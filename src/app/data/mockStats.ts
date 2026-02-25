@@ -78,6 +78,8 @@ export interface GameVisuals {
     townHallLevel: number;
     builderHallLevel: number;
     troops?: CoCTroopData[];
+    superTroops?: CoCTroopData[];
+    builderBaseTroops?: CoCTroopData[];
     spells?: CoCTroopData[];
     siegeMachines?: CoCTroopData[];
     pets?: CoCTroopData[];

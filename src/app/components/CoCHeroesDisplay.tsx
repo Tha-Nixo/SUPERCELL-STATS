@@ -2,12 +2,13 @@ import { CoCHeroData } from '../data/mockStats';
 
 // Hero image URLs
 const HERO_IMAGE_URLS: Record<string, string> = {
-    'Barbarian King': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC8xTXljUG5nUzZyWkcySndXbVVZUC5wbmcifQ:supercell:lo30eJacosJhqFSlJ9jUUXwm-M3aDPEJ2StgNdoD4aU?width=400',
-    'Archer Queen': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC9qTkdGRXVYRkVQRGNZbzZuVmRuZS5wbmcifQ:supercell:PlJVanSyK5-YIqzA2cZ8wdKANt2UruSXP2O1xr6nbgo?width=400',
-    'Grand Warden': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC9SWndZYk5YbkV6QlJSYXo2VkUyVy5wbmcifQ:supercell:S7JkNYch5l1Pwv_DMeyLj_HqR-Ovl0QjhY65MUmG6zg?width=400',
-    'Royal Champion': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC9IRmZhWFZ4UjRIeEhiYkhTZE15VC5wbmcifQ:supercell:QPBmmHT0nW6bwiWZ-Yrke3-MSMM5sAJfYzeG_lVKWm0?width=400',
-    'Battle Machine': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC9rOWpvb2ZYS0ZHUXozQko2cnNSWS5wbmcifQ:supercell:NuCmWDFViu85lsFNJhzRkxx--T6CLnQBtIwUXcZytwk?width=400',
-    'Minion Prince': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC8xQkRyV3BranZzSG1MZG81QWdIWS5wbmcifQ:supercell:CDtGTVyA97Z9QN298JeaJJze-gBxE7ldbU7ZNXoThUY?width=400',
+    'Barbarian King': '/images/coc/heroes/Barbarian_King_2_grass.png',
+    'Archer Queen': '/images/coc/heroes/Archer_Queen_1.png',
+    'Grand Warden': '/images/coc/heroes/Grand_Warden_2_grass.png',
+    'Royal Champion': '/images/coc/heroes/Royal_Champion_2_grass.png',
+    'Battle Machine': '/images/coc/heroes/Battle_Machine_2_grass.png',
+    'Battle Copter': '/images/coc/heroes/Battle_Copter_1.png',
+    'Minion Prince': '/images/coc/heroes/Hero_Minion_Prince_02_grass.png',
 };
 
 function HeroProgressBar({ level, maxLevel, color }: { level: number; maxLevel: number; color: string }) {

@@ -331,6 +331,8 @@ export default function GamePage() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
                   <CoCArmyDisplay
                     troops={playerStats.gameVisuals.coc.troops}
+                    superTroops={playerStats.gameVisuals.coc.superTroops}
+                    builderBaseTroops={playerStats.gameVisuals.coc.builderBaseTroops}
                     spells={playerStats.gameVisuals.coc.spells}
                     siegeMachines={playerStats.gameVisuals.coc.siegeMachines}
                     pets={playerStats.gameVisuals.coc.pets}

@@ -392,13 +392,29 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
     const rawTroops: any[] = player.troops ?? [];
     const rawSpells: any[] = player.spells ?? [];
 
-    // We filter by village "home". Siege machines and pets come under troops but usually have specific names/flags in full API.
-    // For simplicity, we just bucket them.
-    const troops = rawTroops.filter(t => t.village === 'home' && !t.name.includes('L.A.S.S.I') && !t.name.includes('Electro Owl') && !t.name.includes('Mighty Yak') && !t.name.includes('Unicorn') && !t.name.includes('Frosty') && !t.name.includes('Diggy') && !t.name.includes('Poison Lizard') && !t.name.includes('Phoenix') && !t.name.includes('Spirit Fox') && !t.name.includes('Angry Jelly') && !t.name.includes('Wall Wrecker') && !t.name.includes('Battle Blimp') && !t.name.includes('Stone Slammer') && !t.name.includes('Siege Barracks') && !t.name.includes('Log Launcher') && !t.name.includes('Flame Flinger') && !t.name.includes('Battle Drill')).map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
+    const isSiegeName = (n: string) => n.includes('Wall Wrecker') || n.includes('Battle Blimp') || n.includes('Stone Slammer') || n.includes('Siege Barracks') || n.includes('Log Launcher') || n.includes('Flame Flinger') || n.includes('Battle Drill') || n === 'Drill';
+    const isPetName = (n: string) => n.includes('L.A.S.S.I') || n.includes('Electro Owl') || n.includes('Mighty Yak') || n.includes('Unicorn') || n.includes('Frosty') || n.includes('Diggy') || n.includes('Poison Lizard') || n.includes('Phoenix') || n.includes('Spirit Fox') || n.includes('Angry Jelly');
+    const isSuperName = (n: string) => n.includes('Super ') || n.includes('Sneaky ') || n.includes('Rocket ') || n === 'Ice Hound' || n === 'Inferno Dragon';
 
-    const siegeMachines = rawTroops.filter(t => t.village === 'home' && (t.name.includes('Wall Wrecker') || t.name.includes('Battle Blimp') || t.name.includes('Stone Slammer') || t.name.includes('Siege Barracks') || t.name.includes('Log Launcher') || t.name.includes('Flame Flinger') || t.name.includes('Battle Drill'))).map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
+    const troops = rawTroops
+        .filter(t => t.village === 'home' && !isSiegeName(t.name) && !isPetName(t.name) && !isSuperName(t.name))
+        .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
 
-    const pets = rawTroops.filter(t => t.village === 'home' && (t.name.includes('L.A.S.S.I') || t.name.includes('Electro Owl') || t.name.includes('Mighty Yak') || t.name.includes('Unicorn') || t.name.includes('Frosty') || t.name.includes('Diggy') || t.name.includes('Poison Lizard') || t.name.includes('Phoenix') || t.name.includes('Spirit Fox') || t.name.includes('Angry Jelly'))).map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
+    const superTroops = rawTroops
+        .filter(t => t.village === 'home' && isSuperName(t.name))
+        .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
+
+    const builderBaseTroops = rawTroops
+        .filter(t => t.village === 'builderBase' && !isPetName(t.name) && !COC_HEROES[t.name])
+        .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
+
+    const siegeMachines = rawTroops
+        .filter(t => t.village === 'home' && isSiegeName(t.name))
+        .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
+
+    const pets = rawTroops
+        .filter(t => t.village === 'home' && isPetName(t.name))
+        .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
 
     const spells = rawSpells.filter(t => t.village === 'home').map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
 
@@ -448,11 +464,13 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
                 townHallLevel: thLevel,
                 builderHallLevel: bhLevel,
                 troops,
+                superTroops,
+                builderBaseTroops,
                 spells,
                 siegeMachines,
                 pets,
-            },
-        },
+            }
+        }
     };
 }
 
