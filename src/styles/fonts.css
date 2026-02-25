@@ -1,20 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-@font-face {
-  font-family: 'Clash Royale';
-  src: url('/fonts/clash_royale.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Brawl Stars';
-  src: url('/fonts/nougat-eb.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Clash Of Clans';
-  src: url('/fonts/clash_of_clans.ttf') format('truetype');
-}
-
 .font-cr {
   font-family: 'Clash Royale', 'Inter', sans-serif !important;
 }

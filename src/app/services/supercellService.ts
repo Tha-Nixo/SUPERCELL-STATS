@@ -41,6 +41,23 @@ async function fetchSupercell<T>(url: string, apiKey: string): Promise<T> {
     return res.json() as Promise<T>;
 }
 
+
+// Helper to determine exact cards needed for next CR level
+function getCRCardsTarget(level: number, rarity: string): number {
+    if (level >= 16) return 50000;
+    const r = (rarity || 'common').toLowerCase();
+
+    // As of Level 16 update:
+    let targets: number[] = [];
+    if (r === 'champion') targets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 5, 8, 11, 15];
+    else if (r === 'legendary') targets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 6, 9, 12, 14, 20];
+    else if (r === 'epic') targets = [0, 0, 0, 0, 0, 0, 2, 4, 10, 20, 30, 50, 70, 100, 130, 180];
+    else if (r === 'rare') targets = [0, 0, 0, 2, 4, 10, 20, 50, 100, 200, 300, 400, 550, 750, 1000, 1400];
+    else targets = [0, 2, 4, 10, 20, 50, 100, 200, 400, 800, 1000, 1500, 2500, 3500, 5500, 7500];
+
+    return targets[level] || Math.max(...targets) || 1;
+}
+
 // ─────────────────────────────────────────
 // Clash Royale
 // ─────────────────────────────────────────
@@ -73,14 +90,21 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
     // Current deck — has iconUrls from API
     const rawDeck: any[] = player.currentDeck ?? [];
     const currentDeck = rawDeck.map((c: any) => {
-        const offset = 15 - (c.maxLevel ?? 15);
+        const absoluteMaxLevel = c.maxLevel === 14 ? 14 : 14;
+        // 14 is the normal max. Elite is 15 but API normally caps maxLevel at 14 for math.
+        // Base levels are 1 (Common), 3 (Rare), 6 (Epic), 9 (Legendary), 11 (Champion)
+        // Normalize levels based on card rarity max level offset
+        // The user reported the previous system was exactly 2 levels behind.
+        const baseLevel = 15 - (c.maxLevel ?? 14);
+        const actualLevel = baseLevel + (c.level ?? 1) + 1;
+
         return {
             id: c.id ?? 0,
             name: c.name ?? 'Unknown',
-            level: (c.level ?? 1) + 14 - (c.maxLevel ?? 14) + 2,
+            level: actualLevel,
             maxLevel: 14,
             count: c.count ?? 0,
-            maxCount: c.maxCount ?? 1,
+            maxCount: getCRCardsTarget(actualLevel, c.rarity),
             iconUrl: c.iconUrls?.medium ?? '',
             rarity: c.rarity ?? '',
         };
@@ -169,13 +193,15 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
             cr: {
                 currentDeck,
                 cards: (player.cards ?? []).map((c: any) => {
+                    const baseLevel = 15 - (c.maxLevel ?? 14);
+                    const actualLevel = baseLevel + (c.level ?? 1) + 1;
                     return {
                         id: c.id ?? 0,
                         name: c.name ?? 'Unknown',
-                        level: (c.level ?? 1) + 14 - (c.maxLevel ?? 14) + 2,
+                        level: actualLevel,
                         maxLevel: 14,
                         count: c.count ?? 0,
-                        maxCount: c.maxCount ?? 1,
+                        maxCount: getCRCardsTarget(actualLevel, c.rarity),
                         iconUrl: c.iconUrls?.medium ?? '',
                         rarity: c.rarity ?? '',
                     };

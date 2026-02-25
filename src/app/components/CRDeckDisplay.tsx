@@ -67,10 +67,10 @@ export function CRDeckDisplay({ cards, accent, favoriteCard }: CRDeckDisplayProp
                                 )}
                                 {/* Level badge */}
                                 <div
-                                    className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-white text-[10px] font-bold leading-none"
+                                    className={`absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[10px] font-bold leading-none ${card.level >= 16 ? 'text-yellow-300 shadow-[0_0_8px_rgba(253,224,71,0.6)]' : 'text-white'}`}
                                     style={{ backgroundColor: `${rarityColor}dd` }}
                                 >
-                                    {card.level}
+                                    {card.level >= 16 ? `MAX` : `Lvl ${card.level}`}
                                 </div>
                             </div>
                             <p className="text-white/50 text-[9px] text-center mt-1 leading-tight truncate w-full px-0.5">{card.name}</p>

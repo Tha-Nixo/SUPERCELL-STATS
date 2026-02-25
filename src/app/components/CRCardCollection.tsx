@@ -24,7 +24,7 @@ const RARITY_ORDER: Record<string, number> = {
 };
 
 function CardItem({ card, accent }: { card: CRCardData; accent: string }) {
-    const isMax = card.level >= card.maxLevel;
+    const isMax = card.level >= 16; // Now only 16 is maxed visually
     const hideProgress = isMax || card.maxCount <= 1;
     const progressPct = isMax ? 100 : Math.min(100, Math.round((card.count / Math.max(card.maxCount, 1)) * 100));
     const rarityColor = RARITY_COLORS[card.rarity || 'Common'] || '#bdc3c7';
@@ -68,7 +68,7 @@ function CardItem({ card, accent }: { card: CRCardData; accent: string }) {
                 )}
             </div>
             <p className="text-[8px] text-white/40 mt-0.5">
-                {isMax ? 'MAX' : `${card.count}/${card.maxCount}`}
+                {card.level >= 16 ? `MAX` : `${card.count}/${card.maxCount}`}
             </p>
         </div>
     );

@@ -45,9 +45,9 @@ const TH_IMAGES: Record<number, string> = {
   11: 'https://api-assets.clashofclans.com/townhalls/320/vKcS3fZ-K8eCfMHn5j1e-3jmolqhfX2Lzayw-qneMuE.png',
   12: 'https://api-assets.clashofclans.com/townhalls/320/Hq_4RcuHdTJtFGGVCNi-a7KNZYxhGMPNPoZpnpH4oVg.png',
   13: 'https://api-assets.clashofclans.com/townhalls/320/JDvJn9A3mCWgCBqvGiU4hbcuN0UmqgNAB-LafNXFJ9Q.png',
-  14: 'https://static.wikia.nocookie.net/clashofclans/images/8/87/Town_Hall14.png',
-  15: 'https://static.wikia.nocookie.net/clashofclans/images/c/c8/Town_Hall15.png',
-  16: 'https://static.wikia.nocookie.net/clashofclans/images/d/df/Town_Hall16.png',
+  14: 'https://coc.guide/static/imgs/other/town-hall-14.png',
+  15: 'https://coc.guide/static/imgs/other/town-hall-15.png',
+  16: 'https://coc.guide/static/imgs/other/town-hall-16.png',
 };
 
 export default function GamePage() {
@@ -186,7 +186,15 @@ export default function GamePage() {
                 className="flex items-center gap-5">
                 <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl shrink-0 shadow-xl"
                   style={{ background: `linear-gradient(135deg, ${game.gradientFrom}, ${game.gradientTo})`, border: `2px solid ${game.accent}40` }}>
-                  {playerStats.rankIcon}
+                  {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc ? (
+                    <img
+                      src={TH_IMAGES[playerStats.gameVisuals.coc.townHallLevel] || 'https://api-assets.clashofclans.com/townhalls/320/cVBEAFzBDVCWgCBqvGiU4hbcuN0UmqgNAB-LafNXFJ9Q.png'}
+                      alt={`TH ${playerStats.gameVisuals.coc.townHallLevel}`}
+                      className="w-14 h-14 object-contain filter drop-shadow-md"
+                    />
+                  ) : (
+                    playerStats.rankIcon
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-4xl font-extrabold text-white tracking-tight truncate">{playerStats.username}</h2>

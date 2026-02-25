@@ -10,6 +10,34 @@ interface CoCArmyDisplayProps {
     accent: string;
 }
 
+function TroopIcon({ troop, accent }: { troop: CoCTroopData; accent: string }) {
+    const [hasError, setHasError] = useState(false);
+    const [loaded, setLoaded] = useState(false);
+
+    return (
+        <div
+            className="w-full h-full flex items-center justify-center text-lg font-black text-white/30"
+            style={{ background: `linear-gradient(135deg, ${accent}30, transparent)` }}
+        >
+            {!hasError ? (
+                <img
+                    src={`/assets/troops/Icon_HV_${troop.name.replace(/ /g, '')}.png`}
+                    alt={troop.name}
+                    className={`w-full h-full object-contain filter drop-shadow-lg scale-125 transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+                    onLoad={() => setLoaded(true)}
+                    onError={() => setHasError(true)}
+                />
+            ) : null}
+
+            {hasError || !loaded ? (
+                <div className={`absolute inset-0 flex items-center justify-center w-full h-full text-white/70 font-black text-[22px] drop-shadow-md transition-opacity duration-300 ${hasError ? 'opacity-100' : 'opacity-0'}`}>
+                    {troop.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
 function TroopGrid({ items, title, accent }: { items: CoCTroopData[]; title: string; accent: string }) {
     if (!items || items.length === 0) return null;
 
@@ -23,13 +51,8 @@ function TroopGrid({ items, title, accent }: { items: CoCTroopData[]; title: str
                     const isMax = t.level === t.maxLevel;
                     return (
                         <div key={`${t.name}-${idx}`} className="group relative flex items-center justify-center w-12 h-12 rounded-lg bg-black/40 border border-white/10 overflow-hidden hover:scale-110 transition-transform">
-                            {/* Fallback avatar if no icon provided by API (often the case for Troops) */}
-                            <div
-                                className="w-full h-full flex items-center justify-center text-lg font-black text-white/30"
-                                style={{ background: `linear-gradient(135deg, ${accent}30, transparent)` }}
-                            >
-                                {t.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
-                            </div>
+                            {/* Robust Fallback avatar component */}
+                            <TroopIcon troop={t} accent={accent} />
 
                             {/* Level Badge */}
                             <div
