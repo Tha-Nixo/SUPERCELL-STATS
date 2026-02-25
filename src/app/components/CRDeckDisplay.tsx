@@ -10,25 +10,10 @@ const RARITY_COLORS: Record<string, string> = {
 
 interface CRDeckDisplayProps {
     cards: CRCardData[];
-    accent: string;
     favoriteCard?: CRCardData;
 }
 
-function LevelDots({ level, max }: { level: number; max: number }) {
-    return (
-        <div className="flex gap-0.5 flex-wrap justify-center mt-1">
-            {Array.from({ length: Math.min(max, 15) }, (_, i) => (
-                <div
-                    key={i}
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: i < level ? '#f39c12' : 'rgba(255,255,255,0.12)' }}
-                />
-            ))}
-        </div>
-    );
-}
-
-export function CRDeckDisplay({ cards, accent, favoriteCard }: CRDeckDisplayProps) {
+export function CRDeckDisplay({ cards, favoriteCard }: CRDeckDisplayProps) {
     if (!cards.length) return null;
 
     return (

@@ -1,6 +1,5 @@
 import { apiKeys } from './apiKeys';
-import { PlayerStats, Match, PerformancePoint, BSBrawlerData } from '../data/mockStats';
-
+import { PlayerStats, Match, BSBrawlerData } from '../data/mockStats';
 type SupercellGame = 'clash-royale' | 'brawl-stars' | 'clash-of-clans' | 'hay-day' | 'boom-beach';
 
 function normalizeTag(tag: string): string {
@@ -90,7 +89,6 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
     // Current deck — has iconUrls from API
     const rawDeck: any[] = player.currentDeck ?? [];
     const currentDeck = rawDeck.map((c: any) => {
-        const absoluteMaxLevel = c.maxLevel === 14 ? 14 : 14;
         // 14 is the normal max. Elite is 15 but API normally caps maxLevel at 14 for math.
         // Base levels are 1 (Common), 3 (Rare), 6 (Epic), 9 (Legendary), 11 (Champion)
         // Normalize levels based on card rarity max level offset
@@ -221,11 +219,6 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
 function brawlerImageUrl(id: number): string {
     if (!id) return '';
     return `https://cdn.brawlify.com/brawlers/borders/${id}.png`;
-}
-
-const BS_RANK_COLORS = ['#888', '#5c5', '#55f', '#fa0', '#f55', '#a0f', '#f0f'];
-function bsRankColor(rank: number): string {
-    return BS_RANK_COLORS[Math.min(rank, BS_RANK_COLORS.length - 1)] ?? '#888';
 }
 
 async function searchBrawlStars(tag: string): Promise<PlayerStats> {
@@ -391,12 +384,6 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
     const lifetimeDefenseWins = acvMap['Unbreakable'] ?? 0;
     const totalMatches = lifetimeAttackWins + lifetimeDefenseWins;
     const winRate = totalMatches > 0 ? Math.round((lifetimeAttackWins / totalMatches) * 100) : 50;
-
-    const performanceData: PerformancePoint[] = Array.from({ length: 7 }, (_, i) => ({
-        date: new Date(Date.now() - (6 - i) * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        winRate,
-        kd: lifetimeAttackWins > 0 ? Math.round((lifetimeAttackWins / Math.max(lifetimeDefenseWins, 1)) * 100) / 100 : 0,
-    }));
 
     const heroLine = heroList.map(h => `${h.shortName} ${h.level}`).join(' · ') || '—';
     const bm = heroList.find(h => h.shortName === 'BM');

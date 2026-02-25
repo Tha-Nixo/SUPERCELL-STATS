@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { CRCardData } from '../data/mockStats';
-import { ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface CRCardCollectionProps {
     cards: CRCardData[];
@@ -23,9 +23,8 @@ const RARITY_ORDER: Record<string, number> = {
     champion: 5,
 };
 
-function CardItem({ card, accent }: { card: CRCardData; accent: string }) {
+function CardItem({ card }: { card: CRCardData }) {
     const isMax = card.level >= 16; // Now only 16 is maxed visually
-    const hideProgress = isMax || card.maxCount <= 1;
     const progressPct = isMax ? 100 : Math.min(100, Math.round((card.count / Math.max(card.maxCount, 1)) * 100));
     const rarityColor = RARITY_COLORS[card.rarity || 'Common'] || '#bdc3c7';
 
@@ -74,7 +73,7 @@ function CardItem({ card, accent }: { card: CRCardData; accent: string }) {
     );
 }
 
-export function CRCardCollection({ cards, accent }: CRCardCollectionProps) {
+export function CRCardCollection({ cards }: CRCardCollectionProps) {
     const [showAll, setShowAll] = useState(false);
     const [sortBy, setSortBy] = useState<'level' | 'rarity'>('level');
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
@@ -146,7 +145,7 @@ export function CRCardCollection({ cards, accent }: CRCardCollectionProps) {
 
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
                 {displayCards.map((card, idx) => (
-                    <CardItem key={`${card.id}-${idx}`} card={card} accent={accent} />
+                    <CardItem key={`${card.id}-${idx}`} card={card} />
                 ))}
             </div>
         </div>

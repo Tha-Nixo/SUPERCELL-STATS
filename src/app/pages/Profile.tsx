@@ -1,12 +1,12 @@
 import { motion } from 'motion/react';
 import { Link } from 'react-router';
-import { ArrowLeft, Trophy, TrendingUp, Star, Clock } from 'lucide-react';
+import { ArrowLeft, Trophy, TrendingUp, Clock } from 'lucide-react';
 import { generateProfileData } from '../data/mockStats';
 import { getGameById } from '../data/games';
 
 export default function Profile() {
   const profileGames = generateProfileData();
-  
+
   // Calculate aggregate stats
   const totalHours = profileGames.reduce((sum, game) => sum + game.hoursPlayed, 0);
   const avgWinRate = Math.round(
@@ -29,9 +29,9 @@ export default function Profile() {
               <span>Back to Games</span>
             </motion.button>
           </Link>
-          
+
           <h1 className="text-2xl font-bold text-white">My Gaming Profile</h1>
-          
+
           <div className="w-[120px]" /> {/* Spacer for centering */}
         </div>
       </header>
@@ -89,7 +89,7 @@ export default function Profile() {
 
           {/* Games List */}
           <h3 className="text-2xl font-bold text-white mb-6">Your Games</h3>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {profileGames.map((profileGame, index) => {
               const game = getGameById(profileGame.gameId);
@@ -105,13 +105,13 @@ export default function Profile() {
                   <Link to={`/game/${game.id}`}>
                     <div className="group relative bg-[#111827] rounded-2xl overflow-hidden border border-white/5 hover:border-white/10 transition-all duration-300">
                       {/* Color Strip */}
-                      <div 
+                      <div
                         className="absolute top-0 left-0 right-0 h-1"
                         style={{ backgroundColor: game.accent }}
                       />
-                      
+
                       {/* Glow Effect */}
-                      <div 
+                      <div
                         className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 blur-xl"
                         style={{ backgroundColor: game.accent }}
                       />
@@ -120,22 +120,22 @@ export default function Profile() {
                       <div className="relative p-6">
                         <div className="flex items-start gap-4 mb-6">
                           {/* Game Icon */}
-                          <div 
+                          <div
                             className="text-5xl p-3 rounded-xl"
                             style={{ backgroundColor: `${game.accent}20` }}
                           >
                             {game.logo}
                           </div>
-                          
+
                           {/* Game Info */}
                           <div className="flex-1">
                             <h4 className="text-xl font-bold text-white mb-1">
                               {game.name}
                             </h4>
                             <p className="text-white/60 mb-2">{profileGame.username}</p>
-                            <div 
+                            <div
                               className="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-semibold"
-                              style={{ 
+                              style={{
                                 backgroundColor: `${game.accent}30`,
                                 color: game.accent
                               }}
@@ -150,7 +150,7 @@ export default function Profile() {
                         <div className="grid grid-cols-3 gap-4">
                           <div className="text-center">
                             <div className="text-white/40 text-xs mb-1">Win Rate</div>
-                            <div 
+                            <div
                               className="text-2xl font-bold"
                               style={{ color: game.accent }}
                             >
@@ -159,7 +159,7 @@ export default function Profile() {
                           </div>
                           <div className="text-center">
                             <div className="text-white/40 text-xs mb-1">Hours</div>
-                            <div 
+                            <div
                               className="text-2xl font-bold"
                               style={{ color: game.accent }}
                             >
@@ -176,7 +176,7 @@ export default function Profile() {
 
                         {/* View Details */}
                         <div className="mt-4 pt-4 border-t border-white/5">
-                          <div 
+                          <div
                             className="text-sm font-semibold group-hover:translate-x-1 transition-transform"
                             style={{ color: game.accent }}
                           >

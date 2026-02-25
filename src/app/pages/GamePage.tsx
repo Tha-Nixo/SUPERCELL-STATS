@@ -258,7 +258,6 @@ export default function GamePage() {
                   style={{ borderColor: `${game.accent}25` }}>
                   <CRDeckDisplay
                     cards={playerStats.gameVisuals.cr.currentDeck}
-                    accent={game.accent}
                     favoriteCard={playerStats.gameVisuals.cr.favoriteCard}
                   />
                   {/* Clan row */}
@@ -321,12 +320,10 @@ export default function GamePage() {
                   style={{ borderColor: `${game.accent}25` }}>
                   <CoCHeroesDisplay
                     heroes={playerStats.gameVisuals.coc.heroes}
-                    townHallLevel={playerStats.gameVisuals.coc.townHallLevel}
                     builderHallLevel={playerStats.gameVisuals.coc.builderHallLevel}
                     leagueName={playerStats.gameVisuals.coc.leagueName}
                     leagueBadgeUrl={playerStats.gameVisuals.coc.leagueBadgeUrl}
                     clanBadgeUrl={playerStats.gameVisuals.coc.clanBadgeUrl}
-                    accentColor={game.accent}
                   />
                 </motion.div>
               )}

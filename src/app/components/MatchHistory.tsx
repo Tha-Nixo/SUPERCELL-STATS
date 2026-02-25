@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Trophy, TrendingUp, Target, Sword } from 'lucide-react';
+import { Trophy, Target, Sword } from 'lucide-react';
 import { Match } from '../data/mockStats';
 
 interface MatchHistoryProps {
@@ -40,7 +40,7 @@ export function MatchHistory({ matches, accentColor }: MatchHistoryProps) {
             <div
               className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm min-w-[100px]"
               style={{
-                backgroundColor: `${getResultColor(match.result)}20`,
+                backgroundColor: `${getResultColor(match.result)} 20`,
                 color: getResultColor(match.result)
               }}
             >
@@ -72,7 +72,7 @@ export function MatchHistory({ matches, accentColor }: MatchHistoryProps) {
                 <div className="text-center">
                   <div className="text-white/40 text-xs mb-1">Trophies</div>
                   <div className="text-white font-semibold">
-                    {match.score > 0 ? `+${match.score}` : match.score}
+                    {match.score > 0 ? `+ ${match.score} ` : match.score}
                   </div>
                 </div>
               )}

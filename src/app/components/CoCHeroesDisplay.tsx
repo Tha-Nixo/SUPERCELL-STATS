@@ -10,13 +10,6 @@ const HERO_IMAGE_URLS: Record<string, string> = {
     'Minion Prince': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC8xQkRyV3BranZzSG1MZG81QWdIWS5wbmcifQ:supercell:CDtGTVyA97Z9QN298JeaJJze-gBxE7ldbU7ZNXoThUY?width=400',
 };
 
-interface CoCArcanaBarProps {
-    label: string;
-    level: number;
-    maxLevel: number;
-    color: string;
-}
-
 function HeroProgressBar({ level, maxLevel, color }: { level: number; maxLevel: number; color: string }) {
     const pct = maxLevel > 0 ? Math.round((level / maxLevel) * 100) : 0;
     return (
@@ -31,15 +24,13 @@ function HeroProgressBar({ level, maxLevel, color }: { level: number; maxLevel: 
 
 interface CoCHeroesDisplayProps {
     heroes: CoCHeroData[];
-    townHallLevel: number;
     builderHallLevel: number;
     leagueBadgeUrl?: string;
     clanBadgeUrl?: string;
     leagueName: string;
-    accentColor: string;
 }
 
-export function CoCHeroesDisplay({ heroes, townHallLevel, builderHallLevel, leagueBadgeUrl, clanBadgeUrl, leagueName, accentColor }: CoCHeroesDisplayProps) {
+export function CoCHeroesDisplay({ heroes, builderHallLevel, leagueBadgeUrl, clanBadgeUrl, leagueName }: CoCHeroesDisplayProps) {
     const villagHeroes = heroes.filter(h => h.shortName !== 'BM');
     const bhHero = heroes.find(h => h.shortName === 'BM');
 
