@@ -16,24 +16,27 @@ function TroopIcon({ troop, accent }: { troop: CoCTroopData; accent: string }) {
 
     return (
         <div
-            className="w-full h-full flex items-center justify-center text-lg font-black text-white/30"
-            style={{ background: `linear-gradient(135deg, ${accent}30, transparent)` }}
+            className="w-full h-full flex items-center justify-center font-black relative overflow-hidden"
+            style={{
+                background: hasError ? `linear-gradient(135deg, ${accent}80, ${accent}40)` : `linear-gradient(135deg, ${accent}30, transparent)`
+            }}
         >
-            {!hasError ? (
-                <img
-                    src={`/assets/troops/Icon_HV_${troop.name.replace(/ /g, '')}.png`}
-                    alt={troop.name}
-                    className={`w-full h-full object-contain filter drop-shadow-lg scale-125 transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-                    onLoad={() => setLoaded(true)}
-                    onError={() => setHasError(true)}
-                />
-            ) : null}
+            {/* Fallback Initials */}
+            <div className={`absolute inset-0 flex items-center justify-center w-full h-full text-white font-black text-xl drop-shadow-md transition-opacity duration-300 ${hasError ? 'opacity-100' : 'opacity-0'}`}>
+                {troop.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()}
+            </div>
 
-            {hasError || !loaded ? (
-                <div className={`absolute inset-0 flex items-center justify-center w-full h-full text-white/70 font-black text-[22px] drop-shadow-md transition-opacity duration-300 ${hasError ? 'opacity-100' : 'opacity-0'}`}>
-                    {troop.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
-                </div>
-            ) : null}
+            {/* Actually attempt image load */}
+            <img
+                src={`/assets/troops/Icon_HV_${troop.name.replace(/ /g, '')}.png`}
+                alt={troop.name}
+                className={`w-full h-full object-contain filter drop-shadow-lg scale-125 transition-opacity duration-300 absolute inset-0 ${(loaded && !hasError) ? 'opacity-100' : 'opacity-0'}`}
+                onLoad={() => setLoaded(true)}
+                onError={() => {
+                    setHasError(true);
+                    setLoaded(true); // stop waiting
+                }}
+            />
         </div>
     );
 }
