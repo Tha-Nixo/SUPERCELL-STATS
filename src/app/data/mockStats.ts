@@ -26,6 +26,11 @@ export interface CRCardData {
   rarity?: string;
 }
 
+export interface BSEquipment {
+  id: number;
+  name: string;
+}
+
 export interface BSBrawlerData {
   id: number;
   name: string;
@@ -36,6 +41,9 @@ export interface BSBrawlerData {
   imageUrl: string;    // portrait URL from /brawlers API
   gadgets: number;
   starPowers: number;
+  gadgetsList: BSEquipment[];
+  starPowersList: BSEquipment[];
+  gearsList: BSEquipment[];
 }
 
 export interface CoCHeroData {
@@ -178,7 +186,10 @@ export const generatePlayerStats = (username: string, gameId: string): PlayerSta
       rank: 1 + (hash + k) % 35,
       imageUrl: `https://cdn.brawlify.com/brawler-bs/${16000000 + k}.png`,
       gadgets: (hash + k) % 3,
-      starPowers: (hash + k) % 3
+      starPowers: (hash + k) % 3,
+      gadgetsList: Array.from({ length: (hash + k) % 3 }, (_, i) => ({ id: 23000000 + i, name: `Gadget ${i + 1}` })),
+      starPowersList: Array.from({ length: (hash + k) % 3 }, (_, i) => ({ id: 23000000 + i, name: `Star Power ${i + 1}` })),
+      gearsList: Array.from({ length: (hash + k) % 4 }, (_, i) => ({ id: 23000000 + i, name: `Gear ${i + 1}` })),
     })).sort((a, b) => b.trophies - a.trophies);
 
     gameVisuals = {

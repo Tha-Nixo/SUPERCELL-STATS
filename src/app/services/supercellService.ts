@@ -261,6 +261,9 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
         imageUrl: brawlerImageUrl(b.id),
         gadgets: b.gadgets?.length ?? 0,
         starPowers: b.starPowers?.length ?? 0,
+        gadgetsList: (b.gadgets ?? []).map((g: any) => ({ id: g.id, name: g.name })),
+        starPowersList: (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name })),
+        gearsList: (b.gears ?? []).map((g: any) => ({ id: g.id, name: g.name })),
     }));
 
     const recentMatches: Match[] = battles.slice(0, 10).map((b: any, i: number) => {
@@ -323,6 +326,9 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
                     imageUrl: brawlerImageUrl(b.id),
                     gadgets: b.gadgets?.length ?? 0,
                     starPowers: b.starPowers?.length ?? 0,
+                    gadgetsList: (b.gadgets ?? []).map((g: any) => ({ id: g.id, name: g.name })),
+                    starPowersList: (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name })),
+                    gearsList: (b.gears ?? []).map((g: any) => ({ id: g.id, name: g.name })),
                 })), clubTag: player.club?.tag
             },
         },

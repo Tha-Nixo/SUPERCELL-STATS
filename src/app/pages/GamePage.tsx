@@ -57,6 +57,7 @@ export default function GamePage() {
   const [searchInput, setSearchInput] = useState('');
   const [result, setResult] = useState<SearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [bsActiveTab, setBsActiveTab] = useState<'home' | 'brawlers'>('home');
 
   if (!game) {
     return (
@@ -221,8 +222,28 @@ export default function GamePage() {
                 )}
               </motion.div>
 
+              {/* ── Tab Navigation (Brawl Stars Only) ── */}
+              {gameId === 'brawl-stars' && (
+                <div className="flex justify-center mt-6">
+                  <div className="flex bg-black/40 backdrop-blur-md rounded-2xl p-1 border border-white/10 shadow-xl">
+                    <button
+                      onClick={() => setBsActiveTab('home')}
+                      className={`px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${bsActiveTab === 'home' ? 'bg-white/15 text-white shadow-md' : 'text-white/40 hover:text-white/80 hover:bg-white/5'}`}
+                    >
+                      Home
+                    </button>
+                    <button
+                      onClick={() => setBsActiveTab('brawlers')}
+                      className={`px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${bsActiveTab === 'brawlers' ? 'bg-white/15 text-white shadow-md' : 'text-white/40 hover:text-white/80 hover:bg-white/5'}`}
+                    >
+                      Brawlers
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* ── 4 stat cards ── */}
-              {(() => {
+              {(!gameId || gameId !== 'brawl-stars' || bsActiveTab === 'home') && (() => {
                 const L = playerStats.statLabels ?? {};
                 const wins = Math.round(playerStats.totalMatches * playerStats.winRate / 100);
                 const kdDisplay = typeof playerStats.kd === 'number'
@@ -290,8 +311,8 @@ export default function GamePage() {
                 </motion.div>
               )}
 
-              {/* ── BRAWL STARS: Top Brawlers Grid ── */}
-              {gameId === 'brawl-stars' && playerStats.gameVisuals?.bs && playerStats.gameVisuals.bs.topBrawlers.length > 0 && (
+              {/* ── BRAWL STARS: Home Podium ── */}
+              {gameId === 'brawl-stars' && playerStats.gameVisuals?.bs && playerStats.gameVisuals.bs.topBrawlers.length > 0 && bsActiveTab === 'home' && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
                   className="p-6 rounded-3xl border border-white/8 bg-white/3"
                   style={{ borderColor: `${game.accent}25` }}>
@@ -299,6 +320,7 @@ export default function GamePage() {
                     brawlers={playerStats.gameVisuals.bs.topBrawlers}
                     allBrawlers={playerStats.gameVisuals.bs.allBrawlers}
                     accent={game.accent}
+                    variant="podium"
                   />
                   {/* Club row */}
                   {playerStats.extraStats?.find(s => s.label === 'Club') && (
@@ -312,6 +334,21 @@ export default function GamePage() {
                   )}
                 </motion.div>
               )}
+
+              {/* ── BRAWL STARS: Detailed Brawlers Tab ── */}
+              {gameId === 'brawl-stars' && playerStats.gameVisuals?.bs && bsActiveTab === 'brawlers' && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
+                  className="rounded-3xl border border-white/8 bg-white/3 p-6"
+                  style={{ borderColor: `${game.accent}25` }}>
+                  <BSBrawlerGrid
+                    brawlers={playerStats.gameVisuals.bs.topBrawlers}
+                    allBrawlers={playerStats.gameVisuals.bs.allBrawlers}
+                    accent={game.accent}
+                    variant="detailed"
+                  />
+                </motion.div>
+              )}
+
 
               {/* ── CLASH OF CLANS: Heroes ── */}
               {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && (
@@ -342,7 +379,7 @@ export default function GamePage() {
               )}
 
               {/* ── Detailed Stats (all games) ── */}
-              {playerStats.extraStats && playerStats.extraStats.length > 0 && (
+              {(!gameId || gameId !== 'brawl-stars' || bsActiveTab === 'home') && playerStats.extraStats && playerStats.extraStats.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
                   <h3 className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">All Stats</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
@@ -368,7 +405,7 @@ export default function GamePage() {
               )}
 
               {/* ── Performance Chart ── */}
-              {playerStats.performanceData.length > 0 && (
+              {(!gameId || gameId !== 'brawl-stars' || bsActiveTab === 'home') && playerStats.performanceData.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                   <h3 className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Performance Trend</h3>
                   <PerformanceChart data={playerStats.performanceData} accentColor={game.chartPrimary} secondaryColor={game.chartSecondary} />
@@ -376,7 +413,7 @@ export default function GamePage() {
               )}
 
               {/* ── Recent Battles ── */}
-              {playerStats.recentMatches.length > 0 && (
+              {(!gameId || gameId !== 'brawl-stars' || bsActiveTab === 'home') && playerStats.recentMatches.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
                   <h3 className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Recent Battles</h3>
                   <MatchHistory matches={playerStats.recentMatches} accentColor={game.accent} />
@@ -389,28 +426,34 @@ export default function GamePage() {
       </AnimatePresence>
 
       {/* ─── Empty State ─── */}
-      {!playerStats && !isLoading && !result?.error && (
-        <section className="px-6 py-24">
-          <div className="max-w-4xl mx-auto text-center">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-              <div className="text-[100px] leading-none mb-6 opacity-10">{game.logo}</div>
-              <h3 className="text-2xl font-bold text-white/40 mb-3">Search for a Player</h3>
-              <p className="text-white/25 max-w-xs mx-auto text-sm">Enter a player tag above to view live stats, heroes, deck, brawlers and battle history.</p>
-              <div className="mt-8 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/30 text-sm font-mono">
-                <span style={{ color: game.accent }}>#</span>PLAYERTAG
-              </div>
-            </motion.div>
-          </div>
-        </section>
-      )}
+      {
+        !playerStats && !isLoading && !result?.error && (
+          <section className="px-6 py-24">
+            <div className="max-w-4xl mx-auto text-center">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                <div className="text-[100px] leading-none mb-6 opacity-10">{game.logo}</div>
+                <h3 className="text-2xl font-bold text-white/40 mb-3">Search for a Player</h3>
+                <p className="text-white/25 max-w-xs mx-auto text-sm">Enter a player tag above to view live stats, heroes, deck, brawlers and battle history.</p>
+                <div className="mt-8 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/30 text-sm font-mono">
+                  <span style={{ color: game.accent }}>#</span>PLAYERTAG
+                </div>
+              </motion.div>
+            </div>
+          </section>
+        )
+      }
 
       {/* ─── Footer ─── */}
-      <footer className="border-t border-white/5 py-6 mt-8">
-        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between text-white/25 text-xs">
-          <span>{game.name} Stats — Supercell Stats Hub</span>
-          <span>Data from official Supercell API · Not affiliated with Supercell</span>
+      <footer className="border-t border-white/5 py-8 mt-8">
+        <div className="max-w-7xl mx-auto px-6 text-center text-white/30 text-xs leading-relaxed">
+          <p className="mb-2">
+            This material is unofficial and is not endorsed by Supercell. For more information see Supercell's Fan Content Policy: <a href="https://www.supercell.com/fan-content-policy" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white transition-colors underline">www.supercell.com/fan-content-policy</a>.
+          </p>
+          <p>
+            {game.name} Stats — All game data is provided by the official Supercell Developer API.
+          </p>
         </div>
       </footer>
-    </div>
+    </div >
   );
 }

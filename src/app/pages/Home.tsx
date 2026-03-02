@@ -170,11 +170,12 @@ export default function Home() {
 
       {/* ─── Footer ─── */}
       <footer className="border-t border-white/5 py-8">
-        <div className="max-w-7xl mx-auto px-6 text-center text-white/30 text-sm">
+        <div className="max-w-7xl mx-auto px-6 text-center text-white/30 text-xs leading-relaxed">
+          <p className="mb-2">
+            This material is unofficial and is not endorsed by Supercell. For more information see Supercell's Fan Content Policy: <a href="https://www.supercell.com/fan-content-policy" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white transition-colors underline">www.supercell.com/fan-content-policy</a>.
+          </p>
           <p>
-            Supercell Stats Hub — not affiliated with Supercell.<br />
-            All game data is provided by the official{' '}
-            <span className="text-white/50">Supercell Developer API</span>.
+            All game data is provided by the official Supercell Developer API.
           </p>
         </div>
       </footer>
