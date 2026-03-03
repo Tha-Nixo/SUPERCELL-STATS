@@ -24,11 +24,98 @@ export interface CRCardData {
   maxCount: number;
   iconUrl: string;
   rarity?: string;
+  elixirCost?: number;
+  starLevel?: number;
+  evolutionLevel?: number;
+  maxEvolutionLevel?: number;
+  evolutionIconUrl?: string; // from iconUrls.evolutionMedium or heroMedium
+}
+
+export interface CRBadge {
+  name: string;
+  level: number;
+  maxLevel: number;
+  progress: number;
+  target: number;
+  iconUrl: string;
+}
+
+export interface CRAchievement {
+  name: string;
+  stars: number;
+  value: number;
+  target: number;
+  info: string;
+  completionInfo: string | null;
+}
+
+export interface CRSeasonStats {
+  id?: string;
+  rank?: number;
+  trophies: number;
+  bestTrophies?: number;
+}
+
+export interface CRTowerTroop {
+  id: number;
+  name: string;
+  level: number;
+  maxLevel: number;
+  rarity: string;
+  iconUrl: string;
 }
 
 export interface BSEquipment {
   id: number;
   name: string;
+}
+
+export interface BSBuffies {
+  gadget: boolean;
+  starPower: boolean;
+  hyperCharge: boolean;
+}
+
+export interface BSSkin {
+  id: number;
+  name: string;
+}
+
+export interface BSBattleLogItem {
+  battleTime: string;
+  event: {
+    id: number;
+    mode: string;
+    map: string;
+  };
+  battle: {
+    mode: string;
+    type: string;
+    result?: string;
+    duration?: number;
+    trophyChange?: number;
+    starPlayer?: { tag: string; name: string; brawler: { id: number; name: string } };
+  };
+}
+
+export interface BSClubMember {
+  tag: string;
+  name: string;
+  nameColor: string;
+  role: string;
+  trophies: number;
+  icon: { id: number };
+}
+
+export interface BSClubInfo {
+  tag: string;
+  name: string;
+  description: string;
+  type: string;
+  badgeId: number;
+  requiredTrophies: number;
+  trophies: number;
+  members: BSClubMember[];
 }
 
 export interface BSBrawlerData {
@@ -39,11 +126,26 @@ export interface BSBrawlerData {
   highestTrophies: number;
   rank: number;        // medal rank icon number
   imageUrl: string;    // portrait URL from /brawlers API
+
+  prestigeLevel?: number;
+  currentWinStreak?: number;
+  maxWinStreak?: number;
+  skin?: BSSkin;
+
   gadgets: number;
   starPowers: number;
   gadgetsList: BSEquipment[];
   starPowersList: BSEquipment[];
   gearsList: BSEquipment[];
+  hyperCharges?: BSEquipment[];
+  buffies?: BSBuffies;
+}
+
+export interface CoCHeroEquipment {
+  name: string;
+  level: number;
+  maxLevel: number;
+  village: string;
 }
 
 export interface CoCHeroData {
@@ -53,6 +155,7 @@ export interface CoCHeroData {
   maxLevel: number;
   emoji: string;
   color: string;       // accent color for this hero
+  equipment?: CoCHeroEquipment[];
 }
 
 export interface CoCTroopData {
@@ -62,6 +165,28 @@ export interface CoCTroopData {
   iconUrl?: string;
 }
 
+export interface CoCAchievement {
+  name: string;
+  stars: number;
+  value: number;
+  target: number;
+  info: string;
+  completionInfo: string | null;
+  village: string;
+}
+
+export interface CoCLegendStatistics {
+  legendTrophies: number;
+  bestSeason?: {
+    id: string;
+    rank: number;
+    trophies: number;
+  };
+  currentSeason?: {
+    trophies: number;
+  };
+}
+
 export interface GameVisuals {
   // Clash Royale
   cr?: {
@@ -69,20 +194,70 @@ export interface GameVisuals {
     cards: CRCardData[];                // all unlocked cards
     favoriteCard?: CRCardData;
     clanBadgeUrl?: string;
+    clanTag?: string;
     arenaName?: string;
+    arenaId?: number;
+
+    // New fields
+    expPoints?: number;
+    totalExpPoints?: number;
+
+    // Competitive & Seasons
+    legacyTrophyRoadHighScore?: number;
+    leagueStatistics?: {
+      currentSeason?: CRSeasonStats;
+      previousSeason?: CRSeasonStats;
+      bestSeason?: CRSeasonStats;
+    };
+    pathOfLegend?: {
+      currentSeason?: CRSeasonStats;
+      lastSeason?: CRSeasonStats;
+      bestSeason?: CRSeasonStats;
+    };
+
+    // Badges & Achievements
+    badges?: CRBadge[];
+    achievements?: CRAchievement[];
+
+    // Tower / Support
+    supportCards?: CRTowerTroop[];
+    currentDeckSupportCards?: CRTowerTroop[];
   };
   // Brawl Stars
   bs?: {
     topBrawlers: BSBrawlerData[];       // top 9 by trophies
     allBrawlers: BSBrawlerData[];       // all unlocked brawlers
     clubTag?: string;
+    club?: BSClubInfo;
+    battlelog?: BSBattleLogItem[];
+
+    // Global stats
+    nameColor?: string;
+    prestigeLevel?: number;
+    expPoints?: number;
+    victories3v3?: number;
+    victoriesSolo?: number;
+    victoriesDuo?: number;
+    bestRoboRumbleTime?: number;
   };
   // Clash of Clans
   coc?: {
     heroes: CoCHeroData[];
+    heroEquipment?: CoCHeroEquipment[];
+    achievements?: CoCAchievement[];
+    legendStatistics?: CoCLegendStatistics;
+    clanCapitalContributions?: number;
+    builderBaseTrophies?: number;
+    bestBuilderBaseTrophies?: number;
+    warStars?: number;
+
     leagueName: string;
     leagueBadgeUrl?: string;
+    clanName?: string;
     clanBadgeUrl?: string;
+    clanRole?: string;
+    clanLevel?: number;
+
     townHallLevel: number;
     builderHallLevel: number;
     troops?: CoCTroopData[];

@@ -1,0 +1,622 @@
+import { PlayerStats } from '../data/mockStats';
+import { motion, AnimatePresence } from 'motion/react';
+import { Trophy, Award, Users, Crosshair, Star, History, Flame, BarChart2, Shield, Home } from 'lucide-react';
+import { BSBrawlerGrid } from '../components/BSBrawlerGrid';
+
+// Helpers
+const getWinDistribution = (bs: any) => {
+    const v3 = bs.victories3v3 || 0;
+    const vS = bs.victoriesSolo || 0;
+    const vD = bs.victoriesDuo || 0;
+    const total = v3 + vS + vD || 1;
+    return {
+        v3Pct: Math.round((v3 / total) * 100),
+        vSPct: Math.round((vS / total) * 100),
+        vDPct: Math.round((vD / total) * 100),
+        total
+    };
+};
+
+const BSHome = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
+    const bs = playerStats.gameVisuals?.bs;
+    if (!bs) return null;
+
+    const top3 = bs.topBrawlers.slice(0, 3);
+    const winDist = getWinDistribution(bs);
+
+    return (
+        <div className="space-y-6">
+            {/* Top 3 Brawlers Podium */}
+            {top3.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                    className="p-6 rounded-3xl border border-white/8 bg-white/3"
+                    style={{ borderColor: `${accentColor}25` }}>
+                    <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                        <Trophy className="w-5 h-5" style={{ color: accentColor }} />
+                        Top Brawlers
+                    </h3>
+                    <BSBrawlerGrid
+                        brawlers={top3}
+                        allBrawlers={bs.allBrawlers}
+                        accent={accentColor}
+                        variant="podium"
+                    />
+                </motion.div>
+            )}
+
+            {/* Dashboard Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {/* Global Stats */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                    className="p-6 rounded-3xl border border-white/8 bg-white/3">
+                    <h3 className="text-sm font-semibold text-white/40 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <Award className="w-4 h-4" /> Global Metrics
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center text-center">
+                            <span className="text-white/50 text-xs mb-1">Prestige Level</span>
+                            <span className="text-2xl font-bold text-white">{bs.prestigeLevel?.toLocaleString() ?? 0}</span>
+                        </div>
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center text-center">
+                            <span className="text-white/50 text-xs mb-1">Experience Points</span>
+                            <span className="text-2xl font-bold text-white mb-1">{bs.expPoints?.toLocaleString() ?? 0}</span>
+                        </div>
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center text-center">
+                            <span className="text-white/50 text-xs mb-1">Total Victories</span>
+                            <span className="text-2xl font-bold text-white">{(winDist.total || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center text-center">
+                            <span className="text-white/50 text-xs mb-1">Robo Rumble</span>
+                            <span className="text-xl font-bold text-white/90">
+                                {bs.bestRoboRumbleTime ? `${Math.floor(bs.bestRoboRumbleTime / 60)}m ${bs.bestRoboRumbleTime % 60}s` : 'N/A'}
+                            </span>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Win Distribution */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                    className="p-6 rounded-3xl border border-white/8 bg-white/3 flex flex-col">
+                    <h3 className="text-sm font-semibold text-white/40 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <Crosshair className="w-4 h-4" /> Victory Distribution
+                    </h3>
+                    <div className="flex-1 flex flex-col justify-center">
+                        <div className="w-full h-4 rounded-full overflow-hidden flex bg-white/10 mb-6">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${winDist.v3Pct}%` }} transition={{ duration: 1, delay: 0.5 }}
+                                className="h-full bg-blue-500 relative group" title={`3v3: ${winDist.v3Pct}%`} />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${winDist.vSPct}%` }} transition={{ duration: 1, delay: 0.6 }}
+                                className="h-full bg-green-500 relative group" title={`Solo: ${winDist.vSPct}%`} />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${winDist.vDPct}%` }} transition={{ duration: 1, delay: 0.7 }}
+                                className="h-full bg-orange-500 relative group" title={`Duo: ${winDist.vDPct}%`} />
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-center mt-auto">
+                            <div className="flex flex-col items-center">
+                                <span className="w-3 h-3 rounded-full bg-blue-500 mb-2"></span>
+                                <span className="text-white font-bold text-lg">{winDist.v3Pct}%</span>
+                                <span className="text-white/50 text-xs">3v3</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <span className="w-3 h-3 rounded-full bg-green-500 mb-2"></span>
+                                <span className="text-white font-bold text-lg">{winDist.vSPct}%</span>
+                                <span className="text-white/50 text-xs">Solo</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <span className="w-3 h-3 rounded-full bg-orange-500 mb-2"></span>
+                                <span className="text-white font-bold text-lg">{winDist.vDPct}%</span>
+                                <span className="text-white/50 text-xs">Duo</span>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+
+            </div>
+        </div>
+    );
+};
+const BSBrawlers = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
+    const bs = playerStats.gameVisuals?.bs;
+    if (!bs) return null;
+
+    const brawlers = bs.allBrawlers || [];
+    const maxedCount = brawlers.filter(b => b.power === 11).length;
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between px-2">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Users className="w-6 h-6" style={{ color: accentColor }} />
+                    Brawlers ({brawlers.length}/90)
+                </h3>
+                <div className="text-sm text-white/50 text-right">
+                    <p>Maxed (Power 11): <span className="text-white font-bold">{maxedCount}</span></p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {brawlers.map((b, i) => (
+                    <motion.div
+                        key={b.id}
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="p-4 rounded-2xl border border-white/10 bg-white/5 relative overflow-hidden group hover:bg-white/10 transition-colors"
+                    >
+                        {/* Background glow based on rank/power */}
+                        <div className="absolute -inset-10 bg-gradient-to-br from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+                        <div className="flex gap-4 relative z-10 w-full h-full">
+                            <div className="relative shrink-0 w-16 h-16 rounded-xl overflow-hidden shadow-lg border-2 border-white/5">
+                                <img src={b.imageUrl} alt={b.name} className="w-full h-full object-cover" />
+                                <div className="absolute -bottom-1 -right-1 bg-black/80 rounded-tl-lg px-2 py-0.5 text-xs font-black text-amber-400 border-t border-l border-white/10">
+                                    Lv {b.power}
+                                </div>
+                            </div>
+
+                            <div className="flex-1 flex flex-col justify-between overflow-hidden">
+                                <div className="flex justify-between items-start gap-2">
+                                    <h4 className="font-bold text-white uppercase tracking-wider text-sm truncate">{b.name}</h4>
+                                    <div className="shrink-0 flex items-center gap-1.5 px-2 py-1 rounded bg-black/40 border border-white/10">
+                                        <Trophy className="w-3.5 h-3.5 text-yellow-400 drop-shadow-sm" />
+                                        <span className="text-white font-bold text-sm tracking-tight">{b.trophies}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 text-xs mt-1">
+                                    <span className="text-white/40 flex items-center gap-1">
+                                        <Star className="w-3 h-3 text-white/30" />
+                                        Rank {b.rank}
+                                    </span>
+                                    {b.currentWinStreak && b.currentWinStreak > 0 ? (
+                                        <span className="text-orange-400 font-bold flex items-center gap-1">
+                                            <Flame className="w-3 h-3" /> {b.currentWinStreak} Streak
+                                        </span>
+                                    ) : (
+                                        <span className="text-white/30">Best: {b.highestTrophies}</span>
+                                    )}
+                                </div>
+
+                                {/* Equipment indicators */}
+                                <div className="flex items-center gap-1.5 mt-2">
+                                    <div className={`w-3 h-3 rounded-sm ${b.gadgets > 0 ? 'bg-green-500/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-white/5 border border-white/10'}`} title={`Gadgets: ${b.gadgetsList.map(g => g.name).join(', ') || '0'}`} />
+                                    <div className={`w-3 h-3 rounded-sm ${b.starPowers > 0 ? 'bg-yellow-400/80 shadow-[0_0_8px_rgba(250,204,21,0.4)]' : 'bg-white/5 border border-white/10'}`} title={`Star Powers: ${b.starPowersList.map(g => g.name).join(', ') || '0'}`} />
+                                    <div className={`w-3 h-3 rounded-sm ${b.gearsList && b.gearsList.length > 0 ? 'bg-purple-500/80 shadow-[0_0_8px_rgba(168,85,247,0.4)]' : 'bg-white/5 border border-white/10'}`} title={`Gears: ${b.gearsList?.map(g => g.name).join(', ') || '0'}`} />
+                                    {(b.hyperCharges && b.hyperCharges.length > 0) || b.buffies?.hyperCharge ? (
+                                        <div className="w-3 h-3 rounded-sm bg-pink-500 drop-shadow-[0_0_5px_rgba(236,72,153,0.8)] border border-pink-400 relative overflow-hidden" title={`Hypercharge Unlocked`}>
+                                            <div className="absolute inset-0 bg-white/40 animate-pulse" />
+                                        </div>
+                                    ) : (
+                                        <div className="w-3 h-3 rounded-sm bg-white/5 border border-white/10" />
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+        </div>
+    );
+};
+const BSProgression = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
+    const bs = playerStats.gameVisuals?.bs;
+    if (!bs) return null;
+
+    const brawlers = bs.allBrawlers || [];
+
+    // Distribution map Power 1-11
+    const powerCounts = Array.from({ length: 11 }, (_, i) => ({ level: i + 1, count: 0 }));
+    brawlers.forEach(b => {
+        if (b.power >= 1 && b.power <= 11) powerCounts[b.power - 1].count++;
+    });
+
+    const maxCount = Math.max(...powerCounts.map(p => p.count), 1);
+
+    // Gap Analysis
+    const totalCurrentTrophies = brawlers.reduce((acc, b) => acc + (b.trophies || 0), 0);
+    const totalMaxTrophies = brawlers.reduce((acc, b) => acc + (b.highestTrophies || 0), 0);
+    const trophyGap = totalMaxTrophies - totalCurrentTrophies;
+
+    return (
+        <div className="space-y-6">
+            <h3 className="text-xl font-bold text-white flex items-center gap-2 px-2">
+                <BarChart2 className="w-6 h-6" style={{ color: accentColor }} />
+                Account Progression
+            </h3>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Heatmap/Bar Chart */}
+                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+                    className="p-6 rounded-3xl border border-white/8 bg-white/3 flex flex-col justify-between"
+                    style={{ borderColor: `${accentColor}25` }}>
+                    <div className="mb-6">
+                        <h4 className="text-sm font-semibold text-white/40 uppercase tracking-widest">Power Level Distribution</h4>
+                        <p className="text-white/60 text-xs mt-1">Number of brawlers at each level</p>
+                    </div>
+
+                    <div className="flex items-end h-40 gap-1.5 w-full mt-auto pt-4 relative border-b border-white/10">
+                        {powerCounts.map(p => {
+                            const heightPct = (p.count / maxCount) * 100;
+                            return (
+                                <div key={p.level} className="flex-1 flex flex-col justify-end items-center group">
+                                    <div
+                                        className="w-full bg-white/20 rounded-t-md transition-all group-hover:bg-white/40 relative"
+                                        style={{ height: `${heightPct}%`, backgroundColor: p.level === 11 ? accentColor : undefined }}
+                                    >
+                                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 px-2 py-0.5 rounded text-[10px] text-white font-bold pointer-events-none whitespace-nowrap z-10">
+                                            {p.count} Brawlers
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] text-white/40 mt-1 font-bold">L{p.level}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </motion.div>
+
+                {/* Gap Analysis */}
+                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                    className="p-6 rounded-3xl border border-white/8 bg-white/3 flex flex-col justify-between"
+                    style={{ borderColor: `${accentColor}25` }}>
+                    <div className="mb-6">
+                        <h4 className="text-sm font-semibold text-white/40 uppercase tracking-widest">Trophy Gap Analysis</h4>
+                        <p className="text-white/60 text-xs mt-1">Potential trophies if all brawlers restore to their peak</p>
+                    </div>
+
+                    <div className="bg-white/5 rounded-2xl p-6 border border-white/5 text-center mt-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <div className="text-left">
+                                <p className="text-white/40 text-xs">Current Target</p>
+                                <p className="text-white font-bold text-xl">{totalCurrentTrophies.toLocaleString()}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-white/40 text-xs">Peak Trophies</p>
+                                <p className="text-white font-bold text-xl text-yellow-400">{totalMaxTrophies.toLocaleString()}</p>
+                            </div>
+                        </div>
+
+                        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-3">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(totalCurrentTrophies / totalMaxTrophies) * 100}%` }}
+                                transition={{ duration: 1, delay: 0.5 }}
+                                className="h-full bg-yellow-400 rounded-full"
+                            />
+                        </div>
+
+                        <div className="text-center">
+                            <p className="text-white/70 text-sm">You are missing <span className="text-red-400 font-black tracking-widest text-lg px-2">{trophyGap.toLocaleString()}</span> trophies</p>
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+        </div>
+    );
+};
+const BSBattleLog = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
+    const bs = playerStats.gameVisuals?.bs;
+    if (!bs || !bs.battlelog || bs.battlelog.length === 0) {
+        return (
+            <div className="p-12 text-center border border-white/10 rounded-3xl bg-white/5">
+                <History className="w-12 h-12 text-white/20 mx-auto mb-4" />
+                <h3 className="text-white/60 font-bold text-lg">No Battle Log Available</h3>
+                <p className="text-white/40 text-sm mt-1">Play some matches to see your history here.</p>
+            </div>
+        );
+    }
+
+    const log = bs.battlelog;
+    const wins = log.filter(b => b.battle.result === 'victory').length;
+    const losses = log.filter(b => b.battle.result === 'defeat').length;
+    const winRate = Math.round((wins / Math.max(wins + losses, 1)) * 100);
+
+    let netTrophies = 0;
+    const modeCounts: Record<string, number> = {};
+    const brawlerCounts: Record<string, number> = {};
+
+    log.forEach(b => {
+        netTrophies += (b.battle.trophyChange || 0);
+
+        const mode = b.battle.mode || b.event?.mode || 'Unknown';
+        modeCounts[mode] = (modeCounts[mode] || 0) + 1;
+
+        // Naive star player tracking if available, or just fallback
+        if (b.battle.starPlayer?.brawler?.name) {
+            const bName = b.battle.starPlayer.brawler.name;
+            brawlerCounts[bName] = (brawlerCounts[bName] || 0) + 1;
+        }
+    });
+
+    const mostPlayedMode = Object.entries(modeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unknown';
+    const formattedMode = mostPlayedMode.replace(/([A-Z])/g, ' $1').trim().replace(/^./, (str) => str.toUpperCase());
+
+    return (
+        <div className="space-y-6">
+            <h3 className="text-xl font-bold text-white flex items-center gap-2 px-2">
+                <History className="w-6 h-6" style={{ color: accentColor }} />
+                Recent Battles (Last {log.length})
+            </h3>
+
+            {/* Battle Stats Summary */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center text-center">
+                    <span className="text-white/50 text-xs uppercase tracking-wider mb-2">Recent Win Rate</span>
+                    <span className="text-2xl font-black text-white">{winRate}%</span>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.05 }} className="p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center text-center">
+                    <span className="text-white/50 text-xs uppercase tracking-wider mb-2">Net Trophies</span>
+                    <span className={`text-2xl font-black ${netTrophies > 0 ? 'text-green-400' : netTrophies < 0 ? 'text-red-400' : 'text-white'}`}>
+                        {netTrophies > 0 ? '+' : ''}{netTrophies}
+                    </span>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center text-center">
+                    <span className="text-white/50 text-xs uppercase tracking-wider mb-2">W/L/D</span>
+                    <span className="text-lg font-bold text-white">
+                        <span className="text-green-400">{wins}</span> / <span className="text-red-400">{losses}</span> / <span className="text-gray-400">{log.length - wins - losses}</span>
+                    </span>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }} className="p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center text-center">
+                    <span className="text-white/50 text-xs uppercase tracking-wider mb-2">Top Mode</span>
+                    <span className="text-lg font-bold text-white truncate w-full">{formattedMode}</span>
+                </motion.div>
+            </div>
+
+            {/* List */}
+            <div className="flex flex-col gap-3">
+                {log.map((b, i) => {
+                    const isWin = b.battle.result === 'victory';
+                    const isLoss = b.battle.result === 'defeat';
+
+                    let bgCol = 'bg-white/5 border-white/10';
+                    let textCol = 'text-gray-400';
+                    let resText = 'DRAW';
+
+                    if (isWin) {
+                        bgCol = 'bg-green-500/10 border-green-500/20';
+                        textCol = 'text-green-400';
+                        resText = 'VICTORY';
+                    } else if (isLoss) {
+                        bgCol = 'bg-red-500/10 border-red-500/20';
+                        textCol = 'text-red-400';
+                        resText = 'DEFEAT';
+                    }
+
+                    // Attempt format date
+                    let timeStr = b.battleTime;
+                    const m = timeStr.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/);
+                    if (m) {
+                        const d = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`);
+                        if (!isNaN(d.getTime())) {
+                            timeStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        }
+                    }
+
+                    const modeDisp = (b.event.mode || b.battle.mode || 'Unknown').replace(/([A-Z])/g, ' $1').trim().toUpperCase();
+
+                    return (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.03 }}
+                            className={`p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors hover:bg-white/10 ${bgCol}`}
+                        >
+                            <div className="flex items-center gap-4 flex-1">
+                                <div className={`w-2 h-12 rounded-full ${isWin ? 'bg-green-400' : isLoss ? 'bg-red-400' : 'bg-gray-400'}`} />
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h4 className={`font-black tracking-widest text-lg ${textCol}`}>{resText}</h4>
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-black/40 text-white/70 tracking-wider">
+                                            {modeDisp}
+                                        </span>
+                                    </div>
+                                    <p className="text-white/50 text-xs font-medium">Map: {b.event.map || 'Unknown Map'}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-6 sm:gap-8 w-full sm:w-auto justify-between sm:justify-end">
+                                <div className="text-left sm:text-right">
+                                    <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Trophies</p>
+                                    <p className={`font-bold text-lg ${b.battle.trophyChange && b.battle.trophyChange > 0 ? 'text-green-400' : b.battle.trophyChange && b.battle.trophyChange < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                                        {b.battle.trophyChange && b.battle.trophyChange > 0 ? '+' : ''}{b.battle.trophyChange || 0}
+                                    </p>
+                                </div>
+                                <div className="text-right min-w[100px]">
+                                    <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Time</p>
+                                    <p className="text-white/70 text-xs font-mono">{timeStr}</p>
+                                    {b.battle.duration && (
+                                        <p className="text-white/30 text-[10px] mt-0.5 text-right">{b.battle.duration}s</p>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+const BSClub = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
+    const club = playerStats.gameVisuals?.bs?.club;
+    if (!club) return null;
+
+    return (
+        <div className="space-y-6">
+            {/* Club Header */}
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+                className="p-6 md:p-8 rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-black/40 flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden"
+                style={{ borderColor: `${accentColor}40` }}>
+
+                {/* Background glow */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" style={{ backgroundColor: `${accentColor}20` }} />
+
+                <div className="shrink-0 relative w-24 h-24 md:w-32 md:h-32 drop-shadow-2xl">
+                    <img src={`https://cdn-old.brawlify.com/club/${club.badgeId}.png`} alt="Club Badge" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn-old.brawlify.com/club/8.png'; }} />
+                </div>
+
+                <div className="flex-1 text-center md:text-left z-10 w-full">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+                        <div>
+                            <h2 className="text-3xl font-black text-white tracking-wide">{club.name}</h2>
+                            <p className="text-white/50 text-sm font-mono mt-1">{club.tag}</p>
+                        </div>
+                        <div className="flex items-center justify-center md:justify-end gap-2 bg-black/40 px-4 py-2 rounded-xl border border-white/10">
+                            <Trophy className="w-5 h-5 text-yellow-400" />
+                            <span className="text-2xl font-bold text-white">{club.trophies.toLocaleString()}</span>
+                        </div>
+                    </div>
+
+                    <p className="text-white/70 text-sm leading-relaxed mb-6 max-w-2xl bg-black/20 p-4 rounded-xl border border-white/5 whitespace-pre-wrap text-left">
+                        {club.description || "No description provided."}
+                    </p>
+
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                        <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-white/40" />
+                            <span className="text-white/70 text-xs font-bold uppercase tracking-wider">{club.type}</span>
+                        </div>
+                        <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 flex items-center gap-2">
+                            <Trophy className="w-4 h-4 text-white/40" />
+                            <span className="text-white/70 text-xs font-bold uppercase tracking-wider">Req: {club.requiredTrophies.toLocaleString()}</span>
+                        </div>
+                        <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 flex items-center gap-2">
+                            <Users className="w-4 h-4 text-white/40" />
+                            <span className="text-white/70 text-xs font-bold uppercase tracking-wider">{club.members.length} / 30 Members</span>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* Members List */}
+            <div className="rounded-3xl border border-white/8 bg-white/5 overflow-hidden">
+                <div className="bg-black/40 p-4 border-b border-white/5 flex items-center justify-between">
+                    <h3 className="font-bold text-white flex items-center gap-2">
+                        <Users className="w-5 h-5" style={{ color: accentColor }} />
+                        Roster
+                    </h3>
+                </div>
+
+                <div className="divide-y divide-white/5 max-h-[600px] overflow-y-auto custom-scrollbar">
+                    {club.members.map((m, i) => (
+                        <motion.div
+                            key={m.tag}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.02 }}
+                            className={`p-4 flex items-center justify-between hover:bg-white/5 transition-colors ${m.tag === (playerStats as any).tag ? 'bg-white/10' : ''}`}
+                        >
+                            <div className="flex items-center gap-4 w-1/2">
+                                <span className={`text-sm font-black w-6 text-center ${i < 3 ? 'text-yellow-400' : 'text-white/30'}`}>{i + 1}</span>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-bold text-base max-w-[120px] sm:max-w-[200px] truncate" style={{ color: m.nameColor ? `#${m.nameColor.replace('0xff', '')}` : 'white' }}>
+                                            {m.name}
+                                        </p>
+                                        {m.tag === (playerStats as any).tag && (
+                                            <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-white/20 text-white">You</span>
+                                        )}
+                                    </div>
+                                    <p className="text-white/40 text-[10px] font-mono mt-0.5">{m.role.replace(/([A-Z])/g, ' $1').trim().toUpperCase()}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shrink-0">
+                                <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+                                <span className="text-white font-bold text-sm">{m.trophies.toLocaleString()}</span>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+interface BSProfileProps {
+    playerStats: PlayerStats;
+    accentUrl: string; // Used for the background glow
+    accentColor?: string; // e.g. the nameColor
+    bsActiveTab: string; // Sync with GamePage state
+    setBsActiveTab: (tab: string) => void;
+}
+
+type TabType = 'home' | 'brawlers' | 'progression' | 'battlelog' | 'club';
+
+export function BSProfile({ playerStats, accentUrl, bsActiveTab, setBsActiveTab, accentColor = "#fbbf24" }: BSProfileProps) {
+    const bs = playerStats.gameVisuals?.bs;
+    if (!bs) return null;
+
+    const tabs = [
+        { id: 'home', label: 'Dashboard', icon: <Home className="w-4 h-4" /> },
+        { id: 'brawlers', label: 'Brawlers', icon: <Users className="w-4 h-4" /> },
+        { id: 'progression', label: 'Progression', icon: <BarChart2 className="w-4 h-4" /> },
+        { id: 'battlelog', label: 'Battle Log', icon: <History className="w-4 h-4" /> },
+    ] as const;
+
+    // Conditionally add Club tab if they are in one
+    const allTabs = bs.clubTag
+        ? [...tabs, { id: 'club', label: 'Club', icon: <Shield className="w-4 h-4" /> }]
+        : tabs;
+
+    const activeTab = (bsActiveTab || 'home') as TabType;
+
+    return (
+        <div className="relative mt-8">
+            {/* Soft Background Accent */}
+            <div className="absolute top-0 left-0 w-full h-96 -z-10 overflow-hidden rounded-[3rem] opacity-30 pointer-events-none">
+                <div
+                    className="absolute inset-0 bg-cover bg-center blur-[80px]"
+                    style={{ backgroundImage: `url(${accentUrl})`, opacity: 0.6 }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0f111a]" />
+            </div>
+
+            {/* Top Navigation */}
+            <div className="flex justify-center mb-8 px-4 w-full">
+                <div className="inline-flex flex-wrap justify-center gap-2 p-1.5 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 max-w-full">
+                    {allTabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setBsActiveTab(tab.id)}
+                            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all relative ${activeTab === tab.id
+                                ? 'text-white drop-shadow-md'
+                                : 'text-white/40 hover:text-white/80 hover:bg-white/5'
+                                }`}
+                        >
+                            {activeTab === tab.id && (
+                                <motion.div
+                                    layoutId="bs-active-tab"
+                                    className="absolute inset-0 rounded-xl"
+                                    style={{ backgroundColor: accentColor, opacity: 0.25 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                />
+                            )}
+                            <span className="relative z-10 opacity-70">{tab.icon}</span>
+                            <span className="relative z-10">{tab.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Tab Render Area */}
+            <div className="relative min-h-[500px]">
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={activeTab}
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="w-full"
+                    >
+                        {activeTab === 'home' && <BSHome playerStats={playerStats} accentColor={accentColor} />}
+                        {activeTab === 'brawlers' && <BSBrawlers playerStats={playerStats} accentColor={accentColor} />}
+                        {activeTab === 'progression' && <BSProgression playerStats={playerStats} accentColor={accentColor} />}
+                        {activeTab === 'battlelog' && <BSBattleLog playerStats={playerStats} accentColor={accentColor} />}
+                        {activeTab === 'club' && <BSClub playerStats={playerStats} accentColor={accentColor} />}
+                    </motion.div>
+                </AnimatePresence>
+            </div>
+        </div>
+    );
+}

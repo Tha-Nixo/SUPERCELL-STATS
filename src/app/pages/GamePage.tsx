@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import {
   Search, ArrowLeft, Trophy, Target, Clock, Award,
@@ -10,11 +10,15 @@ import { StatCard } from '../components/StatCard';
 import { PerformanceChart } from '../components/PerformanceChart';
 import { MatchHistory } from '../components/MatchHistory';
 import { CRDeckDisplay } from '../components/CRDeckDisplay';
-import { BSBrawlerGrid } from '../components/BSBrawlerGrid';
+import { BSProfile } from '../components/BSProfile';
 import { CoCHeroesDisplay } from '../components/CoCHeroesDisplay';
 import { CRCardCollection } from '../components/CRCardCollection';
 import { CoCArmyDisplay } from '../components/CoCArmyDisplay';
+import { CoCAchievements } from '../components/CoCAchievements';
+import { CoCOverview } from '../components/CoCOverview';
+import { CRProfile } from '../components/CRProfile';
 import { searchPlayer, SearchResult } from '../services/gameApiRouter';
+import { saveRecentSearch, getRecentSearches, removeRecentSearch, RecentSearch } from '../services/recentSearches';
 
 // Auto icon mapping for extra stat labels
 const STAT_ICONS: Array<{ keywords: string[]; icon: React.ReactNode }> = [
@@ -57,7 +61,16 @@ export default function GamePage() {
   const [searchInput, setSearchInput] = useState('');
   const [result, setResult] = useState<SearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [bsActiveTab, setBsActiveTab] = useState<'home' | 'brawlers'>('home');
+  const [bsActiveTab, setBsActiveTab] = useState<string>('home');
+  const [cocActiveTab, setCocActiveTab] = useState<'overview' | 'army' | 'heroes' | 'achievements'>('overview');
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
+
+  // Load recent searches on mount
+  useEffect(() => {
+    if (gameId) {
+      setRecentSearches(getRecentSearches(gameId));
+    }
+  }, [gameId]);
 
   if (!game) {
     return (
@@ -78,6 +91,27 @@ export default function GamePage() {
     const res = await searchPlayer(gameId!, searchInput.trim());
     setResult(res);
     setIsLoading(false);
+
+    if (res.data) {
+      saveRecentSearch(gameId!, searchInput.trim(), res.data);
+      setRecentSearches(getRecentSearches(gameId!));
+    }
+  };
+
+  const handleRecentClick = (tag: string) => {
+    setSearchInput(tag);
+    // Automatically trigger search
+    // We need state to update first, so we'll just run the search
+    setTimeout(() => {
+      const form = document.querySelector('form') as HTMLFormElement;
+      if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }, 0);
+  };
+
+  const handleDeleteRecent = (tag: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    removeRecentSearch(gameId!, tag);
+    setRecentSearches(getRecentSearches(gameId!));
   };
 
   const playerStats = result?.data;
@@ -235,28 +269,36 @@ export default function GamePage() {
                 )}
               </motion.div>
 
-              {/* ── Tab Navigation (Brawl Stars Only) ── */}
+              {/* ── BRAWL STARS: Main Profile ── */}
               {gameId === 'brawl-stars' && (
+                <BSProfile
+                  playerStats={playerStats}
+                  accentUrl={game.logo || ''}
+                  accentColor={playerStats.gameVisuals?.bs?.nameColor ? `#${playerStats.gameVisuals.bs.nameColor.replace('0xff', '')}` : game.accent}
+                  bsActiveTab={bsActiveTab}
+                  setBsActiveTab={setBsActiveTab}
+                />
+              )}
+
+              {/* ── Tab Navigation (Clash of Clans) ── */}
+              {gameId === 'clash-of-clans' && (
                 <div className="flex justify-center mt-6">
-                  <div className="flex bg-black/40 backdrop-blur-md rounded-2xl p-1 border border-white/10 shadow-xl">
-                    <button
-                      onClick={() => setBsActiveTab('home')}
-                      className={`px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${bsActiveTab === 'home' ? 'bg-white/15 text-white shadow-md' : 'text-white/40 hover:text-white/80 hover:bg-white/5'}`}
-                    >
-                      Home
-                    </button>
-                    <button
-                      onClick={() => setBsActiveTab('brawlers')}
-                      className={`px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${bsActiveTab === 'brawlers' ? 'bg-white/15 text-white shadow-md' : 'text-white/40 hover:text-white/80 hover:bg-white/5'}`}
-                    >
-                      Brawlers
-                    </button>
+                  <div className="flex bg-black/40 backdrop-blur-md rounded-2xl p-1 border border-white/10 shadow-xl overflow-x-auto max-w-full no-scrollbar">
+                    {['overview', 'army', 'heroes', 'achievements'].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setCocActiveTab(tab as any)}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all capitalize whitespace-nowrap ${cocActiveTab === tab ? 'bg-white/15 text-white shadow-md' : 'text-white/40 hover:text-white/80 hover:bg-white/5'}`}
+                      >
+                        {tab === 'heroes' ? 'Heroes & Equip' : tab}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
 
               {/* ── 4 stat cards ── */}
-              {(!gameId || gameId !== 'brawl-stars' || bsActiveTab === 'home') && (() => {
+              {((gameId !== 'brawl-stars' && gameId !== 'clash-of-clans' && gameId !== 'clash-royale') || (gameId === 'brawl-stars' && bsActiveTab === 'home')) && (() => {
                 const L = playerStats.statLabels ?? {};
                 const wins = Math.round(playerStats.totalMatches * playerStats.winRate / 100);
                 const kdDisplay = typeof playerStats.kd === 'number'
@@ -284,6 +326,13 @@ export default function GamePage() {
               {/* ══════════════════════════════════════════════
                    GAME-SPECIFIC VISUAL SECTIONS
               ══════════════════════════════════════════════ */}
+
+              {/* ── CLASH ROYALE: Profile ── */}
+              {gameId === 'clash-royale' && playerStats.gameVisuals?.cr && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+                  <CRProfile playerStats={playerStats} accentUrl={game.logo || ''} accentColor={game.accent} />
+                </motion.div>
+              )}
 
               {/* ── CLASH ROYALE: Current Deck ── */}
               {gameId === 'clash-royale' && playerStats.gameVisuals?.cr && (
@@ -324,60 +373,29 @@ export default function GamePage() {
                 </motion.div>
               )}
 
-              {/* ── BRAWL STARS: Home Podium ── */}
-              {gameId === 'brawl-stars' && playerStats.gameVisuals?.bs && playerStats.gameVisuals.bs.topBrawlers.length > 0 && bsActiveTab === 'home' && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-                  className="p-6 rounded-3xl border border-white/8 bg-white/3"
-                  style={{ borderColor: `${game.accent}25` }}>
-                  <BSBrawlerGrid
-                    brawlers={playerStats.gameVisuals.bs.topBrawlers}
-                    allBrawlers={playerStats.gameVisuals.bs.allBrawlers}
-                    accent={game.accent}
-                    variant="podium"
-                  />
-                  {/* Club row */}
-                  {playerStats.extraStats?.find(s => s.label === 'Club') && (
-                    <div className="flex items-center gap-2 mt-5 pt-4 border-t border-white/8 text-sm">
-                      <Users className="w-4 h-4 text-white/40" />
-                      <span className="text-white/40">Club:</span>
-                      <span className="text-white/70 font-semibold">
-                        {playerStats.extraStats.find(s => s.label === 'Club')?.value}
-                      </span>
-                    </div>
-                  )}
+
+              {/* ── CLASH OF CLANS: Overview ── */}
+              {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && cocActiveTab === 'overview' && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+                  <CoCOverview playerStats={playerStats} accent={game.accent} />
                 </motion.div>
               )}
 
-              {/* ── BRAWL STARS: Detailed Brawlers Tab ── */}
-              {gameId === 'brawl-stars' && playerStats.gameVisuals?.bs && bsActiveTab === 'brawlers' && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-                  className="rounded-3xl border border-white/8 bg-white/3 p-6"
-                  style={{ borderColor: `${game.accent}25` }}>
-                  <BSBrawlerGrid
-                    brawlers={playerStats.gameVisuals.bs.topBrawlers}
-                    allBrawlers={playerStats.gameVisuals.bs.allBrawlers}
-                    accent={game.accent}
-                    variant="detailed"
-                  />
-                </motion.div>
-              )}
-
-
-              {/* ── CLASH OF CLANS: Heroes ── */}
-              {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-                  className="p-6 rounded-3xl border border-white/8 bg-white/3"
-                  style={{ borderColor: `${game.accent}25` }}>
+              {/* ── CLASH OF CLANS: Heroes & Equip ── */}
+              {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && cocActiveTab === 'heroes' && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
                   <CoCHeroesDisplay
                     heroes={playerStats.gameVisuals.coc.heroes}
-                    builderHallLevel={playerStats.gameVisuals.coc.builderHallLevel}
+                    heroEquipment={playerStats.gameVisuals.coc.heroEquipment}
                     leagueName={playerStats.gameVisuals.coc.leagueName}
                     leagueBadgeUrl={playerStats.gameVisuals.coc.leagueBadgeUrl}
                     clanBadgeUrl={playerStats.gameVisuals.coc.clanBadgeUrl}
+                    accent={game.accent}
                   />
                 </motion.div>
               )}
-              {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && (
+              {/* ── CLASH OF CLANS: Army ── */}
+              {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && cocActiveTab === 'army' && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
                   <CoCArmyDisplay
                     troops={playerStats.gameVisuals.coc.troops}
@@ -390,9 +408,18 @@ export default function GamePage() {
                   />
                 </motion.div>
               )}
+              {/* ── CLASH OF CLANS: Achievements ── */}
+              {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && cocActiveTab === 'achievements' && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
+                  <CoCAchievements
+                    achievements={playerStats.gameVisuals.coc.achievements ?? []}
+                    accent={game.accent}
+                  />
+                </motion.div>
+              )}
 
               {/* ── Detailed Stats (all games) ── */}
-              {(!gameId || gameId !== 'brawl-stars' || bsActiveTab === 'home') && playerStats.extraStats && playerStats.extraStats.length > 0 && (
+              {((gameId !== 'brawl-stars' && gameId !== 'clash-of-clans' && gameId !== 'clash-royale')) && playerStats.extraStats && playerStats.extraStats.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
                   <h3 className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">All Stats</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
@@ -418,7 +445,7 @@ export default function GamePage() {
               )}
 
               {/* ── Performance Chart ── */}
-              {(!gameId || gameId !== 'brawl-stars' || bsActiveTab === 'home') && playerStats.performanceData.length > 0 && (
+              {((gameId !== 'brawl-stars' && gameId !== 'clash-of-clans') || (gameId === 'brawl-stars' && bsActiveTab === 'home')) && playerStats.performanceData.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                   <h3 className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Performance Trend</h3>
                   <PerformanceChart data={playerStats.performanceData} accentColor={game.chartPrimary} secondaryColor={game.chartSecondary} />
@@ -426,7 +453,7 @@ export default function GamePage() {
               )}
 
               {/* ── Recent Battles ── */}
-              {(!gameId || gameId !== 'brawl-stars' || bsActiveTab === 'home') && playerStats.recentMatches.length > 0 && (
+              {((gameId !== 'brawl-stars' && gameId !== 'clash-of-clans') || (gameId === 'brawl-stars' && bsActiveTab === 'home')) && playerStats.recentMatches.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
                   <h3 className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Recent Battles</h3>
                   <MatchHistory matches={playerStats.recentMatches} accentColor={game.accent} />
@@ -438,19 +465,66 @@ export default function GamePage() {
         )}
       </AnimatePresence>
 
-      {/* ─── Empty State ─── */}
+      {/* ─── Empty State & Recent Searches ─── */}
       {
         !playerStats && !isLoading && !result?.error && (
-          <section className="px-6 py-24">
-            <div className="max-w-4xl mx-auto text-center">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-                <div className="text-[100px] leading-none mb-6 opacity-10">{game.logo}</div>
-                <h3 className="text-2xl font-bold text-white/40 mb-3">Search for a Player</h3>
-                <p className="text-white/25 max-w-xs mx-auto text-sm">Enter a player tag above to view live stats, heroes, deck, brawlers and battle history.</p>
-                <div className="mt-8 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/30 text-sm font-mono">
-                  <span style={{ color: game.accent }}>#</span>PLAYERTAG
-                </div>
-              </motion.div>
+          <section className="px-6 py-16">
+            <div className="max-w-4xl mx-auto">
+              {recentSearches.length > 0 ? (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-white/50" />
+                      Recent Searches
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {recentSearches.map((r) => (
+                      <div
+                        key={r.tag}
+                        onClick={() => handleRecentClick(r.tag)}
+                        className="group relative p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer flex flex-col justify-between"
+                      >
+                        <button
+                          onClick={(e) => handleDeleteRecent(r.tag, e)}
+                          className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/10 hover:bg-red-500/80 flex items-center justify-center text-white/50 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          ×
+                        </button>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-white font-bold text-lg truncate pr-6">{r.username}</h4>
+                          <span className="text-[10px] text-white/40 font-mono bg-black/40 px-2 py-1 rounded">{r.tag}</span>
+                        </div>
+
+                        <div className="flex gap-4">
+                          {r.trophies !== undefined && r.trophies > 0 && (
+                            <div className="text-sm text-yellow-500 font-semibold">{r.trophies.toLocaleString()} 🏆</div>
+                          )}
+                          {r.thLevel !== undefined && (
+                            <div className="text-sm font-semibold text-blue-400">TH {r.thLevel}</div>
+                          )}
+                        </div>
+
+                        {r.clanName && (
+                          <div className="text-xs text-white/40 mt-3 truncate border-t border-white/10 pt-2 flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5" />
+                            {r.clanName}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-center mt-10">
+                  <div className="text-[100px] leading-none mb-6 opacity-10">{game.logo}</div>
+                  <h3 className="text-2xl font-bold text-white/40 mb-3">Search for a Player</h3>
+                  <p className="text-white/25 max-w-xs mx-auto text-sm">Enter a player tag above to view live stats, heroes, deck, brawlers and battle history.</p>
+                  <div className="mt-8 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/30 text-sm font-mono">
+                    <span style={{ color: game.accent }}>#</span>PLAYERTAG
+                  </div>
+                </motion.div>
+              )}
             </div>
           </section>
         )

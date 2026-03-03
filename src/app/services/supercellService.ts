@@ -86,16 +86,106 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
     const clanCardsCollected: number = player.clanCardsCollected ?? 0;
     const estimatedSeconds = total * 3 * 60;
 
-    // Current deck — has iconUrls from API
-    const rawDeck: any[] = player.currentDeck ?? [];
-    const currentDeck = rawDeck.map((c: any) => {
-        // 14 is the normal max. Elite is 15 but API normally caps maxLevel at 14 for math.
-        // Base levels are 1 (Common), 3 (Rare), 6 (Epic), 9 (Legendary), 11 (Champion)
-        // Normalize levels based on card rarity max level offset
-        // The user reported the previous system was exactly 2 levels behind.
+    const arenaName: string = player.arena?.name ?? '';
+    const arenaId: number | null = player.arena?.id ?? null;
+    const arenaIconUrl = arenaId ? `https://royaleapi.github.io/cr-api-assets/arenas/${arenaId}.png` : '';
+
+    const expPoints: number = player.expPoints ?? 0;
+    const totalExpPoints: number = player.totalExpPoints ?? 0;
+    const clanTag: string = player.clan?.tag ?? '';
+    const clanName: string = player.clan?.name ?? 'No Clan';
+    const clanRole: string = player.role ?? 'Member';
+    const clanBadgeUrl: string = player.clan?.badgeUrl ?? '';
+    const legacyTrophyRoadHighScore: number = player.legacyTrophyRoadHighScore ?? 0;
+
+    // Path of legend stats
+    const pathOfLegend = {
+        currentSeason: player.currentPathOfLegendSeasonResult ? {
+            rank: player.currentPathOfLegendSeasonResult.rank,
+            trophies: player.currentPathOfLegendSeasonResult.trophies
+        } : undefined,
+        lastSeason: player.lastPathOfLegendSeasonResult ? {
+            rank: player.lastPathOfLegendSeasonResult.rank,
+            trophies: player.lastPathOfLegendSeasonResult.trophies
+        } : undefined,
+        bestSeason: player.bestPathOfLegendSeasonResult ? {
+            rank: player.bestPathOfLegendSeasonResult.rank,
+            trophies: player.bestPathOfLegendSeasonResult.trophies
+        } : undefined
+    };
+
+    // League stats
+    const leagueStatistics = {
+        currentSeason: player.leagueStatistics?.currentSeason ? {
+            id: player.leagueStatistics.currentSeason.id,
+            rank: player.leagueStatistics.currentSeason.rank,
+            trophies: player.leagueStatistics.currentSeason.trophies,
+            bestTrophies: player.leagueStatistics.currentSeason.bestTrophies
+        } : undefined,
+        previousSeason: player.leagueStatistics?.previousSeason ? {
+            id: player.leagueStatistics.previousSeason.id,
+            rank: player.leagueStatistics.previousSeason.rank,
+            trophies: player.leagueStatistics.previousSeason.trophies,
+            bestTrophies: player.leagueStatistics.previousSeason.bestTrophies
+        } : undefined,
+        bestSeason: player.leagueStatistics?.bestSeason ? {
+            id: player.leagueStatistics.bestSeason.id,
+            rank: player.leagueStatistics.bestSeason.rank,
+            trophies: player.leagueStatistics.bestSeason.trophies,
+        } : undefined
+    };
+
+    // Badges
+    const badges = (player.badges ?? []).map((b: any) => ({
+        name: b.name,
+        level: b.level ?? 0,
+        maxLevel: b.maxLevel ?? 0,
+        progress: b.progress ?? 0,
+        target: b.target ?? 0,
+        iconUrl: b.iconUrls?.large ?? ''
+    }));
+
+    // Achievements
+    const achievements = (player.achievements ?? []).map((a: any) => ({
+        name: a.name,
+        stars: a.stars ?? 0,
+        value: a.value ?? 0,
+        target: a.target ?? 0,
+        info: a.info ?? '',
+        completionInfo: a.completionInfo ?? null
+    }));
+
+    // Tower Troops
+    const supportCards = (player.supportCards ?? []).map((t: any) => {
+        const baseLevel = 15 - (t.maxLevel ?? 14);
+        const actualLevel = baseLevel + (t.level ?? 1) + 1;
+        return {
+            id: t.id,
+            name: t.name,
+            level: actualLevel,
+            maxLevel: 14,
+            rarity: t.rarity ?? 'common',
+            iconUrl: t.iconUrls?.medium ?? ''
+        };
+    });
+
+    const currentDeckSupportCards = (player.currentDeckSupportCards ?? []).map((t: any) => {
+        const baseLevel = 15 - (t.maxLevel ?? 14);
+        const actualLevel = baseLevel + (t.level ?? 1) + 1;
+        return {
+            id: t.id,
+            name: t.name,
+            level: actualLevel,
+            maxLevel: 14,
+            rarity: t.rarity ?? 'common',
+            iconUrl: t.iconUrls?.medium ?? ''
+        };
+    });
+
+    // Helper map for cards
+    const mapCardInfo = (c: any) => {
         const baseLevel = 15 - (c.maxLevel ?? 14);
         const actualLevel = baseLevel + (c.level ?? 1) + 1;
-
         return {
             id: c.id ?? 0,
             name: c.name ?? 'Unknown',
@@ -105,29 +195,25 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
             maxCount: getCRCardsTarget(actualLevel, c.rarity),
             iconUrl: c.iconUrls?.medium ?? '',
             rarity: c.rarity ?? '',
+            elixirCost: c.elixirCost,
+            starLevel: c.starLevel,
+            evolutionLevel: c.evolutionLevel,
+            maxEvolutionLevel: c.maxEvolutionLevel,
+            evolutionIconUrl: c.iconUrls?.evolutionMedium ?? c.iconUrls?.heroMedium
         };
-    });
+    };
+
+    const rawDeck: any[] = player.currentDeck ?? [];
+    const currentDeck = rawDeck.map(mapCardInfo);
 
     // Favorite card
     const rawFav: any = player.currentFavouriteCard;
     const favoriteCard = rawFav ? {
-        id: rawFav.id ?? 0,
-        name: rawFav.name ?? '',
+        ...mapCardInfo(rawFav),
         level: 0,
-        maxLevel: 15,
         count: 0,
         maxCount: 1,
-        iconUrl: rawFav.iconUrls?.medium ?? '',
-        rarity: rawFav.rarity ?? '',
     } : undefined;
-
-    // Clan badge
-    const clanBadgeUrl: string = player.clan?.badgeUrl ?? '';
-    const clanName: string = player.clan?.name ?? 'No Clan';
-    const clanRole: string = player.role ?? 'Member';
-    const arenaName: string = player.arena?.name ?? '';
-    const arenaId: number | null = player.arena?.id ?? null;
-    const arenaIconUrl = arenaId ? `https://royaleapi.github.io/cr-api-assets/arenas/${arenaId}.png` : '';
 
     const league: string = player.currentPathOfLegendSeasonResult?.leagueNumber
         ? `League ${player.currentPathOfLegendSeasonResult.leagueNumber}`
@@ -192,23 +278,21 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
         gameVisuals: {
             cr: {
                 currentDeck,
-                cards: (player.cards ?? []).map((c: any) => {
-                    const baseLevel = 15 - (c.maxLevel ?? 14);
-                    const actualLevel = baseLevel + (c.level ?? 1) + 1;
-                    return {
-                        id: c.id ?? 0,
-                        name: c.name ?? 'Unknown',
-                        level: actualLevel,
-                        maxLevel: 14,
-                        count: c.count ?? 0,
-                        maxCount: getCRCardsTarget(actualLevel, c.rarity),
-                        iconUrl: c.iconUrls?.medium ?? '',
-                        rarity: c.rarity ?? '',
-                    };
-                }).sort((a: any, b: any) => b.level - a.level),
+                cards: (player.cards ?? []).map(mapCardInfo).sort((a: any, b: any) => b.level - a.level),
                 favoriteCard,
                 clanBadgeUrl,
+                clanTag,
                 arenaName,
+                arenaId: arenaId || undefined,
+                expPoints,
+                totalExpPoints,
+                legacyTrophyRoadHighScore,
+                leagueStatistics,
+                pathOfLegend,
+                badges,
+                achievements,
+                supportCards,
+                currentDeckSupportCards,
             },
         },
     };
@@ -227,11 +311,17 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
     const key = apiKeys.get('brawlStars');
     const encodedTag = encodeURIComponent(normalizeTag(tag));
 
-    const [player, battleLog] = await Promise.all([
-        fetchSupercell<any>(`/api/brawl-stars/players/${encodedTag}`, key),
-        fetchSupercell<any>(`/api/brawl-stars/players/${encodedTag}/battlelog`, key)
-            .catch(() => ({ items: [] })),
-    ]);
+    // Setup sequential fetching: Player & Battlelog parallel -> Club dependent on Player
+    const playerPromise = fetchSupercell<any>(`/api/brawl-stars/players/${encodedTag}`, key);
+    const battleLogPromise = fetchSupercell<any>(`/api/brawl-stars/players/${encodedTag}/battlelog`, key).catch(() => ({ items: [] }));
+
+    const [player, battleLog] = await Promise.all([playerPromise, battleLogPromise]);
+
+    let clubInfo: any = undefined;
+    if (player.club?.tag) {
+        const clubTagEncoded = encodeURIComponent(normalizeTag(player.club.tag));
+        clubInfo = await fetchSupercell<any>(`/api/brawl-stars/clubs/${clubTagEncoded}`, key).catch(() => undefined);
+    }
 
     const battles: any[] = battleLog.items ?? [];
     const battleWins = battles.filter((b: any) => b.battle?.result === 'victory').length;
@@ -272,6 +362,10 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
             if (gadgetsList.length === 0) gadgetsList = [{ id: 23000681, name: 'Sharp Blade' }, { id: 23000682, name: 'Piercing Dash' }];
             if (starPowersList.length === 0) starPowersList = [{ id: 23000683, name: 'Fierce Will' }, { id: 23000684, name: 'Armor Break' }];
         }
+        if (name === 'GIGI') {
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000685, name: 'Tech Support' }, { id: 23000686, name: 'System Override' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23000687, name: 'Firewall' }, { id: 23000688, name: 'Overclock' }];
+        }
 
         return {
             id: b.id ?? 0,
@@ -281,11 +375,23 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
             highestTrophies: b.highestTrophies ?? b.trophies ?? 0,
             rank: b.rank ?? 1,
             imageUrl: brawlerImageUrl(b.id),
+
+            prestigeLevel: b.prestigeLevel ?? 0,
+            currentWinStreak: b.currentWinStreak ?? 0,
+            maxWinStreak: b.maxWinStreak ?? 0,
+            skin: b.skin ? { id: b.skin.id, name: b.skin.name } : undefined,
+
             gadgets: gadgetsList.length,
             starPowers: starPowersList.length,
             gadgetsList: gadgetsList,
             starPowersList: starPowersList,
             gearsList: (b.gears ?? []).map((g: any) => ({ id: g.id, name: g.name })),
+            hyperCharges: (b.hyperCharges ?? []).map((hc: any) => ({ id: hc.id, name: hc.name })),
+            buffies: {
+                gadget: b.buffies?.gadget ?? false,
+                starPower: b.buffies?.starPower ?? false,
+                hyperCharge: b.buffies?.hyperCharge ?? false
+            }
         }
     });
 
@@ -325,6 +431,10 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
             if (gadgetsList.length === 0) gadgetsList = [{ id: 23000681, name: 'Sharp Blade' }, { id: 23000682, name: 'Piercing Dash' }];
             if (starPowersList.length === 0) starPowersList = [{ id: 23000683, name: 'Fierce Will' }, { id: 23000684, name: 'Armor Break' }];
         }
+        if (name === 'GIGI') {
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000685, name: 'Tech Support' }, { id: 23000686, name: 'System Override' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23000687, name: 'Firewall' }, { id: 23000688, name: 'Overclock' }];
+        }
 
         return {
             id: b.id ?? 0,
@@ -334,11 +444,23 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
             highestTrophies: b.highestTrophies ?? b.trophies ?? 0,
             rank: b.rank ?? 1,
             imageUrl: brawlerImageUrl(b.id),
+
+            prestigeLevel: b.prestigeLevel ?? 0,
+            currentWinStreak: b.currentWinStreak ?? 0,
+            maxWinStreak: b.maxWinStreak ?? 0,
+            skin: b.skin ? { id: b.skin.id, name: b.skin.name } : undefined,
+
             gadgets: gadgetsList.length,
             starPowers: starPowersList.length,
             gadgetsList: gadgetsList,
             starPowersList: starPowersList,
             gearsList: (b.gears ?? []).map((g: any) => ({ id: g.id, name: g.name })),
+            hyperCharges: (b.hyperCharges ?? []).map((hc: any) => ({ id: hc.id, name: hc.name })),
+            buffies: {
+                gadget: b.buffies?.gadget ?? false,
+                starPower: b.buffies?.starPower ?? false,
+                hyperCharge: b.buffies?.hyperCharge ?? false
+            }
         }
     });
 
@@ -375,7 +497,53 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
         ],
         gameVisuals: {
             bs: {
-                topBrawlers, allBrawlers, clubTag: player.club?.tag
+                topBrawlers,
+                allBrawlers,
+                clubTag: player.club?.tag,
+                club: clubInfo ? {
+                    tag: clubInfo.tag,
+                    name: clubInfo.name,
+                    description: clubInfo.description ?? '',
+                    type: clubInfo.type ?? '',
+                    badgeId: clubInfo.badgeId ?? 0,
+                    requiredTrophies: clubInfo.requiredTrophies ?? 0,
+                    trophies: clubInfo.trophies ?? 0,
+                    members: (clubInfo.members ?? []).map((m: any) => ({
+                        tag: m.tag,
+                        name: m.name,
+                        nameColor: m.nameColor ?? '#ffffff',
+                        role: m.role ?? 'member',
+                        trophies: m.trophies ?? 0,
+                        icon: m.icon ?? { id: 0 }
+                    }))
+                } : undefined,
+                battlelog: battles.map((b: any) => ({
+                    battleTime: b.battleTime,
+                    event: { id: b.event.id, mode: b.event.mode, map: b.event.map },
+                    battle: {
+                        mode: b.battle.mode,
+                        type: b.battle.type,
+                        result: b.battle.result,
+                        duration: b.battle.duration,
+                        trophyChange: b.battle.trophyChange,
+                        starPlayer: b.battle.starPlayer ? {
+                            tag: b.battle.starPlayer.tag,
+                            name: b.battle.starPlayer.name,
+                            brawler: {
+                                id: b.battle.starPlayer.brawler.id,
+                                name: b.battle.starPlayer.brawler.name,
+                            }
+                        } : undefined
+                    }
+                })),
+
+                nameColor: player.nameColor,
+                prestigeLevel: player.totalPrestigeLevel ?? 0,
+                expPoints: player.expPoints ?? 0,
+                victories3v3: player['3vs3Victories'] ?? 0,
+                victoriesSolo: player.soloVictories ?? 0,
+                victoriesDuo: player.duoVictories ?? 0,
+                bestRoboRumbleTime: player.bestRoboRumbleTime ?? 0
             },
         },
     };
@@ -389,9 +557,10 @@ const COC_HEROES: Record<string, { shortName: string; emoji: string; color: stri
     'Archer Queen': { shortName: 'AQ', emoji: '🏹', color: '#8e44ad', maxLevel: 95 },
     'Grand Warden': { shortName: 'GW', emoji: '📖', color: '#2980b9', maxLevel: 65 },
     'Royal Champion': { shortName: 'RC', emoji: '🛡️', color: '#e74c3c', maxLevel: 45 },
-    'Battle Machine': { shortName: 'BM', emoji: '🤖', color: '#7f8c8d', maxLevel: 45 },
+    'Battle Machine': { shortName: 'BM', emoji: '🤖', color: '#7f8c8d', maxLevel: 35 },
     'Minion Prince': { shortName: 'MP', emoji: '😈', color: '#6c3483', maxLevel: 30 },
-    'Dragon Duke': { shortName: 'DD', emoji: '🐉', color: '#8e44ad', maxLevel: 20 },
+    'Dragon Duke': { shortName: 'DD', emoji: '🐉', color: '#8e44ad', maxLevel: 25 },
+    'Battle Copter': { shortName: 'BC', emoji: '🚁', color: '#f39c12', maxLevel: 35 },
 };
 
 async function searchClashOfClans(tag: string): Promise<PlayerStats> {
@@ -410,8 +579,21 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
     const clanName: string = player.clan?.name ?? 'No Clan';
     const clanRole: string = player.role ?? 'Member';
     const clanBadgeUrl: string = player.clan?.badgeUrls?.medium ?? '';
-    const leagueName: string = player.league?.name ?? 'Unranked';
-    const leagueBadgeUrl: string = player.league?.iconUrls?.medium ?? '';
+    const clanLevel: number = player.clan?.clanLevel ?? 0;
+    const leagueName: string = player.league?.name ?? player.leagueTier?.name ?? 'Unranked';
+    const leagueBadgeUrl: string = player.league?.iconUrls?.medium ?? player.leagueTier?.iconUrls?.medium ?? '';
+    const builderBaseTrophies: number = player.builderBaseTrophies ?? 0;
+    const bestBuilderBaseTrophies: number = player.bestBuilderBaseTrophies ?? 0;
+    const clanCapitalContributions: number = player.clanCapitalContributions ?? 0;
+    const legendStatistics = player.legendStatistics;
+
+    // Hero Equipment full catalog
+    const heroEquipment = player.heroEquipment?.map((e: any) => ({
+        name: e.name,
+        level: e.level,
+        maxLevel: e.maxLevel,
+        village: e.village
+    })) ?? [];
 
     // Heroes
     const rawHeroes: any[] = player.heroes ?? [];
@@ -426,11 +608,27 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
                 maxLevel: h.maxLevel ?? meta.maxLevel,
                 emoji: meta.emoji,
                 color: meta.color,
+                equipment: h.equipment?.map((e: any) => ({
+                    name: e.name,
+                    level: e.level,
+                    maxLevel: e.maxLevel,
+                    village: e.village
+                })) ?? []
             };
         });
 
     // Achievements
     const achievements: any[] = player.achievements ?? [];
+    const mappedAchievements = achievements.map(a => ({
+        name: a.name,
+        stars: a.stars ?? 0,
+        value: a.value ?? 0,
+        target: a.target ?? 0,
+        info: a.info ?? '',
+        completionInfo: a.completionInfo ?? null,
+        village: a.village ?? 'home',
+    }));
+
     const acvMap: Record<string, number> = {};
     for (const a of achievements) { acvMap[a.name] = a.value ?? 0; }
     const lifetimeAttackWins = acvMap['Conqueror'] ?? 0;
@@ -440,15 +638,16 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
 
     const heroLine = heroList.map(h => `${h.shortName} ${h.level}`).join(' · ') || '—';
     const bm = heroList.find(h => h.shortName === 'BM');
+    const bc = heroList.find(h => h.shortName === 'BC');
 
     // Categorize troops and spells
     const rawTroops: any[] = player.troops ?? [];
     const rawSpells: any[] = player.spells ?? [];
 
-    const isSiegeName = (n: string) => n.includes('Wall Wrecker') || n.includes('Battle Blimp') || n.includes('Stone Slammer') || n.includes('Siege Barracks') || n.includes('Log Launcher') || n.includes('Flame Flinger') || n.includes('Battle Drill') || n === 'Drill';
-    const isPetName = (n: string) => n.includes('L.A.S.S.I') || n.includes('Electro Owl') || n.includes('Mighty Yak') || n.includes('Unicorn') || n.includes('Frosty') || n.includes('Diggy') || n.includes('Poison Lizard') || n.includes('Phoenix') || n.includes('Spirit Fox') || n.includes('Angry Jelly') || n.includes('Raven') || n.includes('Bat');
-    const isSuperName = (n: string) => n.includes('Super ') || n.includes('Sneaky ') || n.includes('Rocket ') || n === 'Ice Hound' || n === 'Inferno Dragon';
-    const isExtraBaseTroop = (n: string) => ['Skeleton', 'Sneezy', 'Meteor Golem'].includes(n);
+    const isSiegeName = (n: string) => n.includes('Wall Wrecker') || n.includes('Battle Blimp') || n.includes('Stone Slammer') || n.includes('Siege Barracks') || n.includes('Log Launcher') || n.includes('Flame Flinger') || n.includes('Battle Drill') || n === 'Drill' || n.includes('Troop Launcher');
+    const isPetName = (n: string) => n.includes('L.A.S.S.I') || n.includes('Electro Owl') || n.includes('Mighty Yak') || n.includes('Unicorn') || n.includes('Frosty') || n.includes('Diggy') || n.includes('Poison Lizard') || n.includes('Phoenix') || n.includes('Spirit Fox') || n.includes('Angry Jelly') || n.includes('Sneezy') || n.includes('Greedy Raven');
+    const isSuperName = (n: string) => n !== 'Super Yeti' && (n.includes('Super ') || n.includes('Sneaky ') || n.includes('Rocket ') || n === 'Ice Hound' || n === 'Inferno Dragon');
+    const isExtraBaseTroop = (n: string) => ['Skeleton'].includes(n);
 
     const troops = rawTroops
         .filter(t => t.village === 'home' && !isSiegeName(t.name) && !isPetName(t.name) && !isSuperName(t.name) && !isExtraBaseTroop(t.name) && !COC_HEROES[t.name])
@@ -462,24 +661,32 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
         .filter(t => t.village === 'builderBase' && !isPetName(t.name) && !COC_HEROES[t.name])
         .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
 
-    const siegeOrder = ['Wall Wrecker', 'Siege Barracks', 'Battle Blimp', 'Log Launcher', 'Flame Flinger', 'Battle Drill', 'Stone Slammer'];
+    const siegeOrder = ['Wall Wrecker', 'Siege Barracks', 'Battle Blimp', 'Log Launcher', 'Flame Flinger', 'Battle Drill', 'Stone Slammer', 'Troop Launcher'];
 
     const siegeMachines = rawTroops
         .filter(t => t.village === 'home' && isSiegeName(t.name))
-        .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }))
-        .sort((a, b) => {
-            let ia = siegeOrder.findIndex(s => a.name.includes(s));
-            let ib = siegeOrder.findIndex(s => b.name.includes(s));
-            if (ia === -1) ia = 99;
-            if (ib === -1) ib = 99;
-            return ia - ib;
-        });
+        .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
+
+    for (const rs of siegeOrder) {
+        if (!siegeMachines.some(s => s.name.includes(rs))) {
+            const defaultMaxLevel = rs === 'Stone Slammer' ? 5 : 4; // Most are 4, stone slammer is 5
+            siegeMachines.push({ name: rs, level: 0, maxLevel: defaultMaxLevel });
+        }
+    }
+
+    siegeMachines.sort((a, b) => {
+        let ia = siegeOrder.findIndex(s => a.name.includes(s));
+        let ib = siegeOrder.findIndex(s => b.name.includes(s));
+        if (ia === -1) ia = 99;
+        if (ib === -1) ib = 99;
+        return ia - ib;
+    });
 
     const pets = rawTroops
         .filter(t => t.village === 'home' && isPetName(t.name))
         .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
 
-    const requiredPets = ['L.A.S.S.I', 'Mighty Yak', 'Electro Owl', 'Unicorn', 'Frosty', 'Diggy', 'Poison Lizard', 'Phoenix', 'Spirit Fox', 'Angry Jelly', 'Raven', 'Bat'];
+    const requiredPets = ['L.A.S.S.I', 'Mighty Yak', 'Electro Owl', 'Unicorn', 'Frosty', 'Diggy', 'Poison Lizard', 'Phoenix', 'Spirit Fox', 'Angry Jelly', 'Sneezy', 'Greedy Raven'];
     for (const rp of requiredPets) {
         if (!pets.some(p => p.name.includes(rp))) {
             pets.push({ name: rp, level: 0, maxLevel: 10 });
@@ -499,6 +706,7 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
                     maxLevel: meta.maxLevel,
                     emoji: meta.emoji,
                     color: meta.color,
+                    equipment: [],
                 });
             }
         }
@@ -537,6 +745,7 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
             { label: 'Builder Hall', value: bhLevel > 0 ? `BH ${bhLevel}` : 'N/A' },
             { label: 'Heroes', value: heroLine },
             ...(bm ? [{ label: 'Battle Machine', value: `Lv ${bm.level}` }] : []),
+            ...(bc ? [{ label: 'Battle Copter', value: `Lv ${bc.level}` }] : []),
             { label: 'Current Trophies', value: `${trophies.toLocaleString()} 🏆` },
             { label: 'Best Trophies', value: `${bestTrophies.toLocaleString()} 🏆` },
             { label: 'War Stars', value: `${warStars.toLocaleString()} ⭐` },
@@ -546,9 +755,19 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
         gameVisuals: {
             coc: {
                 heroes: heroList,
+                heroEquipment,
+                achievements: mappedAchievements,
+                legendStatistics,
+                clanCapitalContributions,
+                builderBaseTrophies,
+                bestBuilderBaseTrophies,
+                warStars,
                 leagueName,
                 leagueBadgeUrl,
+                clanName,
                 clanBadgeUrl,
+                clanRole,
+                clanLevel,
                 townHallLevel: thLevel,
                 builderHallLevel: bhLevel,
                 troops,
