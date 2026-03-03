@@ -194,7 +194,20 @@ export default function GamePage() {
                       className="w-14 h-14 object-contain filter drop-shadow-md"
                     />
                   ) : (
-                    playerStats.rankIcon
+                    typeof playerStats.rankIcon === 'string' && playerStats.rankIcon.startsWith('http') ? (
+                      <img
+                        src={playerStats.rankIcon}
+                        alt="Rank"
+                        className="w-12 h-12 object-contain filter drop-shadow-md"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          target.parentElement?.insertAdjacentHTML('beforeend', '<span class="text-4xl text-white drop-shadow-md">👑</span>');
+                        }}
+                      />
+                    ) : (
+                      playerStats.rankIcon
+                    )
                   )}
                 </div>
                 <div className="flex-1 min-w-0">

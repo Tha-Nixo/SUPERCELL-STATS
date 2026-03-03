@@ -82,10 +82,23 @@ export function CRCardCollection({ cards }: CRCardCollectionProps) {
         if (!cards) return [];
         return [...cards].sort((a, b) => {
             const modifier = sortOrder === 'desc' ? 1 : -1;
+            const rA = RARITY_ORDER[(a.rarity || 'common').toLowerCase()] || 0;
+            const rB = RARITY_ORDER[(b.rarity || 'common').toLowerCase()] || 0;
+
             if (sortBy === 'level') {
-                return (b.level - a.level || (RARITY_ORDER[(b.rarity || 'common').toLowerCase()] || 0) - (RARITY_ORDER[(a.rarity || 'common').toLowerCase()] || 0)) * modifier;
+                const lDiff = b.level - a.level;
+                if (lDiff !== 0) return lDiff * modifier;
+                return (rB - rA) * modifier;
             } else {
-                return ((RARITY_ORDER[(b.rarity || 'common').toLowerCase()] || 0) - (RARITY_ORDER[(a.rarity || 'common').toLowerCase()] || 0) || b.level - a.level) * modifier;
+                // By rarity: game order is usually Common -> Rare -> Epic -> Legendary -> Champion
+                // meaning ascending rarity order by default. Let's do rA - rB for default 'desc' to show Common first.
+                // Or if it was Champions first, rB - rA. Let's do rB - rA but descending rarity. Wait, if the user complained, let's reverse it.
+                // Actually, let's make it Common (1) to Champion (5) by default, so rA - rB.
+                const rDiff = rA - rB;
+                if (rDiff !== 0) return rDiff * modifier;
+                const lDiff = b.level - a.level;
+                if (lDiff !== 0) return lDiff * modifier;
+                return a.name.localeCompare(b.name) * modifier;
             }
         });
     }, [cards, sortBy, sortOrder]);

@@ -112,7 +112,7 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
         const podiumBrawlers = (allBrawlers ?? brawlers).slice(0, 3);
         // order: 2nd, 1st, 3rd => indices: 1, 0, 2
         const order = [1, 0, 2];
-        const podiumHeights = [{ height: '144px' }, { height: '192px' }, { height: '112px' }]; // explicitly staggering
+        const podiumHeights = [{ height: '144px' }, { height: '192px' }, { height: '136px' }]; // explicitly staggering
         const bgColors = ['bg-gradient-to-t from-gray-500 to-gray-300', 'bg-gradient-to-t from-yellow-600 to-yellow-300', 'bg-gradient-to-t from-amber-700 to-orange-400']; // Silver, Gold, Bronze
         const textColors = ['text-gray-900', 'text-yellow-950', 'text-amber-950'];
 
@@ -121,7 +121,6 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                 {order.map((idx, i) => {
                     const b = podiumBrawlers[idx];
                     if (!b) return null;
-                    const tierInfo = getBSTierInfo(b.trophies);
                     return (
                         <div key={b.id} className="flex flex-col items-center justify-end w-24 sm:w-32">
                             {/* Brawler Portrait */}
@@ -133,10 +132,6 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                                 style={{ borderColor: accent }}
                             >
                                 {b.imageUrl && <img src={b.imageUrl} alt={b.name} className="w-full h-full object-cover" />}
-                                <PowerLevel power={b.power} hasOverdrive={b.power === 11} />
-                                <div className="absolute top-0 left-0 bg-black/80 rounded-br-xl px-1.5 py-1 text-[10px] sm:text-xs font-black text-white shadow-lg border-b border-r border-white/20">
-                                    {tierInfo.name.substring(0, 3).toUpperCase()}
-                                </div>
                             </motion.div>
                             {/* Podium Step */}
                             <motion.div
@@ -219,16 +214,12 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                                             <img src={`https://cdn.brawlify.com/gadgets/borderless/${b.gadgetsList[0].id}.png`} className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-green-900/30 rounded-xl border-2 border-green-500/60 p-1" title={b.gadgetsList[0].name} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${b.gadgetsList![0].id}.png`; } else { t.parentElement!.style.display = 'none'; } }} />
                                         </div>
                                     )}
-                                    {b.gearsList?.[0] && (
-                                        <div className="relative">
-                                            <img src={`https://cdn.brawlify.com/gears/borderless/${b.gearsList[0].id}.png`} className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-blue-900/30 rounded-xl border-2 border-blue-500/60 p-1" title={b.gearsList[0].name} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gears/${b.gearsList![0].id}.png`; } else { t.parentElement!.style.display = 'none'; } }} />
-                                        </div>
-                                    )}
-                                    {!hasHypercharge && !b.starPowersList?.[0] && !b.gadgetsList?.[0] && !b.gearsList?.[0] && (
+                                    {!hasHypercharge && !b.starPowersList?.[0] && !b.gadgetsList?.[0] && (
                                         <span className="text-white/20 text-xs italic py-2">No items</span>
                                     )}
                                 </div>
                             </div>
+
 
                             {/* Collection */}
                             <div className="bg-white/5 rounded-2xl p-4 flex flex-col gap-3 border border-white/5 shadow-inner">
@@ -248,10 +239,7 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                                     {b.gadgetsList?.map(g => (
                                         <img key={g.id} src={`https://cdn.brawlify.com/gadgets/borderless/${g.id}.png`} className="w-7 h-7 object-contain opacity-70 hover:opacity-100 transition-opacity drop-shadow cursor-help" title={`Gadget: ${g.name}`} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${g.id}.png`; } else { t.style.display = 'none'; } }} />
                                     ))}
-                                    {b.gearsList?.map(g => (
-                                        <img key={g.id} src={`https://cdn.brawlify.com/gears/borderless/${g.id}.png`} className="w-7 h-7 object-contain opacity-70 hover:opacity-100 transition-opacity drop-shadow cursor-help" title={`Gear: ${g.name}`} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gears/${g.id}.png`; } else { t.style.display = 'none'; } }} />
-                                    ))}
-                                    {!hasHypercharge && !b.starPowersList?.length && !b.gadgetsList?.length && !b.gearsList?.length && (
+                                    {!hasHypercharge && !b.starPowersList?.length && !b.gadgetsList?.length && (
                                         <span className="text-white/20 text-[10px] italic">Empty Collection</span>
                                     )}
                                 </div>

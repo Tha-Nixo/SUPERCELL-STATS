@@ -71,8 +71,8 @@ export function MatchHistory({ matches, accentColor }: MatchHistoryProps) {
               {match.score !== undefined && (
                 <div className="text-center">
                   <div className="text-white/40 text-xs mb-1">Trophies</div>
-                  <div className="text-white font-semibold">
-                    {match.score > 0 ? `+ ${match.score} ` : match.score}
+                  <div className={`text-white font-semibold ${match.score > 0 ? 'text-green-500' : match.score < 0 ? 'text-red-500' : ''}`}>
+                    {match.score > 0 ? `+${match.score}` : match.score}
                   </div>
                 </div>
               )}

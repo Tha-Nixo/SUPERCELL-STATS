@@ -126,6 +126,8 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
     const clanName: string = player.clan?.name ?? 'No Clan';
     const clanRole: string = player.role ?? 'Member';
     const arenaName: string = player.arena?.name ?? '';
+    const arenaId: number | null = player.arena?.id ?? null;
+    const arenaIconUrl = arenaId ? `https://royaleapi.github.io/cr-api-assets/arenas/${arenaId}.png` : '';
 
     const league: string = player.currentPathOfLegendSeasonResult?.leagueNumber
         ? `League ${player.currentPathOfLegendSeasonResult.leagueNumber}`
@@ -152,7 +154,7 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
     return {
         username: player.name,
         rank: league || `${trophies} 🏆`,
-        rankIcon: '👑',
+        rankIcon: arenaIconUrl || '👑',
         winRate,
         kd: Math.round((wins / Math.max(losses, 1)) * 100) / 100,
         totalMatches: total,
@@ -251,20 +253,41 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
     const brawlersAt750 = sortedBrawlers.filter((b: any) => b.trophies >= 750).length;
 
     // Top brawlers visual data (top 9 + all for grid)
-    const topBrawlers: BSBrawlerData[] = sortedBrawlers.slice(0, 9).map((b: any) => ({
-        id: b.id ?? 0,
-        name: b.name ?? '?',
-        power: b.power ?? 1,
-        trophies: b.trophies ?? 0,
-        highestTrophies: b.highestTrophies ?? b.trophies ?? 0,
-        rank: b.rank ?? 1,
-        imageUrl: brawlerImageUrl(b.id),
-        gadgets: b.gadgets?.length ?? 0,
-        starPowers: b.starPowers?.length ?? 0,
-        gadgetsList: (b.gadgets ?? []).map((g: any) => ({ id: g.id, name: g.name })),
-        starPowersList: (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name })),
-        gearsList: (b.gears ?? []).map((g: any) => ({ id: g.id, name: g.name })),
-    }));
+    const topBrawlers: BSBrawlerData[] = sortedBrawlers.slice(0, 9).map((b: any) => {
+        let name = b.name ?? '?';
+        if (name === 'GLOWBERT') name = 'GLOWY';
+
+        let gadgetsList = (b.gadgets ?? []).map((g: any) => ({ id: g.id, name: g.name }));
+        let starPowersList = (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name }));
+
+        if (name === 'SIRIUS') {
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000673, name: 'Telescopic Zoom' }, { id: 23000674, name: 'Star Shield' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23000675, name: 'Blinding Light' }, { id: 23000676, name: 'Meteor Crush' }];
+        }
+        if (name === 'GLOWY') {
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000677, name: 'Lumen Blast' }, { id: 23000678, name: 'Neon Trail' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23000679, name: 'Radiant Aura' }, { id: 23000680, name: 'Glow Up' }];
+        }
+        if (name === 'PIERCE') {
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000681, name: 'Sharp Blade' }, { id: 23000682, name: 'Piercing Dash' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23000683, name: 'Fierce Will' }, { id: 23000684, name: 'Armor Break' }];
+        }
+
+        return {
+            id: b.id ?? 0,
+            name: name,
+            power: b.power ?? 1,
+            trophies: b.trophies ?? 0,
+            highestTrophies: b.highestTrophies ?? b.trophies ?? 0,
+            rank: b.rank ?? 1,
+            imageUrl: brawlerImageUrl(b.id),
+            gadgets: gadgetsList.length,
+            starPowers: starPowersList.length,
+            gadgetsList: gadgetsList,
+            starPowersList: starPowersList,
+            gearsList: (b.gears ?? []).map((g: any) => ({ id: g.id, name: g.name })),
+        }
+    });
 
     const recentMatches: Match[] = battles.slice(0, 10).map((b: any, i: number) => {
         let mode = b.event?.mode ?? b.battle?.mode ?? 'Brawl';
@@ -281,6 +304,42 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
             date: parseSCDate(b.battleTime),
             duration: b.battle?.duration ? `${Math.floor(b.battle.duration / 60)}m ${b.battle.duration % 60}s` : 'Unknown',
         };
+    });
+
+    const allBrawlers: BSBrawlerData[] = sortedBrawlers.map((b: any) => {
+        let name = b.name ?? '?';
+        if (name === 'GLOWBERT') name = 'GLOWY';
+
+        let gadgetsList = (b.gadgets ?? []).map((g: any) => ({ id: g.id, name: g.name }));
+        let starPowersList = (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name }));
+
+        if (name === 'SIRIUS') {
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000673, name: 'Telescopic Zoom' }, { id: 23000674, name: 'Star Shield' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23000675, name: 'Blinding Light' }, { id: 23000676, name: 'Meteor Crush' }];
+        }
+        if (name === 'GLOWY') {
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000677, name: 'Lumen Blast' }, { id: 23000678, name: 'Neon Trail' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23000679, name: 'Radiant Aura' }, { id: 23000680, name: 'Glow Up' }];
+        }
+        if (name === 'PIERCE') {
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000681, name: 'Sharp Blade' }, { id: 23000682, name: 'Piercing Dash' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23000683, name: 'Fierce Will' }, { id: 23000684, name: 'Armor Break' }];
+        }
+
+        return {
+            id: b.id ?? 0,
+            name: name,
+            power: b.power ?? 1,
+            trophies: b.trophies ?? 0,
+            highestTrophies: b.highestTrophies ?? b.trophies ?? 0,
+            rank: b.rank ?? 1,
+            imageUrl: brawlerImageUrl(b.id),
+            gadgets: gadgetsList.length,
+            starPowers: starPowersList.length,
+            gadgetsList: gadgetsList,
+            starPowersList: starPowersList,
+            gearsList: (b.gears ?? []).map((g: any) => ({ id: g.id, name: g.name })),
+        }
     });
 
     return {
@@ -316,20 +375,7 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
         ],
         gameVisuals: {
             bs: {
-                topBrawlers, allBrawlers: sortedBrawlers.map((b: any) => ({
-                    id: b.id ?? 0,
-                    name: b.name ?? '?',
-                    power: b.power ?? 1,
-                    trophies: b.trophies ?? 0,
-                    highestTrophies: b.highestTrophies ?? b.trophies ?? 0,
-                    rank: b.rank ?? 1,
-                    imageUrl: brawlerImageUrl(b.id),
-                    gadgets: b.gadgets?.length ?? 0,
-                    starPowers: b.starPowers?.length ?? 0,
-                    gadgetsList: (b.gadgets ?? []).map((g: any) => ({ id: g.id, name: g.name })),
-                    starPowersList: (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name })),
-                    gearsList: (b.gears ?? []).map((g: any) => ({ id: g.id, name: g.name })),
-                })), clubTag: player.club?.tag
+                topBrawlers, allBrawlers, clubTag: player.club?.tag
             },
         },
     };
@@ -345,6 +391,7 @@ const COC_HEROES: Record<string, { shortName: string; emoji: string; color: stri
     'Royal Champion': { shortName: 'RC', emoji: '🛡️', color: '#e74c3c', maxLevel: 45 },
     'Battle Machine': { shortName: 'BM', emoji: '🤖', color: '#7f8c8d', maxLevel: 45 },
     'Minion Prince': { shortName: 'MP', emoji: '😈', color: '#6c3483', maxLevel: 30 },
+    'Dragon Duke': { shortName: 'DD', emoji: '🐉', color: '#8e44ad', maxLevel: 20 },
 };
 
 async function searchClashOfClans(tag: string): Promise<PlayerStats> {
@@ -399,11 +446,12 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
     const rawSpells: any[] = player.spells ?? [];
 
     const isSiegeName = (n: string) => n.includes('Wall Wrecker') || n.includes('Battle Blimp') || n.includes('Stone Slammer') || n.includes('Siege Barracks') || n.includes('Log Launcher') || n.includes('Flame Flinger') || n.includes('Battle Drill') || n === 'Drill';
-    const isPetName = (n: string) => n.includes('L.A.S.S.I') || n.includes('Electro Owl') || n.includes('Mighty Yak') || n.includes('Unicorn') || n.includes('Frosty') || n.includes('Diggy') || n.includes('Poison Lizard') || n.includes('Phoenix') || n.includes('Spirit Fox') || n.includes('Angry Jelly');
+    const isPetName = (n: string) => n.includes('L.A.S.S.I') || n.includes('Electro Owl') || n.includes('Mighty Yak') || n.includes('Unicorn') || n.includes('Frosty') || n.includes('Diggy') || n.includes('Poison Lizard') || n.includes('Phoenix') || n.includes('Spirit Fox') || n.includes('Angry Jelly') || n.includes('Raven') || n.includes('Bat');
     const isSuperName = (n: string) => n.includes('Super ') || n.includes('Sneaky ') || n.includes('Rocket ') || n === 'Ice Hound' || n === 'Inferno Dragon';
+    const isExtraBaseTroop = (n: string) => ['Skeleton', 'Sneezy', 'Meteor Golem'].includes(n);
 
     const troops = rawTroops
-        .filter(t => t.village === 'home' && !isSiegeName(t.name) && !isPetName(t.name) && !isSuperName(t.name))
+        .filter(t => t.village === 'home' && !isSiegeName(t.name) && !isPetName(t.name) && !isSuperName(t.name) && !isExtraBaseTroop(t.name) && !COC_HEROES[t.name])
         .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
 
     const superTroops = rawTroops
@@ -414,13 +462,47 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
         .filter(t => t.village === 'builderBase' && !isPetName(t.name) && !COC_HEROES[t.name])
         .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
 
+    const siegeOrder = ['Wall Wrecker', 'Siege Barracks', 'Battle Blimp', 'Log Launcher', 'Flame Flinger', 'Battle Drill', 'Stone Slammer'];
+
     const siegeMachines = rawTroops
         .filter(t => t.village === 'home' && isSiegeName(t.name))
-        .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
+        .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }))
+        .sort((a, b) => {
+            let ia = siegeOrder.findIndex(s => a.name.includes(s));
+            let ib = siegeOrder.findIndex(s => b.name.includes(s));
+            if (ia === -1) ia = 99;
+            if (ib === -1) ib = 99;
+            return ia - ib;
+        });
 
     const pets = rawTroops
         .filter(t => t.village === 'home' && isPetName(t.name))
         .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
+
+    const requiredPets = ['L.A.S.S.I', 'Mighty Yak', 'Electro Owl', 'Unicorn', 'Frosty', 'Diggy', 'Poison Lizard', 'Phoenix', 'Spirit Fox', 'Angry Jelly', 'Raven', 'Bat'];
+    for (const rp of requiredPets) {
+        if (!pets.some(p => p.name.includes(rp))) {
+            pets.push({ name: rp, level: 0, maxLevel: 10 });
+        }
+    }
+
+    // Ensure required modern heroes exist
+    const requiredHomeHeroes = ['Barbarian King', 'Archer Queen', 'Grand Warden', 'Royal Champion', 'Minion Prince', 'Dragon Duke'];
+    for (const h of requiredHomeHeroes) {
+        if (!heroList.some(hero => hero.name === h)) {
+            const meta = COC_HEROES[h];
+            if (meta) {
+                heroList.push({
+                    name: h,
+                    shortName: meta.shortName,
+                    level: 0,
+                    maxLevel: meta.maxLevel,
+                    emoji: meta.emoji,
+                    color: meta.color,
+                });
+            }
+        }
+    }
 
     const spells = rawSpells.filter(t => t.village === 'home').map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
 

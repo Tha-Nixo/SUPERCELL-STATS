@@ -37,7 +37,6 @@ function TroopIcon({ troop, category, accent }: { troop: CoCTroopData; category:
             if (rawName === 'Electro Titan') pathsToTry.push(`/images/coc/troops/Icon_HV_Electro_Titan.png`);
             if (rawName === 'Root Rider') pathsToTry.push(`/images/coc/troops/Icon_HV_Root_Rider.png`);
             if (rawName === 'Dragon Rider') pathsToTry.push(`/images/coc/troops/Icon_HV_Dragon_Rider.png`);
-            if (rawName === 'Thrower') pathsToTry.push(`/images/coc/troops/Thrower_05_grass.png`);
             if (rawName === 'Meteor Golem') pathsToTry.push(`/images/coc/troops/MeteoriteGolem_withGrassbase_f22_3k_-removebg-preview.png`);
             if (rawName === 'Troop Launcher') pathsToTry.push(`/images/coc/siege_machines/icon_troop_launcher.png`);
             if (rawName === 'Furnace') pathsToTry.push(`/images/coc/troops/Icon_HV_Furnace.png`);
@@ -63,6 +62,7 @@ function TroopIcon({ troop, category, accent }: { troop: CoCTroopData; category:
             // Check for names with dots e.g. Power P.E.K.K.A
             if (rawName === 'Power P.E.K.K.A') pathsToTry.push(`/images/coc/builder_base/Icon_BB_Power_P.E.K.K.A.png`);
         } else if (category === 'Spells') {
+            if (rawName === 'Lightning Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_Lightning.png`, `/images/coc/spells/lightning_spell.png`);
             pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_${baseName}.png`);
             pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_${baseName}.png`);
             pathsToTry.push(`/images/coc/spells/Icon_CC_Spell_${baseName}.png`);
@@ -95,7 +95,6 @@ function TroopIcon({ troop, category, accent }: { troop: CoCTroopData; category:
             if (rawName === 'Log Launcher') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Log_Launcher.png`);
             if (rawName === 'Flame Flinger') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Flame_Flinger.png`);
             if (rawName === 'Battle Drill' || rawName === 'Drill') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Battle_Drill.png`);
-            if (rawName === 'Thrower') pathsToTry.push(`/images/coc/troops/Thrower_05_grass.png`);
         } else if (category === 'Hero Pets') {
             pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_${petsName}.png`);
             pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_${formatName}.png`);
@@ -106,6 +105,8 @@ function TroopIcon({ troop, category, accent }: { troop: CoCTroopData; category:
             if (rawName === 'Spirit Fox') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_Spirit_Fox.png`);
             if (rawName === 'Angry Jelly') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_Angry_Jelly.png`);
             if (rawName === 'Angry Jelly') pathsToTry.push(`/images/coc/pets/jelly_2024.png`); // Fallback if user eventually adds it
+            if (rawName === 'Raven') pathsToTry.push(`/images/coc/pets/Raven.png`);
+            if (rawName === 'Vampbat') pathsToTry.push(`/images/coc/pets/Vampbat.png`);
         }
 
         pathsToTry.push(`/images/coc/troops/${troop.name.toLowerCase().replace(/ /g, '_')}.png`);
