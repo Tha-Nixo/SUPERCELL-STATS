@@ -19,7 +19,7 @@ function PowerLevel({ power, hasOverdrive = false }: { power: number; hasOverdri
         return (
             <div className="absolute top-1 right-1 z-10">
                 <img
-                    src="https://cdn.brawlify.com/icon/Hypercharge.png"
+                    src="/images/bs/icon_hypercharge.png"
                     alt="Hypercharge Power 11"
                     className="w-7 h-7 object-contain drop-shadow-md"
                     title="Power 11 (Hypercharge)"
@@ -206,12 +206,12 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                                     )}
                                     {b.starPowersList?.[0] && (
                                         <div className="relative">
-                                            <img src={`https://cdn.brawlify.com/star-powers/borderless/${b.starPowersList[0].id}.png`} className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-yellow-900/30 rounded-xl border-2 border-yellow-500/60 p-1" title={b.starPowersList[0].name} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/star-powers/${b.starPowersList![0].id}.png`; } else if (!t.src.includes('Star-Power.png')) { t.src = 'https://cdn.brawlify.com/icon/Star-Power.png'; t.className = "w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-yellow-900/30 rounded-xl border-2 border-yellow-500/60 p-2 opacity-50"; } }} />
+                                            <img src={`https://cdn.brawlify.com/star-powers/borderless/${b.starPowersList[0].id}.png`} className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-yellow-900/30 rounded-xl border-2 border-yellow-500/60 p-1" title={b.starPowersList[0].name} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/star-powers/${b.starPowersList![0].id}.png`; } else if (!t.src.includes('Star-Power.png')) { t.src = '/images/bs/icon_star_power.png'; t.className = "w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-yellow-900/30 rounded-xl border-2 border-yellow-500/60 p-2 opacity-50"; } }} />
                                         </div>
                                     )}
                                     {b.gadgetsList?.[0] && (
                                         <div className="relative">
-                                            <img src={`https://cdn.brawlify.com/gadgets/borderless/${b.gadgetsList[0].id}.png`} className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-green-900/30 rounded-xl border-2 border-green-500/60 p-1" title={b.gadgetsList[0].name} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${b.gadgetsList![0].id}.png`; } else if (!t.src.includes('Gadget.png')) { t.src = 'https://cdn.brawlify.com/icon/Gadget.png'; t.className = "w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-green-900/30 rounded-xl border-2 border-green-500/60 p-2 opacity-50"; } }} />
+                                            <img src={`https://cdn.brawlify.com/gadgets/borderless/${b.gadgetsList[0].id}.png`} className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-green-900/30 rounded-xl border-2 border-green-500/60 p-1" title={b.gadgetsList[0].name} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${b.gadgetsList![0].id}.png`; } else if (!t.src.includes('Gadget.png')) { t.src = '/images/bs/icon_gadget.png'; t.className = "w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-green-900/30 rounded-xl border-2 border-green-500/60 p-2 opacity-50"; } }} />
                                         </div>
                                     )}
                                     {!hasHypercharge && !b.starPowersList?.[0] && !b.gadgetsList?.[0] && (
@@ -234,10 +234,10 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                                         </div>
                                     )}
                                     {b.starPowersList?.map(sp => (
-                                        <img key={sp.id} src={`https://cdn.brawlify.com/star-powers/borderless/${sp.id}.png`} className="w-7 h-7 object-contain opacity-70 hover:opacity-100 transition-opacity drop-shadow cursor-help" title={`Star Power: ${sp.name}`} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/star-powers/${sp.id}.png`; } else if (!t.src.includes('Star-Power.png')) { t.src = 'https://cdn.brawlify.com/icon/Star-Power.png'; t.className = "w-7 h-7 object-contain opacity-40 hover:opacity-100 transition-opacity drop-shadow cursor-help p-1 bg-yellow-900/30 rounded border border-yellow-500/50"; } }} />
+                                        <img key={sp.id} src={`https://cdn.brawlify.com/star-powers/borderless/${sp.id}.png`} className="w-7 h-7 object-contain opacity-70 hover:opacity-100 transition-opacity drop-shadow cursor-help" title={`Star Power: ${sp.name}`} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/star-powers/${sp.id}.png`; } else if (!t.src.includes('Star-Power.png')) { t.src = '/images/bs/icon_star_power.png'; t.className = "w-7 h-7 object-contain opacity-40 hover:opacity-100 transition-opacity drop-shadow cursor-help p-1 bg-yellow-900/30 rounded border border-yellow-500/50"; } }} />
                                     ))}
                                     {b.gadgetsList?.map(g => (
-                                        <img key={g.id} src={`https://cdn.brawlify.com/gadgets/borderless/${g.id}.png`} className="w-7 h-7 object-contain opacity-70 hover:opacity-100 transition-opacity drop-shadow cursor-help" title={`Gadget: ${g.name}`} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${g.id}.png`; } else if (!t.src.includes('Gadget.png')) { t.src = 'https://cdn.brawlify.com/icon/Gadget.png'; t.className = "w-7 h-7 object-contain opacity-40 hover:opacity-100 transition-opacity drop-shadow cursor-help p-1 bg-green-900/30 rounded border border-green-500/50"; } }} />
+                                        <img key={g.id} src={`https://cdn.brawlify.com/gadgets/borderless/${g.id}.png`} className="w-7 h-7 object-contain opacity-70 hover:opacity-100 transition-opacity drop-shadow cursor-help" title={`Gadget: ${g.name}`} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${g.id}.png`; } else if (!t.src.includes('Gadget.png')) { t.src = '/images/bs/icon_gadget.png'; t.className = "w-7 h-7 object-contain opacity-40 hover:opacity-100 transition-opacity drop-shadow cursor-help p-1 bg-green-900/30 rounded border border-green-500/50"; } }} />
                                     ))}
                                     {!hasHypercharge && !b.starPowersList?.length && !b.gadgetsList?.length && (
                                         <span className="text-white/20 text-[10px] italic">Empty Collection</span>

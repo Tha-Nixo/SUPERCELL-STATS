@@ -20,7 +20,7 @@ export function CRDeck({ playerStats, accent }: CRDeckProps) {
 
     // Count Evolutions & Maxed Cards
     const evoCount = currentDeck.filter(c => c.evolutionLevel && c.evolutionLevel > 0).length;
-    const maxedCount = currentDeck.filter(c => c.level === c.maxLevel).length;
+    const maxedCount = currentDeck.filter(c => c.level >= 16).length;
 
     const getRarityColor = (rarity?: string) => {
         switch (rarity?.toLowerCase()) {
@@ -70,7 +70,7 @@ export function CRDeck({ playerStats, accent }: CRDeckProps) {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {currentDeck.map((card) => {
-                        const isMax = card.level === card.maxLevel;
+                        const isMax = card.level >= 16;
                         const hasEvolution = card.evolutionLevel && card.evolutionLevel > 0;
 
                         return (

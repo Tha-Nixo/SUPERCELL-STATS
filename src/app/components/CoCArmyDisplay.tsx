@@ -43,7 +43,7 @@ function TroopIcon({ troop, category, accent }: { troop: CoCTroopData; category:
 
             // Temporary Event Troops
             if (rawName === 'Sneezy') pathsToTry.push(`/images/coc/troops/Icon_HV_Sneaky_Goblin.png`); // Best guess fallback
-            if (rawName === 'Greedy Raven') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_Electro_Owl.png`); // Best guess fallback
+            if (rawName === 'Greedy Raven') pathsToTry.push(`/images/coc/pets/pet_Greedy_Raven_3_grasspng.png`, `/images/coc/pets/Raven.png`);
 
             pathsToTry.push(`/images/coc/clan_capital/Icon_CC_Troop_${formatName}.png`);
             pathsToTry.push(`/images/coc/builder_base/Icon_BB_${formatName}.png`);

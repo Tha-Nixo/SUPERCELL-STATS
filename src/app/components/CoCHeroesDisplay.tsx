@@ -10,6 +10,7 @@ const HERO_IMAGE_URLS: Record<string, string> = {
     'Battle Machine': '/images/coc/heroes/Battle_Machine_2_grass.png',
     'Battle Copter': '/images/coc/heroes/Battle_Copter_1.png',
     'Minion Prince': '/images/coc/heroes/Hero_Minion_Prince_02_grass.png',
+    'Dragon Duke': '/images/coc/heroes/DragonDuke_f011_4k.png',
 };
 
 function HeroProgressBar({ level, maxLevel, color }: { level: number; maxLevel: number; color: string }) {

@@ -9,10 +9,8 @@ import { getGameById } from '../data/games';
 import { StatCard } from '../components/StatCard';
 import { PerformanceChart } from '../components/PerformanceChart';
 import { MatchHistory } from '../components/MatchHistory';
-import { CRDeckDisplay } from '../components/CRDeckDisplay';
 import { BSProfile } from '../components/BSProfile';
 import { CoCHeroesDisplay } from '../components/CoCHeroesDisplay';
-import { CRCardCollection } from '../components/CRCardCollection';
 import { CoCArmyDisplay } from '../components/CoCArmyDisplay';
 import { CoCAchievements } from '../components/CoCAchievements';
 import { CoCOverview } from '../components/CoCOverview';
@@ -39,19 +37,19 @@ function getStatIcon(label: string) {
   return <BarChart3 className="w-4 h-4" />;
 }
 
-// ─── Town Hall hero images (CoC CDN)
+// ─── Town Hall hero images (CoC — stored locally under /images/coc/townhall/)
 const TH_IMAGES: Record<number, string> = {
-  1: 'https://api-assets.clashofclans.com/townhalls/320/F8VHVgM3WkGbUuRGhXQaEMuAlOq-gkdz9b8l1QDOoVY.png',
-  7: 'https://api-assets.clashofclans.com/townhalls/320/BJ7X8TLyXQNqN5VoHlsFSEKzB-vl-8BPAY24KNvLR-A.png',
-  8: 'https://api-assets.clashofclans.com/townhalls/320/BJ7X8TLyXQNqN5VoHlsFSEKzB-vl-8BPAY24KNvLR-A.png',
-  9: 'https://api-assets.clashofclans.com/townhalls/320/bILAGGH7EgCPHMB5bXQOQJPSfk7Kr_PVLKkFsY-Pf6E.png',
-  10: 'https://api-assets.clashofclans.com/townhalls/320/1z-CNHo8A0O2LoEMnYymLxjHdT7S0L_qNJ3t2LSPMlA.png',
-  11: 'https://api-assets.clashofclans.com/townhalls/320/vKcS3fZ-K8eCfMHn5j1e-3jmolqhfX2Lzayw-qneMuE.png',
-  12: 'https://api-assets.clashofclans.com/townhalls/320/Hq_4RcuHdTJtFGGVCNi-a7KNZYxhGMPNPoZpnpH4oVg.png',
-  13: 'https://api-assets.clashofclans.com/townhalls/320/JDvJn9A3mCWgCBqvGiU4hbcuN0UmqgNAB-LafNXFJ9Q.png',
-  14: 'https://coc.guide/static/imgs/other/town-hall-14.png',
-  15: 'https://coc.guide/static/imgs/other/town-hall-15.png',
-  16: 'https://coc.guide/static/imgs/other/town-hall-16.png',
+  1: '/images/coc/townhall/th_01.png',
+  7: '/images/coc/townhall/th_07.png',
+  8: '/images/coc/townhall/th_08.png',
+  9: '/images/coc/townhall/th_09.png',
+  10: '/images/coc/townhall/th_10.png',
+  11: '/images/coc/townhall/th_11.png',
+  12: '/images/coc/townhall/th_12.png',
+  13: '/images/coc/townhall/th_13.png',
+  14: '/images/coc/townhall/th_14.png',
+  15: '/images/coc/townhall/th_15.png',
+  16: '/images/coc/townhall/th_16.png',
 };
 
 export default function GamePage() {
@@ -334,44 +332,6 @@ export default function GamePage() {
                 </motion.div>
               )}
 
-              {/* ── CLASH ROYALE: Current Deck ── */}
-              {gameId === 'clash-royale' && playerStats.gameVisuals?.cr && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-                  className="p-6 rounded-3xl border border-white/8 bg-white/3"
-                  style={{ borderColor: `${game.accent}25` }}>
-                  <CRDeckDisplay
-                    cards={playerStats.gameVisuals.cr.currentDeck}
-                    favoriteCard={playerStats.gameVisuals.cr.favoriteCard}
-                  />
-                  {/* Clan row */}
-                  {(playerStats.gameVisuals.cr.clanBadgeUrl || playerStats.gameVisuals.cr.arenaName) && (
-                    <div className="flex items-center gap-3 mt-5 pt-4 border-t border-white/8">
-                      {playerStats.gameVisuals.cr.clanBadgeUrl && (
-                        <img src={playerStats.gameVisuals.cr.clanBadgeUrl} alt="Clan"
-                          className="w-8 h-8 object-contain"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      )}
-                      <div className="text-white/50 text-sm">
-                        {playerStats.extraStats?.find(s => s.label === 'Clan')?.value ?? ''}
-                      </div>
-                      {playerStats.gameVisuals.cr.arenaName && (
-                        <span className="ml-auto px-2.5 py-1 rounded-lg text-xs font-semibold"
-                          style={{ backgroundColor: `${game.accent}20`, color: game.accent }}>
-                          {playerStats.gameVisuals.cr.arenaName}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-              {gameId === 'clash-royale' && playerStats.gameVisuals?.cr?.cards && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
-                  <CRCardCollection
-                    cards={playerStats.gameVisuals.cr.cards}
-                    accent={game.accent}
-                  />
-                </motion.div>
-              )}
 
 
               {/* ── CLASH OF CLANS: Overview ── */}

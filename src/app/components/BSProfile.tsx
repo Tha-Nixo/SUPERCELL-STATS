@@ -1,6 +1,8 @@
-import { PlayerStats } from '../data/mockStats';
+import { PlayerStats, BSBrawlerData } from '../data/mockStats';
+import { brawlerRarityMap } from '../data/brawlerRarities';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Award, Users, Crosshair, Star, History, Flame, BarChart2, Shield, Home } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Trophy, Award, Users, Crosshair, Star, History, Flame, BarChart2, Shield, Home, Search, ArrowUpDown, ChevronDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { BSBrawlerGrid } from '../components/BSBrawlerGrid';
 
 // Helpers
@@ -120,22 +122,114 @@ const BSBrawlers = ({ playerStats, accentColor }: { playerStats: PlayerStats, ac
     if (!bs) return null;
 
     const brawlers = bs.allBrawlers || [];
-    const maxedCount = brawlers.filter(b => b.power === 11).length;
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortBy, setSortBy] = useState<'trophies' | 'rarity'>('trophies');
+    const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+
+    // Helper to determine rank icon
+    const getRankIcon = (rank: number) => {
+        if (rank <= 1) return '/images/bs/icon_trophy_brawler_wood.png';
+        if (rank === 2) return '/images/bs/icon_trophy_brawler_bronze.png';
+        if (rank === 3) return '/images/bs/icon_trophy_brawler_silver.png';
+        if (rank === 4) return '/images/bs/icon_trophy_brawler_gold.png';
+        if (rank === 5) return '/images/bs/icon_trophy_brawler_prestige_1.png';
+        if (rank === 6) return '/images/bs/icon_trophy_brawler_prestige_2.png';
+        return '/images/bs/icon_trophy_brawler_prestige_3.png';
+    };
+
+    // Derived states
+    const filteredAndSortedBrawlers = useMemo(() => {
+        let result = brawlers;
+
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter((b: BSBrawlerData) => b.name.toLowerCase().includes(query));
+        }
+
+        result = [...result].sort((a: BSBrawlerData, b: BSBrawlerData) => {
+            const modifier = sortOrder === 'desc' ? -1 : 1;
+            if (sortBy === 'trophies') {
+                return (a.trophies - b.trophies) * modifier;
+            } else if (sortBy === 'rarity') {
+                const RARITY_WEIGHTS: Record<string, number> = {
+                    'Common': 1,
+                    'Rare': 2,
+                    'Super Rare': 3,
+                    'Epic': 4,
+                    'Mythic': 5,
+                    'Legendary': 6,
+                    'Ultra Legendary': 7
+                };
+
+                const nameA = a.name.toUpperCase().replace(/ /g, '-');
+                const nameB = b.name.toUpperCase().replace(/ /g, '-');
+                const rarityA = brawlerRarityMap[nameA] || 'Common';
+                const rarityB = brawlerRarityMap[nameB] || 'Common';
+                const weightA = RARITY_WEIGHTS[rarityA] || 0;
+                const weightB = RARITY_WEIGHTS[rarityB] || 0;
+
+                if (weightA !== weightB) return (weightA - weightB) * modifier;
+                if (b.power !== a.power) return (a.power - b.power) * modifier;
+                return (a.trophies - b.trophies) * modifier;
+            }
+            return 0;
+        });
+
+        return result;
+    }, [brawlers, searchQuery, sortBy, sortOrder]);
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between px-2">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <div className="flex flex-col md:flex-row md:items-center justify-between px-2 gap-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2 whitespace-nowrap">
                     <Users className="w-6 h-6" style={{ color: accentColor }} />
-                    Brawlers ({brawlers.length}/90)
+                    Brawlers ({brawlers.length}/{Math.max(brawlers.length, 90)})
                 </h3>
-                <div className="text-sm text-white/50 text-right">
-                    <p>Maxed (Power 11): <span className="text-white font-bold">{maxedCount}</span></p>
+
+                <div className="flex flex-1 flex-col sm:flex-row items-center justify-end gap-3">
+                    <div className="relative w-full sm:max-w-xs">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                        <input
+                            type="text"
+                            placeholder="Search Brawlers..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-white/30 transition-colors"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="relative flex-1 sm:w-48">
+                            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value as any)}
+                                className="w-full appearance-none pl-9 pr-8 py-2 bg-black/60 border border-white/10 rounded-xl text-sm text-white/90 focus:outline-none focus:border-white/30 cursor-pointer hover:bg-black/80 transition-colors shadow-sm"
+                            >
+                                <option value="trophies">Sort by Trophies</option>
+                                <option value="rarity">Sort by Rarity</option>
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+                        </div>
+
+                        <button
+                            onClick={() => setSortOrder((prev: string) => prev === 'desc' ? 'asc' : 'desc')}
+                            className="shrink-0 w-9 h-9 bg-black/60 border border-white/10 rounded-xl text-white/60 hover:text-white hover:bg-black/80 transition-colors flex items-center justify-center shadow-sm"
+                            title="Toggle Sort Order"
+                        >
+                            {sortOrder === 'desc' ? (
+                                <ArrowDown className="w-4 h-4" />
+                            ) : (
+                                <ArrowUp className="w-4 h-4" />
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {brawlers.map((b, i) => (
+                {filteredAndSortedBrawlers.map((b: BSBrawlerData, i: number) => (
                     <motion.div
                         key={b.id}
                         initial={{ opacity: 0, y: 15 }}
@@ -158,7 +252,7 @@ const BSBrawlers = ({ playerStats, accentColor }: { playerStats: PlayerStats, ac
                                 <div className="flex justify-between items-start gap-2">
                                     <h4 className="font-bold text-white uppercase tracking-wider text-sm truncate">{b.name}</h4>
                                     <div className="shrink-0 flex items-center gap-1.5 px-2 py-1 rounded bg-black/40 border border-white/10">
-                                        <Trophy className="w-3.5 h-3.5 text-yellow-400 drop-shadow-sm" />
+                                        <img src={getRankIcon(b.rank)} alt={`Rank ${b.rank}`} className="w-4 h-4 object-contain drop-shadow-sm" />
                                         <span className="text-white font-bold text-sm tracking-tight">{b.trophies}</span>
                                     </div>
                                 </div>
@@ -178,17 +272,57 @@ const BSBrawlers = ({ playerStats, accentColor }: { playerStats: PlayerStats, ac
                                 </div>
 
                                 {/* Equipment indicators */}
-                                <div className="flex items-center gap-1.5 mt-2">
-                                    <div className={`w-3 h-3 rounded-sm ${b.gadgets > 0 ? 'bg-green-500/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-white/5 border border-white/10'}`} title={`Gadgets: ${b.gadgetsList.map(g => g.name).join(', ') || '0'}`} />
-                                    <div className={`w-3 h-3 rounded-sm ${b.starPowers > 0 ? 'bg-yellow-400/80 shadow-[0_0_8px_rgba(250,204,21,0.4)]' : 'bg-white/5 border border-white/10'}`} title={`Star Powers: ${b.starPowersList.map(g => g.name).join(', ') || '0'}`} />
-                                    <div className={`w-3 h-3 rounded-sm ${b.gearsList && b.gearsList.length > 0 ? 'bg-purple-500/80 shadow-[0_0_8px_rgba(168,85,247,0.4)]' : 'bg-white/5 border border-white/10'}`} title={`Gears: ${b.gearsList?.map(g => g.name).join(', ') || '0'}`} />
-                                    {(b.hyperCharges && b.hyperCharges.length > 0) || b.buffies?.hyperCharge ? (
-                                        <div className="w-3 h-3 rounded-sm bg-pink-500 drop-shadow-[0_0_5px_rgba(236,72,153,0.8)] border border-pink-400 relative overflow-hidden" title={`Hypercharge Unlocked`}>
-                                            <div className="absolute inset-0 bg-white/40 animate-pulse" />
-                                        </div>
-                                    ) : (
-                                        <div className="w-3 h-3 rounded-sm bg-white/5 border border-white/10" />
-                                    )}
+                                <div className="mt-2 text-center">
+                                    <div className="text-[10px] text-white/50 uppercase font-bold tracking-widest mb-2">Equipped Config</div>
+                                    <div className="flex items-center justify-center gap-2">
+                                        {b.gadgetsList?.[0] ? (
+                                            <img src={`https://cdn.brawlify.com/gadgets/borderless/${b.gadgetsList[0].id}.png`} className="w-8 h-8 object-contain drop-shadow-lg bg-green-900/40 rounded border border-green-500/80 p-0.5" title={b.gadgetsList[0].name} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${b.gadgetsList![0].id}.png`; } else if (!t.src.includes('Gadget.png')) { t.src = '/images/bs/icon_gadget.png'; } }} />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded bg-white/5 border border-white/10" />
+                                        )}
+
+                                        {b.starPowersList?.[0] ? (
+                                            <img src={`https://cdn.brawlify.com/star-powers/borderless/${b.starPowersList[0].id}.png`} className="w-8 h-8 object-contain drop-shadow-lg bg-yellow-900/40 rounded border border-yellow-500/80 p-0.5" title={b.starPowersList[0].name} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/star-powers/${b.starPowersList![0].id}.png`; } else if (!t.src.includes('Star-Power.png')) { t.src = '/images/bs/icon_star_power.png'; } }} />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded bg-white/5 border border-white/10" />
+                                        )}
+
+                                        {b.gearsList?.[0] ? (
+                                            <img src={`https://cdn.brawlify.com/gears/regular/${b.gearsList[0].id}.png`} className="w-8 h-8 object-contain drop-shadow-lg bg-purple-900/40 rounded border border-purple-500/80 p-0.5" title={b.gearsList[0].name} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded bg-white/5 border border-white/10" />
+                                        )}
+
+                                        {b.gearsList?.[1] ? (
+                                            <img src={`https://cdn.brawlify.com/gears/regular/${b.gearsList[1].id}.png`} className="w-8 h-8 object-contain drop-shadow-lg bg-purple-900/40 rounded border border-purple-500/80 p-0.5" title={b.gearsList[1].name} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded bg-white/5 border border-white/10" />
+                                        )}
+
+                                        {(b.hyperCharges && b.hyperCharges.length > 0) || b.buffies?.hyperCharge ? (
+                                            <div className="w-8 h-8 rounded bg-pink-900/40 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)] border border-pink-400 flex items-center justify-center relative overflow-hidden" title={`Hypercharge Unlocked`}>
+                                                <div className="absolute inset-0 bg-white/20 animate-pulse pointer-events-none" />
+                                                <img src="/images/bs/hyper.png" alt="Hypercharge" className="w-full h-full object-contain drop-shadow-md z-10 scale-125" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-8 h-8 rounded bg-white/5 border border-white/10" />
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 w-full text-center">
+                                    <div className="text-[10px] text-white/50 uppercase font-bold tracking-widest mb-1.5 pt-3 border-t border-white/10">Owned Equipment</div>
+                                    <div className="flex flex-wrap justify-center gap-1.5">
+                                        {b.gadgetsList?.length > 0 && b.gadgetsList.map((g: any) => (
+                                            <img key={`g-${g.id}`} src={`https://cdn.brawlify.com/gadgets/borderless/${g.id}.png`} className="w-5 h-5 object-contain opacity-70 hover:opacity-100 cursor-help" title={`Gadget: ${g.name}`} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${g.id}.png`; } else if (!t.src.includes('Gadget.png')) { t.src = '/images/bs/icon_gadget.png'; } }} />
+                                        ))}
+                                        {b.starPowersList?.length > 0 && b.starPowersList.map((sp: any) => (
+                                            <img key={`sp-${sp.id}`} src={`https://cdn.brawlify.com/star-powers/borderless/${sp.id}.png`} className="w-5 h-5 object-contain opacity-70 hover:opacity-100 cursor-help" title={`Star Power: ${sp.name}`} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/star-powers/${sp.id}.png`; } else if (!t.src.includes('Star-Power.png')) { t.src = '/images/bs/icon_star_power.png'; } }} />
+                                        ))}
+                                        {b.gearsList?.length > 0 && b.gearsList.map((gear: any) => (
+                                            <img key={`gear-${gear.id}`} src={`https://cdn.brawlify.com/gears/regular/${gear.id}.png`} className="w-5 h-5 object-contain opacity-70 hover:opacity-100 cursor-help" title={`Gear: ${gear.name}`} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>

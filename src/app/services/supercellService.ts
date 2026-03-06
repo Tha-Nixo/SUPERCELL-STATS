@@ -647,7 +647,7 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
     const isSiegeName = (n: string) => n.includes('Wall Wrecker') || n.includes('Battle Blimp') || n.includes('Stone Slammer') || n.includes('Siege Barracks') || n.includes('Log Launcher') || n.includes('Flame Flinger') || n.includes('Battle Drill') || n === 'Drill' || n.includes('Troop Launcher');
     const isPetName = (n: string) => n.includes('L.A.S.S.I') || n.includes('Electro Owl') || n.includes('Mighty Yak') || n.includes('Unicorn') || n.includes('Frosty') || n.includes('Diggy') || n.includes('Poison Lizard') || n.includes('Phoenix') || n.includes('Spirit Fox') || n.includes('Angry Jelly') || n.includes('Sneezy') || n.includes('Greedy Raven');
     const isSuperName = (n: string) => n !== 'Super Yeti' && (n.includes('Super ') || n.includes('Sneaky ') || n.includes('Rocket ') || n === 'Ice Hound' || n === 'Inferno Dragon');
-    const isExtraBaseTroop = (n: string) => ['Skeleton'].includes(n);
+    const isExtraBaseTroop = (n: string) => ['Skeleton', 'Meteor Golem'].includes(n);
 
     const troops = rawTroops
         .filter(t => t.village === 'home' && !isSiegeName(t.name) && !isPetName(t.name) && !isSuperName(t.name) && !isExtraBaseTroop(t.name) && !COC_HEROES[t.name])

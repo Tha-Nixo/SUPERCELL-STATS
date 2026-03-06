@@ -46,15 +46,15 @@ export function CRCardsList({ cards, accent }: CRCardsListProps) {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             {gridCards.map((card) => {
                 const pct = card.maxCount > 0 ? Math.min(100, (card.count / card.maxCount) * 100) : 0;
-                const isMax = card.level === card.maxLevel;
+                const isMax = card.level >= 16;
                 const hasEvolution = card.evolutionLevel && card.evolutionLevel > 0;
 
                 return (
                     <div
                         key={card.id}
                         className={`relative p-3 rounded-2xl border transition-all ${isOwned
-                                ? hasEvolution ? 'bg-purple-900/10 border-purple-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10'
-                                : 'bg-black/40 border-white/5 opacity-60 grayscale hover:grayscale-0 hover:opacity-100'
+                            ? hasEvolution ? 'bg-purple-900/10 border-purple-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                            : 'bg-black/40 border-white/5 opacity-60 grayscale hover:grayscale-0 hover:opacity-100'
                             }`}
                     >
                         {/* Elite / Star Level Badge */}

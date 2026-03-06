@@ -11,7 +11,7 @@ const SUPERCELL_FEATURES = [
 // Official Supercell Fan Kit character images for each game card
 const GAME_CHARACTERS: Record<string, string> = {
   'clash-royale': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC9kbmQ2VmhFUXhkQmZqclBYRHBRZC5wbmcifQ:supercell:Ptfr075q06EczWsn8SQ25LkhQomxHtJzW_dp7erRm-g?width=600',
-  'brawl-stars': 'https://media.brawltime.ninja/brawlers/shelly/model.png',
+  'brawl-stars': '/images/bs/shelly_model.png',
   'clash-of-clans': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC8xTXljUG5nUzZyWkcySndXbVVZUC5wbmcifQ:supercell:lo30eJacosJhqFSlJ9jUUXwm-M3aDPEJ2StgNdoD4aU?width=600',
 };
 
@@ -44,7 +44,7 @@ export default function Home() {
             </div>
 
             <h1 className="flex flex-wrap items-center justify-center gap-4 text-6xl md:text-8xl font-bold text-white mb-6 leading-tight">
-              <img src="https://cdn.supercell.com/supercell.com/221213073743/supercell.com/files/media_logo_supercell_white2x.png" alt="Supercell" className="h-[60px] md:h-[80px] object-contain" />
+              <img src="/images/logos/supercell_logo.png" alt="Supercell" className="h-[60px] md:h-[80px] object-contain" />
               <span className="bg-gradient-to-r from-[#4D7FFF] via-[#FFC800] to-[#8BC34A] bg-clip-text text-transparent">
                 Stats
               </span>
