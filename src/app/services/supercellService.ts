@@ -304,6 +304,7 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
 // Brawlify CDN for brawler portraits — reliable unofficial CDN used widely
 function brawlerImageUrl(id: number): string {
     if (!id) return '';
+    // Local copy preferred, CDN as fallback (CDN images load fine in browser)
     return `https://cdn.brawlify.com/brawlers/borders/${id}.png`;
 }
 

@@ -10,16 +10,16 @@ const SUPERCELL_FEATURES = [
 
 // Official Supercell Fan Kit character images for each game card
 const GAME_CHARACTERS: Record<string, string> = {
-  'clash-royale': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC9kbmQ2VmhFUXhkQmZqclBYRHBRZC5wbmcifQ:supercell:Ptfr075q06EczWsn8SQ25LkhQomxHtJzW_dp7erRm-g?width=600',
+  'clash-royale': '/images/characters/cr_character.png',
   'brawl-stars': '/images/bs/shelly_model.png',
-  'clash-of-clans': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC8xTXljUG5nUzZyWkcySndXbVVZUC5wbmcifQ:supercell:lo30eJacosJhqFSlJ9jUUXwm-M3aDPEJ2StgNdoD4aU?width=600',
+  'clash-of-clans': '/images/characters/coc_character.png',
 };
 
 // Official game logo images from Supercell Fan Kit
 const GAME_LOGOS: Record<string, string> = {
-  'clash-royale': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC9hSldOVloyZ3JNQkhQQzVUM000Ui5wbmcifQ:supercell:m6w5ekixWdEpSr3rhHNOJfh9DXxnYCf-BSSfLIUNKZs?width=300',
-  'brawl-stars': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC9wS0JNWXdhOW51aEFnRG5wSnkzdi5wbmcifQ:supercell:QirzHVs-XdUZ6nYY3QARLhNRZ5ImTEhgF_lY0ehWTmE?width=300',
-  'clash-of-clans': 'https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJwYXRoIjoic3VwZXJjZWxsXC9maWxlXC9Ic1RFOHBEWVk5V2dMNFNwMjZzRS5wbmcifQ:supercell:JN0MDt6Q-ERTDgC6Abgxhu9tgvzwQpOwlqNaC0QM3Jc?width=300',
+  'clash-royale': '/images/logos/cr_logo.png',
+  'brawl-stars': '/images/logos/bs_logo.png',
+  'clash-of-clans': '/images/logos/coc_logo.png',
 };
 
 export default function Home() {
