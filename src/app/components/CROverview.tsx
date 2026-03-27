@@ -1,14 +1,20 @@
+import { useState } from 'react';
 import { PlayerStats } from '../data/mockStats';
-import { Trophy, Star, Crown, Users, TrendingUp } from 'lucide-react';
+import { Trophy, Star, Users, TrendingUp, ChevronDown, ChevronUp, Crown, Shield } from 'lucide-react';
 
 interface CROverviewProps {
     playerStats: PlayerStats;
     accent: string;
+    onTabChange?: (tab: string) => void;
 }
 
-export function CROverview({ playerStats, accent }: CROverviewProps) {
+export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps) {
     const cr = playerStats.gameVisuals?.cr;
+    const [badgesExpanded, setBadgesExpanded] = useState(false);
     if (!cr) return null;
+
+    // Deck preview cards (first 8 from current deck)
+    const deckCards = cr.currentDeck?.slice(0, 8) ?? [];
 
     return (
         <div className="space-y-6">
@@ -25,17 +31,30 @@ export function CROverview({ playerStats, accent }: CROverviewProps) {
                             <Star className="w-4 h-4 text-yellow-400" />
                             <span className="text-white/80">Lvl {playerStats.level}</span>
                             {cr.expPoints !== undefined && cr.expPoints > 0 && (
-                                <span className="text-white/40text-[10px]">({cr.expPoints.toLocaleString()} XP)</span>
+                                <span className="text-white/50 text-[10px]">({cr.expPoints.toLocaleString()} XP)</span>
                             )}
                         </div>
                         <div className="flex items-center gap-2">
                             <Trophy className="w-4 h-4 text-yellow-500" />
                             <span className="text-white/80">{playerStats.hoursPlayed}</span>
-                            <span className="text-white/40text-[10px]">Best: {playerStats.statLabels?.stat4Sub?.replace('Best: ', '')}</span>
+                            <span className="text-white/50 text-[10px]">Best: {playerStats.statLabels?.stat4Sub?.replace('Best: ', '')}</span>
                         </div>
                         {cr.arenaName && (
                             <div className="flex items-center gap-2 border-l border-white/10 pl-4">
-                                {cr.arenaId && <img src={`https://royaleapi.github.io/cr-api-assets/arenas/${cr.arenaId}.png`} className="w-6 h-6 object-contain drop-shadow" alt="Arena" />}
+                                {(cr.arenaIconUrl || cr.arenaId) && <img
+                                    src={cr.arenaIconUrl || `https://api-assets.clashroyale.com/arenas/72/${cr.arenaId}.png`}
+                                    className="w-6 h-6 object-contain drop-shadow"
+                                    alt="Arena"
+                                    onError={(e) => {
+                                        const img = e.target as HTMLImageElement;
+                                        if (!img.dataset.tried) {
+                                            img.dataset.tried = '1';
+                                            img.src = `https://royaleapi.github.io/cr-api-assets/arenas/${cr.arenaId}.png`;
+                                        } else {
+                                            img.style.display = 'none';
+                                        }
+                                    }}
+                                />}
                                 <span className="text-white/80 font-semibold">{cr.arenaName}</span>
                             </div>
                         )}
@@ -44,7 +63,7 @@ export function CROverview({ playerStats, accent }: CROverviewProps) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Colonna 1: Quick Stats & Clan */}
+                {/* Colonna 1: Quick Stats, Clan & Deck Preview */}
                 <div className="space-y-6">
                     {/* Quick Stats */}
                     <div className="p-5 rounded-2xl border border-white/5 bg-white/2">
@@ -72,9 +91,18 @@ export function CROverview({ playerStats, accent }: CROverviewProps) {
                             <div>
                                 <div className="flex items-center gap-3 mb-4">
                                     {cr.clanBadgeUrl ? (
-                                        <img src={cr.clanBadgeUrl} className="w-10 h-10 object-contain" alt="Badge" />
+                                        <img
+                                            src={cr.clanBadgeUrl}
+                                            className="w-10 h-10 object-contain"
+                                            alt="Clan Badge"
+                                            onError={(e) => {
+                                                const img = e.target as HTMLImageElement;
+                                                img.style.display = 'none';
+                                                img.parentElement?.insertAdjacentHTML('afterbegin', '<div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-white/40 text-lg">🛡️</div>');
+                                            }}
+                                        />
                                     ) : (
-                                        <div className="w-10 h-10 rounded-lg bg-white/10" />
+                                        <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-white/40 text-lg"><Shield className="w-5 h-5" /></div>
                                     )}
                                     <div>
                                         <h4 className="text-white font-bold">{playerStats.extraStats?.find(s => s.label === 'Clan')?.value.toString().split(' · ')[0]}</h4>
@@ -102,6 +130,30 @@ export function CROverview({ playerStats, accent }: CROverviewProps) {
                             <div className="text-center py-6 text-white/30 text-sm">Not currently in a Clan</div>
                         )}
                     </div>
+
+                    {/* Deck Preview */}
+                    {deckCards.length > 0 && (
+                        <button
+                            onClick={() => onTabChange?.('deck')}
+                            className="w-full p-4 rounded-2xl border border-white/5 bg-white/2 hover:bg-white/5 hover:border-white/10 transition-all text-left group"
+                        >
+                            <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest mb-3 flex items-center justify-between">
+                                <span>Battle Deck</span>
+                                <span className="text-white/20 group-hover:text-white/50 text-[10px] transition-colors">View →</span>
+                            </h3>
+                            <div className="grid grid-cols-4 gap-1.5">
+                                {deckCards.map((card, i) => (
+                                    <div key={i} className="aspect-[3/4] rounded-lg overflow-hidden bg-black/40 border border-white/10 group-hover:border-white/20 transition-all">
+                                        {card.iconUrl ? (
+                                            <img src={card.iconUrl} alt={card.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-white/20 text-[8px] text-center p-1">{card.name}</div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </button>
+                    )}
                 </div>
 
                 {/* Colonna 2 & 3: Competitive & Badges */}
@@ -172,30 +224,52 @@ export function CROverview({ playerStats, accent }: CROverviewProps) {
                         </div>
                     )}
 
-                    {/* Badges Grid */}
+                    {/* Badges Grid — collapsible, collapsed by default */}
                     {cr.badges && cr.badges.length > 0 && (
-                        <div className="p-5 rounded-2xl border border-white/5 bg-white/2">
-                            <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">Badges</h3>
-                            <div className="flex flex-wrap gap-3">
-                                {cr.badges.map((b, i) => (
-                                    <div key={i} className="group relative w-16 h-16 flex items-center justify-center bg-black/40 rounded-xl border border-white/5 hover:border-white/20 transition-all cursor-help">
-                                        <img src={b.iconUrl} alt={b.name} className="w-12 h-12 object-contain drop-shadow-lg group-hover:scale-110 transition-transform" />
-
-                                        {/* Tooltip */}
-                                        <div className="absolute bottom-full mb-2 bg-gray-900 border border-white/10 text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none drop-shadow-xl min-w-[120px] text-center">
-                                            <div className="font-bold mb-1">{b.name}</div>
-                                            {b.level > 0 && (
-                                                <div className="text-white/60 mb-1">Level {b.level}{b.maxLevel ? ` / ${b.maxLevel}` : ''}</div>
-                                            )}
-                                            {b.target > 0 && (
-                                                <div className="w-full h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
-                                                    <div className="h-full bg-blue-500" style={{ width: `${Math.min(100, (b.progress / b.target) * 100)}%` }} />
-                                                </div>
-                                            )}
+                        <div className="rounded-2xl border border-white/5 bg-white/2 overflow-hidden">
+                            <button
+                                onClick={() => setBadgesExpanded(prev => !prev)}
+                                className="w-full flex items-center justify-between p-5 hover:bg-white/5 transition-colors"
+                            >
+                                <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                                    Badges
+                                    <span className="text-white/20 font-normal normal-case tracking-normal text-[10px]">({cr.badges.length})</span>
+                                </h3>
+                                {badgesExpanded
+                                    ? <ChevronUp className="w-4 h-4 text-white/30" />
+                                    : <ChevronDown className="w-4 h-4 text-white/30" />
+                                }
+                            </button>
+                            {badgesExpanded && (
+                                <div className="px-5 pb-5 flex flex-wrap gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {cr.badges.map((b, i) => (
+                                        <div key={i} className="group relative w-16 h-16 flex items-center justify-center bg-black/40 rounded-xl border border-white/5 hover:border-white/20 transition-all cursor-help">
+                                            <img
+                                                src={b.iconUrl}
+                                                alt={b.name}
+                                                className="w-12 h-12 object-contain drop-shadow-lg group-hover:scale-110 transition-transform"
+                                                onError={(e) => {
+                                                    const img = e.target as HTMLImageElement;
+                                                    img.style.display = 'none';
+                                                    img.parentElement?.insertAdjacentHTML('beforeend', `<span class="text-2xl opacity-40">🏅</span>`);
+                                                }}
+                                            />
+                                            {/* Tooltip */}
+                                            <div className="absolute bottom-full mb-2 bg-gray-900 border border-white/10 text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none drop-shadow-xl min-w-[120px] text-center">
+                                                <div className="font-bold mb-1">{b.name}</div>
+                                                {b.level > 0 && (
+                                                    <div className="text-white/60 mb-1">Level {b.level}{b.maxLevel ? ` / ${b.maxLevel}` : ''}</div>
+                                                )}
+                                                {b.target > 0 && (
+                                                    <div className="w-full h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
+                                                        <div className="h-full bg-blue-500" style={{ width: `${Math.min(100, (b.progress / b.target) * 100)}%` }} />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 

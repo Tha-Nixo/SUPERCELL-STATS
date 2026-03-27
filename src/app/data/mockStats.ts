@@ -197,6 +197,7 @@ export interface GameVisuals {
     clanTag?: string;
     arenaName?: string;
     arenaId?: number;
+    arenaIconUrl?: string;             // direct from API arena.iconUrls
 
     // New fields
     expPoints?: number;
@@ -230,6 +231,7 @@ export interface GameVisuals {
     clubTag?: string;
     club?: BSClubInfo;
     battlelog?: BSBattleLogItem[];
+    iconId?: number;                    // player icon from API (icon.id)
 
     // Global stats
     nameColor?: string;

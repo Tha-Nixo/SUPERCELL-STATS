@@ -50,6 +50,8 @@ const TH_IMAGES: Record<number, string> = {
   14: '/images/coc/townhall/th_14.png',
   15: '/images/coc/townhall/th_15.png',
   16: '/images/coc/townhall/th_16.png',
+  17: '/images/coc/townhall/th_17.png',
+  18: '/images/coc/townhall/th_18.png',
 };
 
 export default function GamePage() {
@@ -224,6 +226,33 @@ export default function GamePage() {
                       src={TH_IMAGES[playerStats.gameVisuals.coc.townHallLevel] || 'https://api-assets.clashofclans.com/townhalls/320/cVBEAFzBDVCWgCBqvGiU4hbcuN0UmqgNAB-LafNXFJ9Q.png'}
                       alt={`TH ${playerStats.gameVisuals.coc.townHallLevel}`}
                       className="w-14 h-14 object-contain filter drop-shadow-md"
+                    />
+                  ) : gameId === 'brawl-stars' && playerStats.gameVisuals?.bs?.iconId ? (
+                    <img
+                      src={`https://cdn.brawlify.com/profile-icons/regular/${playerStats.gameVisuals.bs.iconId}.png`}
+                      alt="Player Icon"
+                      className="w-12 h-12 object-contain filter drop-shadow-md"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        target.parentElement?.insertAdjacentHTML('beforeend', '<span class="text-4xl">⭐</span>');
+                      }}
+                    />
+                  ) : gameId === 'clash-royale' && (playerStats.gameVisuals?.cr?.arenaIconUrl || playerStats.gameVisuals?.cr?.arenaId) ? (
+                    <img
+                      src={playerStats.gameVisuals.cr?.arenaIconUrl || `https://api-assets.clashroyale.com/arenas/72/${playerStats.gameVisuals.cr?.arenaId}.png`}
+                      alt="Arena"
+                      className="w-12 h-12 object-contain filter drop-shadow-md"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.dataset.tried) {
+                          target.dataset.tried = '1';
+                          target.src = `https://royaleapi.github.io/cr-api-assets/arenas/${playerStats.gameVisuals!.cr!.arenaId}.png`;
+                        } else {
+                          target.style.display = 'none';
+                          target.parentElement?.insertAdjacentHTML('beforeend', '<span class="text-4xl">👑</span>');
+                        }
+                      }}
                     />
                   ) : (
                     typeof playerStats.rankIcon === 'string' && playerStats.rankIcon.startsWith('http') ? (

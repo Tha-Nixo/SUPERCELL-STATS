@@ -88,7 +88,8 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
 
     const arenaName: string = player.arena?.name ?? '';
     const arenaId: number | null = player.arena?.id ?? null;
-    const arenaIconUrl = arenaId ? `https://royaleapi.github.io/cr-api-assets/arenas/${arenaId}.png` : '';
+    // Use the actual icon URL from the API — most reliable source
+    const arenaIconUrl: string = player.arena?.iconUrls?.large ?? player.arena?.iconUrls?.medium ?? '';
 
     const expPoints: number = player.expPoints ?? 0;
     const totalExpPoints: number = player.totalExpPoints ?? 0;
@@ -284,6 +285,7 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
                 clanTag,
                 arenaName,
                 arenaId: arenaId || undefined,
+                arenaIconUrl: arenaIconUrl || undefined,
                 expPoints,
                 totalExpPoints,
                 legacyTrophyRoadHighScore,
@@ -539,6 +541,7 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
                 })),
 
                 nameColor: player.nameColor,
+                iconId: player.icon?.id ?? undefined,
                 prestigeLevel: player.totalPrestigeLevel ?? 0,
                 expPoints: player.expPoints ?? 0,
                 victories3v3: player['3vs3Victories'] ?? 0,

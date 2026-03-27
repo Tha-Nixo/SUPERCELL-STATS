@@ -137,9 +137,11 @@ export function CRCardCollection({ cards }: CRCardCollectionProps) {
                     {/* Sort Order Toggle */}
                     <button
                         onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                        className="px-2 py-1 bg-black/40 rounded-lg border border-white/10 text-white/60 hover:text-white text-xs flex items-center gap-1 transition-colors"
+                        className="px-3 py-1 bg-black/40 rounded-lg border border-white/10 text-white/60 hover:text-white text-xs flex items-center gap-1.5 transition-colors shrink-0"
+                        title="Toggle sort order"
                     >
                         {sortOrder === 'desc' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+                        <span>{sortOrder === 'desc' ? 'Desc' : 'Asc'}</span>
                     </button>
                     {cards.length > 16 && (
                         <button

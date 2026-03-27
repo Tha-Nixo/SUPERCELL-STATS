@@ -78,7 +78,7 @@ export function CRProfile({ playerStats, accentUrl, accentColor }: CRProfileProp
                         transition={{ duration: 0.2 }}
                         className="w-full"
                     >
-                        {activeTab === 'overview' && <CROverview playerStats={playerStats} accent={accentColor} />}
+                        {activeTab === 'overview' && <CROverview playerStats={playerStats} accent={accentColor} onTabChange={(tab) => setActiveTab(tab as TabType)} />}
                         {activeTab === 'cards' && <CRCardsList cards={cr.cards} accent={accentColor} />}
                         {activeTab === 'deck' && <CRDeck playerStats={playerStats} accent={accentColor} />}
                         {activeTab === 'tower' && <CRTowerTroops playerStats={playerStats} accent={accentColor} />}

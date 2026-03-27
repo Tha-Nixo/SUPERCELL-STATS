@@ -56,8 +56,9 @@ export function CoCAchievements({ achievements, accent }: CoCAchievementsProps) 
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filtered.map((a, i) => {
-                    const isComplete = a.stars === 3 || a.completionInfo === 'Completed!';
-                    const progressPct = a.target > 0 ? Math.min(100, (a.value / a.target) * 100) : (isComplete ? 100 : 0);
+                    const isComplete = a.stars === 3 || a.completionInfo === 'Completed!' || (a.target > 0 && a.value >= a.target);
+                    const safeTarget = Math.max(a.target, 1);
+                    const progressPct = isComplete ? 100 : a.target > 0 ? Math.min(100, (a.value / safeTarget) * 100) : 0;
 
                     return (
                         <div key={i} className="p-4 rounded-xl border border-white/5 bg-white/5 flex flex-col justify-between">

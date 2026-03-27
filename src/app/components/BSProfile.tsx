@@ -585,7 +585,23 @@ const BSClub = ({ playerStats, accentColor }: { playerStats: PlayerStats, accent
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" style={{ backgroundColor: `${accentColor}20` }} />
 
                 <div className="shrink-0 relative w-24 h-24 md:w-32 md:h-32 drop-shadow-2xl">
-                    <img src={`https://cdn-old.brawlify.com/club/${club.badgeId}.png`} alt="Club Badge" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn-old.brawlify.com/club/8.png'; }} />
+                    <img
+                        src={`https://cdn.brawlify.com/club-icons/regular/${club.badgeId}.png`}
+                        alt="Club Badge"
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                            const img = e.target as HTMLImageElement;
+                            if (!img.dataset.tried) {
+                                img.dataset.tried = '1';
+                                img.src = `https://cdn-old.brawlify.com/club/${club.badgeId}.png`;
+                            } else if (img.dataset.tried === '1') {
+                                img.dataset.tried = '2';
+                                img.src = `https://cdn.brawlify.com/club/${club.badgeId}.png`;
+                            } else {
+                                img.src = 'https://cdn-old.brawlify.com/club/8.png';
+                            }
+                        }}
+                    />
                 </div>
 
                 <div className="flex-1 text-center md:text-left z-10 w-full">
