@@ -354,20 +354,20 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
         let starPowersList = (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name }));
 
         if (name === 'SIRIUS') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000673, name: 'Telescopic Zoom' }, { id: 23000674, name: 'Star Shield' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23000675, name: 'Blinding Light' }, { id: 23000676, name: 'Meteor Crush' }];
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001191, name: 'A Starr Is Born' }, { id: 23001192, name: 'Master Of Shadows' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23001189, name: 'Dusk Runners' }, { id: 23001190, name: 'The Darkest Starr' }];
         }
         if (name === 'GLOWY') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000677, name: 'Lumen Blast' }, { id: 23000678, name: 'Neon Trail' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23000679, name: 'Radiant Aura' }, { id: 23000680, name: 'Glow Up' }];
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001183, name: 'Slippery Savior' }, { id: 23001184, name: 'More Lumens' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23001181, name: 'Biotic Ecosystem' }, { id: 23001182, name: 'Parasitism' }];
         }
         if (name === 'PIERCE') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000681, name: 'Sharp Blade' }, { id: 23000682, name: 'Piercing Dash' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23000683, name: 'Fierce Will' }, { id: 23000684, name: 'Armor Break' }];
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001062, name: 'Bottomless Mags' }, { id: 23001063, name: 'You Only Brawl Twice' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23001060, name: 'Mission Swimpossible' }, { id: 23001061, name: 'Slip N Snipe' }];
         }
         if (name === 'GIGI') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000685, name: 'Tech Support' }, { id: 23000686, name: 'System Override' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23000687, name: 'Firewall' }, { id: 23000688, name: 'Overclock' }];
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001070, name: 'Longer Strings' }, { id: 23001071, name: 'Disappearing Act' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23001068, name: 'Plie Protection' }, { id: 23001069, name: 'A Helping Hand' }];
         }
 
         return {
@@ -423,20 +423,20 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
         let starPowersList = (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name }));
 
         if (name === 'SIRIUS') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000673, name: 'Telescopic Zoom' }, { id: 23000674, name: 'Star Shield' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23000675, name: 'Blinding Light' }, { id: 23000676, name: 'Meteor Crush' }];
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001191, name: 'A Starr Is Born' }, { id: 23001192, name: 'Master Of Shadows' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23001189, name: 'Dusk Runners' }, { id: 23001190, name: 'The Darkest Starr' }];
         }
         if (name === 'GLOWY') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000677, name: 'Lumen Blast' }, { id: 23000678, name: 'Neon Trail' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23000679, name: 'Radiant Aura' }, { id: 23000680, name: 'Glow Up' }];
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001183, name: 'Slippery Savior' }, { id: 23001184, name: 'More Lumens' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23001181, name: 'Biotic Ecosystem' }, { id: 23001182, name: 'Parasitism' }];
         }
         if (name === 'PIERCE') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000681, name: 'Sharp Blade' }, { id: 23000682, name: 'Piercing Dash' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23000683, name: 'Fierce Will' }, { id: 23000684, name: 'Armor Break' }];
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001062, name: 'Bottomless Mags' }, { id: 23001063, name: 'You Only Brawl Twice' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23001060, name: 'Mission Swimpossible' }, { id: 23001061, name: 'Slip N Snipe' }];
         }
         if (name === 'GIGI') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23000685, name: 'Tech Support' }, { id: 23000686, name: 'System Override' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23000687, name: 'Firewall' }, { id: 23000688, name: 'Overclock' }];
+            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001070, name: 'Longer Strings' }, { id: 23001071, name: 'Disappearing Act' }];
+            if (starPowersList.length === 0) starPowersList = [{ id: 23001068, name: 'Plie Protection' }, { id: 23001069, name: 'A Helping Hand' }];
         }
 
         return {

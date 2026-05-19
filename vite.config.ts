@@ -11,21 +11,25 @@ export default defineConfig({
             '/api/clash-royale': {
                 target: 'https://api.clashroyale.com/v1',
                 changeOrigin: true,
+                secure: false,
                 rewrite: (path) => path.replace(/^\/api\/clash-royale/, ''),
             },
             '/api/brawl-stars': {
                 target: 'https://api.brawlstars.com/v1',
                 changeOrigin: true,
+                secure: false,
                 rewrite: (path) => path.replace(/^\/api\/brawl-stars/, ''),
             },
             '/api/clash-of-clans': {
                 target: 'https://api.clashofclans.com/v1',
                 changeOrigin: true,
+                secure: false,
                 rewrite: (path) => path.replace(/^\/api\/clash-of-clans/, ''),
             },
             '/api/tracker': {
                 target: 'https://public-api.tracker.gg/v2',
                 changeOrigin: true,
+                secure: false,
                 rewrite: (path) => path.replace(/^\/api\/tracker/, ''),
             }
         }
