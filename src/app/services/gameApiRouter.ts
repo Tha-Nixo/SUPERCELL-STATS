@@ -1,4 +1,4 @@
-import { apiKeys, ApiKeyName } from './apiKeys';
+import { ApiKeyName, DEMO_MODE } from './apiKeys';
 import { PlayerStats } from '../data/mockStats';
 import { generatePlayerStats } from '../data/mockStats';
 import { searchSupercellPlayer, isValidTag } from './supercellService';
@@ -27,8 +27,10 @@ export async function searchPlayer(gameId: string, input: string): Promise<Searc
         return { data: generatePlayerStats(input, gameId), isReal: false, error: null };
     }
 
-    // Key missing → demo data (page shows an explicit "Demo data" badge)
-    if (!apiKeys.has(config.keyName)) {
+    // Explicit demo mode only (page shows the "Demo data" badge).
+    // A missing client-side key is NOT a reason to mock anymore: in
+    // production the reverse proxy injects the key server-side.
+    if (DEMO_MODE) {
         return { data: generatePlayerStats(input, gameId), isReal: false, error: null };
     }
 

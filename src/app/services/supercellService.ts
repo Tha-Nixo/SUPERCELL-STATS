@@ -55,8 +55,10 @@ async function fetchSupercell<T>(url: string, apiKey: string): Promise<T> {
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     let res: Response;
     try {
+        // No key client-side (production): send no Authorization header —
+        // the reverse proxy injects it server-side.
         res = await fetch(url, {
-            headers: { Authorization: `Bearer ${apiKey}` },
+            headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
             signal: controller.signal,
         });
     } catch (e) {
