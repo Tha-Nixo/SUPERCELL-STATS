@@ -7,22 +7,23 @@ import path from "path";
 export default defineConfig({
     plugins: [react(), tailwindcss()],
     server: {
-        // Dev-only proxy: keeps the Supercell API keys usable from localhost
-        // (the browser cannot call api.*.com directly: CORS + IP-bound keys).
-        // Production needs a real backend proxy — see GitHub issues #2/#3.
+        // Dev-only proxy: keeps the Supercell API keys usable from localhost.
+        // Targets RoyaleAPI's fixed-IP relay (see DEPLOY.md) instead of the
+        // Supercell APIs directly, so dev keys (whitelisted to 45.79.218.79)
+        // work the same way behind a residential dynamic IP as in production.
         proxy: {
             '/api/clash-royale': {
-                target: 'https://api.clashroyale.com/v1',
+                target: 'https://proxy.royaleapi.dev/v1',
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api\/clash-royale/, ''),
             },
             '/api/brawl-stars': {
-                target: 'https://api.brawlstars.com/v1',
+                target: 'https://bsproxy.royaleapi.dev/v1',
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api\/brawl-stars/, ''),
             },
             '/api/clash-of-clans': {
-                target: 'https://api.clashofclans.com/v1',
+                target: 'https://cocproxy.royaleapi.dev/v1',
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api\/clash-of-clans/, ''),
             },
