@@ -280,6 +280,8 @@ export interface PlayerStats {
   totalMatches: number;
   hoursPlayed: number;
   level: number;
+  /** Current trophies as a plain number (source of truth for recent-search cards). */
+  trophies?: number;
   recentMatches: Match[];
   performanceData: PerformancePoint[];
   statLabels?: StatLabels;
