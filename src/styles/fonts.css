@@ -1,17 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+/* Inter is loaded from index.html via <link> (preconnect + non-blocking). */
 
-.font-cr {
-  font-family: 'Clash Royale', 'Inter', sans-serif !important;
+/* Supercell-style display font, self-hosted (public/fonts/). */
+@font-face {
+  font-family: 'Clash';
+  src: url('/fonts/Clash_Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
-.font-bs {
-  font-family: 'Brawl Stars', 'Inter', sans-serif !important;
-}
-
+.font-cr,
+.font-bs,
 .font-coc {
-  font-family: 'Clash Of Clans', 'Inter', sans-serif !important;
+  font-family: 'Clash', 'Inter', sans-serif;
 }
 
-* {
+body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }

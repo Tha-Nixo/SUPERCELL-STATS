@@ -1,10 +1,12 @@
 import { createBrowserRouter } from "react-router";
 import Home from "./pages/Home";
-import GamePage from "./pages/GamePage";
-import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
 
 export const router = createBrowserRouter([
   { path: "/", Component: Home },
-  { path: "/game/:gameId", Component: GamePage },
-  { path: "/profile", Component: Profile },
+  {
+    path: "/game/:gameId",
+    lazy: async () => ({ Component: (await import("./pages/GamePage")).default }),
+  },
+  { path: "*", Component: NotFound },
 ]);

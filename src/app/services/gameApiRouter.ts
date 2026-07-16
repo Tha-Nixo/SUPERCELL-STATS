@@ -1,7 +1,7 @@
-import { apiKeys, ApiKeyName } from './apiKeys';
+import { ApiKeyName, DEMO_MODE } from './apiKeys';
 import { PlayerStats } from '../data/mockStats';
 import { generatePlayerStats } from '../data/mockStats';
-import { searchSupercellPlayer } from './supercellService';
+import { searchSupercellPlayer, isValidTag } from './supercellService';
 
 export interface SearchResult {
     data: PlayerStats | null;
@@ -27,20 +27,24 @@ export async function searchPlayer(gameId: string, input: string): Promise<Searc
         return { data: generatePlayerStats(input, gameId), isReal: false, error: null };
     }
 
-    // Key missing → mock silently
-    if (!apiKeys.has(config.keyName)) {
+    // Explicit demo mode only (page shows the "Demo data" badge).
+    // A missing client-side key is NOT a reason to mock anymore: in
+    // production the reverse proxy injects the key server-side.
+    if (DEMO_MODE) {
         return { data: generatePlayerStats(input, gameId), isReal: false, error: null };
     }
 
-    // Call real API
+    // Reject obviously invalid tags before hitting the API
+    if (!isValidTag(input)) {
+        return { data: null, isReal: false, error: 'Invalid tag: player tags use only the characters 0 2 8 9 P Y L Q G R J C U V.' };
+    }
+
+    // Call real API (errors arrive already user-friendly from fetchSupercell)
     try {
         const data = await config.handler(input, gameId);
         return { data, isReal: true, error: null };
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        if (message.includes('inMaintenance')) {
-            return { data: null, isReal: false, error: 'The game servers are currently in maintenance. Please try again later.' };
-        }
         return { data: null, isReal: false, error: message };
     }
 }

@@ -1,11 +1,19 @@
 import { apiKeys } from './apiKeys';
 import { PlayerStats, Match, BSBrawlerData } from '../data/mockStats';
-type SupercellGame = 'clash-royale' | 'brawl-stars' | 'clash-of-clans' | 'hay-day' | 'boom-beach';
+import { BRAWLER_PATCHES, BRAWLER_RENAMES } from '../data/brawlerPatches';
+type SupercellGame = 'clash-royale' | 'brawl-stars' | 'clash-of-clans';
 
-function normalizeTag(tag: string): string {
-    let t = tag.trim().toUpperCase();
-    if (!t.startsWith('#')) t = '#' + t;
-    return t;
+// Player tags only ever contain these characters; O is a common typo for 0.
+const TAG_CHARSET = /^[0289PYLQGRJCUV]+$/;
+
+export function normalizeTag(tag: string): string {
+    let t = tag.trim().toUpperCase().replace(/^#/, '').replace(/O/g, '0');
+    return '#' + t;
+}
+
+export function isValidTag(tag: string): boolean {
+    const t = normalizeTag(tag).slice(1);
+    return t.length >= 3 && t.length <= 14 && TAG_CHARSET.test(t);
 }
 
 function parseSCDate(battleTime: string | undefined): string {
@@ -31,11 +39,40 @@ function fmtTime(seconds: number): string {
     return parts.length > 0 ? parts.join(' ') : '< 1h';
 }
 
+const FETCH_TIMEOUT_MS = 10_000;
+
+// Map raw Supercell API "reason" codes to messages a visitor can understand.
+function friendlyApiError(status: number, reason: string, fallback: string): string {
+    if (status === 404 || reason === 'notFound') return 'Player not found. Double-check the tag.';
+    if (status === 429) return 'Too many requests — please wait a moment and try again.';
+    if (reason === 'inMaintenance') return 'The game servers are currently in maintenance. Please try again later.';
+    if (reason.startsWith('accessDenied')) return 'API key problem (invalid key or IP not allowed). Check the server configuration.';
+    return fallback || 'Unexpected error from the Supercell API.';
+}
+
 async function fetchSupercell<T>(url: string, apiKey: string): Promise<T> {
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    let res: Response;
+    try {
+        // No key client-side (production): send no Authorization header —
+        // the reverse proxy injects it server-side.
+        res = await fetch(url, {
+            headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
+            signal: controller.signal,
+        });
+    } catch (e) {
+        throw new Error(
+            e instanceof DOMException && e.name === 'AbortError'
+                ? 'The request timed out. Please try again.'
+                : 'Network error while contacting the API.'
+        );
+    } finally {
+        clearTimeout(timer);
+    }
     if (!res.ok) {
         const err = await res.json().catch(() => ({ message: res.statusText }));
-        throw new Error(err?.reason ?? err?.message ?? `HTTP ${res.status}`);
+        throw new Error(friendlyApiError(res.status, String(err?.reason ?? ''), String(err?.message ?? `HTTP ${res.status}`)));
     }
     return res.json() as Promise<T>;
 }
@@ -74,7 +111,7 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
     const wins: number = player.wins ?? 0;
     const losses: number = player.losses ?? 0;
     const total: number = wins + losses;
-    const winRate = total > 0 ? Math.round((wins / total) * 100) : 50;
+    const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
     const trophies: number = player.trophies ?? 0;
     const bestTrophies: number = player.bestTrophies ?? trophies;
     const totalDonations: number = player.totalDonations ?? player.donations ?? 0;
@@ -240,6 +277,7 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
 
     return {
         username: player.name,
+        trophies,
         rank: league || `${trophies} 🏆`,
         rankIcon: arenaIconUrl || '👑',
         winRate,
@@ -273,7 +311,7 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
             { label: 'Total Donations', value: totalDonations.toLocaleString() },
             { label: 'Star Points', value: starPoints.toLocaleString() },
             { label: 'Cards Found', value: `${player.cards?.length ?? 0} / 121` },
-            { label: 'Estimated Time Played', value: fmtTime(estimatedSeconds) },
+            { label: 'Est. Time Played (≈3 min/battle)', value: fmtTime(estimatedSeconds) },
             { label: 'Clan', value: `${clanName} · ${clanRole}` },
         ],
         gameVisuals: {
@@ -310,6 +348,44 @@ function brawlerImageUrl(id: number): string {
     return `https://cdn.brawlify.com/brawlers/borders/${id}.png`;
 }
 
+// Single mapper for API brawler → BSBrawlerData (used for both top and full grids).
+function mapBrawler(b: any): BSBrawlerData {
+    const name: string = BRAWLER_RENAMES[b.name] ?? b.name ?? '?';
+    const patch = BRAWLER_PATCHES[name];
+
+    let gadgetsList = (b.gadgets ?? []).map((g: any) => ({ id: g.id, name: g.name }));
+    let starPowersList = (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name }));
+    if (gadgetsList.length === 0 && patch?.gadgets) gadgetsList = patch.gadgets;
+    if (starPowersList.length === 0 && patch?.starPowers) starPowersList = patch.starPowers;
+
+    return {
+        id: b.id ?? 0,
+        name,
+        power: b.power ?? 1,
+        trophies: b.trophies ?? 0,
+        highestTrophies: b.highestTrophies ?? b.trophies ?? 0,
+        rank: b.rank ?? 1,
+        imageUrl: brawlerImageUrl(b.id),
+
+        prestigeLevel: b.prestigeLevel ?? 0,
+        currentWinStreak: b.currentWinStreak ?? 0,
+        maxWinStreak: b.maxWinStreak ?? 0,
+        skin: b.skin ? { id: b.skin.id, name: b.skin.name } : undefined,
+
+        gadgets: gadgetsList.length,
+        starPowers: starPowersList.length,
+        gadgetsList,
+        starPowersList,
+        gearsList: (b.gears ?? []).map((g: any) => ({ id: g.id, name: g.name })),
+        hyperCharges: (b.hyperCharges ?? []).map((hc: any) => ({ id: hc.id, name: hc.name })),
+        buffies: {
+            gadget: b.buffies?.gadget ?? false,
+            starPower: b.buffies?.starPower ?? false,
+            hyperCharge: b.buffies?.hyperCharge ?? false
+        }
+    };
+}
+
 async function searchBrawlStars(tag: string): Promise<PlayerStats> {
     const key = apiKeys.get('brawlStars');
     const encodedTag = encodeURIComponent(normalizeTag(tag));
@@ -328,7 +404,7 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
 
     const battles: any[] = battleLog.items ?? [];
     const battleWins = battles.filter((b: any) => b.battle?.result === 'victory').length;
-    const winRate = battles.length > 0 ? Math.round((battleWins / battles.length) * 100) : 50;
+    const winRate = battles.length > 0 ? Math.round((battleWins / battles.length) * 100) : 0;
 
     const trophies: number = player.trophies ?? 0;
     const highestTrophies: number = player.highestTrophies ?? trophies;
@@ -346,57 +422,7 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
     const brawlersAt750 = sortedBrawlers.filter((b: any) => b.trophies >= 750).length;
 
     // Top brawlers visual data (top 9 + all for grid)
-    const topBrawlers: BSBrawlerData[] = sortedBrawlers.slice(0, 9).map((b: any) => {
-        let name = b.name ?? '?';
-        if (name === 'GLOWBERT') name = 'GLOWY';
-
-        let gadgetsList = (b.gadgets ?? []).map((g: any) => ({ id: g.id, name: g.name }));
-        let starPowersList = (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name }));
-
-        if (name === 'SIRIUS') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001191, name: 'A Starr Is Born' }, { id: 23001192, name: 'Master Of Shadows' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23001189, name: 'Dusk Runners' }, { id: 23001190, name: 'The Darkest Starr' }];
-        }
-        if (name === 'GLOWY') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001183, name: 'Slippery Savior' }, { id: 23001184, name: 'More Lumens' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23001181, name: 'Biotic Ecosystem' }, { id: 23001182, name: 'Parasitism' }];
-        }
-        if (name === 'PIERCE') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001062, name: 'Bottomless Mags' }, { id: 23001063, name: 'You Only Brawl Twice' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23001060, name: 'Mission Swimpossible' }, { id: 23001061, name: 'Slip N Snipe' }];
-        }
-        if (name === 'GIGI') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001070, name: 'Longer Strings' }, { id: 23001071, name: 'Disappearing Act' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23001068, name: 'Plie Protection' }, { id: 23001069, name: 'A Helping Hand' }];
-        }
-
-        return {
-            id: b.id ?? 0,
-            name: name,
-            power: b.power ?? 1,
-            trophies: b.trophies ?? 0,
-            highestTrophies: b.highestTrophies ?? b.trophies ?? 0,
-            rank: b.rank ?? 1,
-            imageUrl: brawlerImageUrl(b.id),
-
-            prestigeLevel: b.prestigeLevel ?? 0,
-            currentWinStreak: b.currentWinStreak ?? 0,
-            maxWinStreak: b.maxWinStreak ?? 0,
-            skin: b.skin ? { id: b.skin.id, name: b.skin.name } : undefined,
-
-            gadgets: gadgetsList.length,
-            starPowers: starPowersList.length,
-            gadgetsList: gadgetsList,
-            starPowersList: starPowersList,
-            gearsList: (b.gears ?? []).map((g: any) => ({ id: g.id, name: g.name })),
-            hyperCharges: (b.hyperCharges ?? []).map((hc: any) => ({ id: hc.id, name: hc.name })),
-            buffies: {
-                gadget: b.buffies?.gadget ?? false,
-                starPower: b.buffies?.starPower ?? false,
-                hyperCharge: b.buffies?.hyperCharge ?? false
-            }
-        }
-    });
+    const topBrawlers: BSBrawlerData[] = sortedBrawlers.slice(0, 9).map(mapBrawler);
 
     const recentMatches: Match[] = battles.slice(0, 10).map((b: any, i: number) => {
         let mode = b.event?.mode ?? b.battle?.mode ?? 'Brawl';
@@ -415,60 +441,11 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
         };
     });
 
-    const allBrawlers: BSBrawlerData[] = sortedBrawlers.map((b: any) => {
-        let name = b.name ?? '?';
-        if (name === 'GLOWBERT') name = 'GLOWY';
-
-        let gadgetsList = (b.gadgets ?? []).map((g: any) => ({ id: g.id, name: g.name }));
-        let starPowersList = (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name }));
-
-        if (name === 'SIRIUS') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001191, name: 'A Starr Is Born' }, { id: 23001192, name: 'Master Of Shadows' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23001189, name: 'Dusk Runners' }, { id: 23001190, name: 'The Darkest Starr' }];
-        }
-        if (name === 'GLOWY') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001183, name: 'Slippery Savior' }, { id: 23001184, name: 'More Lumens' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23001181, name: 'Biotic Ecosystem' }, { id: 23001182, name: 'Parasitism' }];
-        }
-        if (name === 'PIERCE') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001062, name: 'Bottomless Mags' }, { id: 23001063, name: 'You Only Brawl Twice' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23001060, name: 'Mission Swimpossible' }, { id: 23001061, name: 'Slip N Snipe' }];
-        }
-        if (name === 'GIGI') {
-            if (gadgetsList.length === 0) gadgetsList = [{ id: 23001070, name: 'Longer Strings' }, { id: 23001071, name: 'Disappearing Act' }];
-            if (starPowersList.length === 0) starPowersList = [{ id: 23001068, name: 'Plie Protection' }, { id: 23001069, name: 'A Helping Hand' }];
-        }
-
-        return {
-            id: b.id ?? 0,
-            name: name,
-            power: b.power ?? 1,
-            trophies: b.trophies ?? 0,
-            highestTrophies: b.highestTrophies ?? b.trophies ?? 0,
-            rank: b.rank ?? 1,
-            imageUrl: brawlerImageUrl(b.id),
-
-            prestigeLevel: b.prestigeLevel ?? 0,
-            currentWinStreak: b.currentWinStreak ?? 0,
-            maxWinStreak: b.maxWinStreak ?? 0,
-            skin: b.skin ? { id: b.skin.id, name: b.skin.name } : undefined,
-
-            gadgets: gadgetsList.length,
-            starPowers: starPowersList.length,
-            gadgetsList: gadgetsList,
-            starPowersList: starPowersList,
-            gearsList: (b.gears ?? []).map((g: any) => ({ id: g.id, name: g.name })),
-            hyperCharges: (b.hyperCharges ?? []).map((hc: any) => ({ id: hc.id, name: hc.name })),
-            buffies: {
-                gadget: b.buffies?.gadget ?? false,
-                starPower: b.buffies?.starPower ?? false,
-                hyperCharge: b.buffies?.hyperCharge ?? false
-            }
-        }
-    });
+    const allBrawlers: BSBrawlerData[] = sortedBrawlers.map(mapBrawler);
 
     return {
         username: player.name,
+        trophies,
         rank: `${trophies.toLocaleString()} 🏆`,
         rankIcon: '⭐',
         winRate,
@@ -522,19 +499,19 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
                 } : undefined,
                 battlelog: battles.map((b: any) => ({
                     battleTime: b.battleTime,
-                    event: { id: b.event.id, mode: b.event.mode, map: b.event.map },
+                    event: { id: b.event?.id ?? 0, mode: b.event?.mode ?? b.battle?.mode ?? '', map: b.event?.map ?? '' },
                     battle: {
-                        mode: b.battle.mode,
-                        type: b.battle.type,
-                        result: b.battle.result,
-                        duration: b.battle.duration,
-                        trophyChange: b.battle.trophyChange,
-                        starPlayer: b.battle.starPlayer ? {
+                        mode: b.battle?.mode ?? '',
+                        type: b.battle?.type ?? '',
+                        result: b.battle?.result,
+                        duration: b.battle?.duration,
+                        trophyChange: b.battle?.trophyChange,
+                        starPlayer: b.battle?.starPlayer ? {
                             tag: b.battle.starPlayer.tag,
                             name: b.battle.starPlayer.name,
                             brawler: {
-                                id: b.battle.starPlayer.brawler.id,
-                                name: b.battle.starPlayer.brawler.name,
+                                id: b.battle.starPlayer.brawler?.id ?? 0,
+                                name: b.battle.starPlayer.brawler?.name ?? '',
                             }
                         } : undefined
                     }
@@ -638,7 +615,7 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
     const lifetimeAttackWins = acvMap['Conqueror'] ?? 0;
     const lifetimeDefenseWins = acvMap['Unbreakable'] ?? 0;
     const totalMatches = lifetimeAttackWins + lifetimeDefenseWins;
-    const winRate = totalMatches > 0 ? Math.round((lifetimeAttackWins / totalMatches) * 100) : 50;
+    const winRate = totalMatches > 0 ? Math.round((lifetimeAttackWins / totalMatches) * 100) : 0;
 
     const heroLine = heroList.map(h => `${h.shortName} ${h.level}`).join(' · ') || '—';
     const bm = heroList.find(h => h.shortName === 'BM');
@@ -720,6 +697,7 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
 
     return {
         username: player.name,
+        trophies,
         rank: leagueName,
         rankIcon: '🏰',
         winRate,
@@ -792,9 +770,7 @@ export async function searchSupercellPlayer(tag: string, gameId: SupercellGame):
     switch (gameId) {
         case 'clash-royale': return searchClashRoyale(tag);
         case 'brawl-stars': return searchBrawlStars(tag);
-        case 'clash-of-clans':
-        case 'hay-day':
-        case 'boom-beach': return searchClashOfClans(tag);
+        case 'clash-of-clans': return searchClashOfClans(tag);
         default: throw new Error(`No Supercell handler for ${gameId}`);
     }
 }

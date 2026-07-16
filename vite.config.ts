@@ -7,32 +7,37 @@ import path from "path";
 export default defineConfig({
     plugins: [react(), tailwindcss()],
     server: {
+        // Dev-only proxy: keeps the Supercell API keys usable from localhost
+        // (the browser cannot call api.*.com directly: CORS + IP-bound keys).
+        // Production needs a real backend proxy — see GitHub issues #2/#3.
         proxy: {
             '/api/clash-royale': {
                 target: 'https://api.clashroyale.com/v1',
                 changeOrigin: true,
-                secure: false,
                 rewrite: (path) => path.replace(/^\/api\/clash-royale/, ''),
             },
             '/api/brawl-stars': {
                 target: 'https://api.brawlstars.com/v1',
                 changeOrigin: true,
-                secure: false,
                 rewrite: (path) => path.replace(/^\/api\/brawl-stars/, ''),
             },
             '/api/clash-of-clans': {
                 target: 'https://api.clashofclans.com/v1',
                 changeOrigin: true,
-                secure: false,
                 rewrite: (path) => path.replace(/^\/api\/clash-of-clans/, ''),
             },
-            '/api/tracker': {
-                target: 'https://public-api.tracker.gg/v2',
-                changeOrigin: true,
-                secure: false,
-                rewrite: (path) => path.replace(/^\/api\/tracker/, ''),
-            }
         }
+    },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    react: ['react', 'react-dom', 'react-router'],
+                    charts: ['recharts'],
+                    motion: ['motion'],
+                },
+            },
+        },
     },
     resolve: {
         alias: {

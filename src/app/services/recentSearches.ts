@@ -35,7 +35,8 @@ export function saveRecentSearch(gameId: string, tag: string, stats: PlayerStats
         // Remove duplicates of the same player tag within the same game
         const filteredList = list.filter(item => !(item.gameId === gameId && item.tag === tag));
 
-        let trophies = 0;
+        // Numeric trophies come straight from the service; no string re-parsing.
+        const trophies = stats.trophies ?? 0;
         let thLevel = undefined;
         let clanName = undefined;
         let leagueUrl = undefined;
@@ -46,16 +47,7 @@ export function saveRecentSearch(gameId: string, tag: string, stats: PlayerStats
                 thLevel = coc.townHallLevel;
                 clanName = coc.clanName;
                 leagueUrl = coc.leagueBadgeUrl;
-                // Parse trophies from stat4Value "6984 🏆" or similar
-                const tr = stats.statLabels?.stat4Value?.match(/(\d+[,.]?\d*)/)?.[0]?.replace(/[,.]/g, '');
-                if (tr) trophies = parseInt(tr, 10);
             }
-        } else if (gameId === 'clash-royale') {
-            const crTrophies = stats.statLabels?.stat4Value?.match(/(\d+[,.]?\d*)/)?.[0]?.replace(/[,.]/g, '');
-            if (crTrophies) trophies = parseInt(crTrophies, 10);
-        } else if (gameId === 'brawl-stars') {
-            const bsTrophies = stats.statLabels?.stat4Value?.match(/(\d+[,.]?\d*)/)?.[0]?.replace(/[,.]/g, '');
-            if (bsTrophies) trophies = parseInt(bsTrophies, 10);
         }
 
         const newEntry: RecentSearch = {
