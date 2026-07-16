@@ -72,6 +72,12 @@ export default function GamePage() {
     }
   }, [gameId]);
 
+  // Per-game document title
+  useEffect(() => {
+    if (game) document.title = `${game.name} Stats — Supercell Stats`;
+    return () => { document.title = 'Supercell Stats'; };
+  }, [game]);
+
   if (!game) {
     return (
       <div className="min-h-screen bg-[#0B0F1A] flex items-center justify-center">
@@ -83,29 +89,29 @@ export default function GamePage() {
     );
   }
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchInput.trim()) return;
+  const performSearch = async (tag: string) => {
+    const trimmed = tag.trim();
+    if (!trimmed || isLoading) return;
     setIsLoading(true);
     setResult(null);
-    const res = await searchPlayer(gameId!, searchInput.trim());
+    const res = await searchPlayer(gameId!, trimmed);
     setResult(res);
     setIsLoading(false);
 
     if (res.data) {
-      saveRecentSearch(gameId!, searchInput.trim(), res.data);
+      saveRecentSearch(gameId!, trimmed, res.data);
       setRecentSearches(getRecentSearches(gameId!));
     }
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    void performSearch(searchInput);
+  };
+
   const handleRecentClick = (tag: string) => {
     setSearchInput(tag);
-    // Automatically trigger search
-    // We need state to update first, so we'll just run the search
-    setTimeout(() => {
-      const form = document.querySelector('form') as HTMLFormElement;
-      if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-    }, 0);
+    void performSearch(tag);
   };
 
   const handleDeleteRecent = (tag: string, e: React.MouseEvent) => {
@@ -164,9 +170,10 @@ export default function GamePage() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Enter Player Tag (e.g., #ABC123)"
+                  aria-label="Player tag"
                   className="w-full px-5 py-4 pr-14 bg-black/35 backdrop-blur-lg border-2 border-white/20 rounded-2xl text-white placeholder-white/35 focus:outline-none focus:border-white/50 transition-all"
                 />
-                <button type="submit" disabled={isLoading}
+                <button type="submit" disabled={isLoading} aria-label="Search player"
                   className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-xl disabled:opacity-50 hover:brightness-110 transition-all"
                   style={{ backgroundColor: game.accent }}>
                   {isLoading
@@ -190,7 +197,9 @@ export default function GamePage() {
             <div className="max-w-5xl mx-auto flex items-center gap-4 p-5 rounded-2xl bg-red-500/10 border border-red-500/30">
               <WifiOff className="w-6 h-6 text-red-400 shrink-0" />
               <div>
-                <p className="text-red-300 font-semibold">Player not found</p>
+                <p className="text-red-300 font-semibold">
+                  {result.error.toLowerCase().includes('not found') ? 'Player not found' : 'Search failed'}
+                </p>
                 <p className="text-red-300/70 text-sm mt-0.5">{result.error}</p>
               </div>
             </div>
@@ -198,14 +207,21 @@ export default function GamePage() {
         )}
       </AnimatePresence>
 
-      {/* ─── Live badge ─── */}
-      {result?.isReal && playerStats && (
+      {/* ─── Live / Demo badge ─── */}
+      {playerStats && (
         <div className="px-6 pt-6">
           <div className="max-w-5xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-semibold">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              Live · Official Supercell API
-            </div>
+            {result?.isReal ? (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-semibold">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                Live · Official Supercell API
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-semibold">
+                <div className="w-2 h-2 rounded-full bg-yellow-400" />
+                Demo data · API key not configured — stats are randomly generated
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -234,6 +250,8 @@ export default function GamePage() {
                       className="w-12 h-12 object-contain filter drop-shadow-md"
                       onError={(e) => {
                         const target = e.currentTarget;
+                        if (target.dataset.fallback) return;
+                        target.dataset.fallback = '1';
                         target.style.display = 'none';
                         target.parentElement?.insertAdjacentHTML('beforeend', '<span class="text-4xl">⭐</span>');
                       }}
@@ -262,6 +280,8 @@ export default function GamePage() {
                         className="w-12 h-12 object-contain filter drop-shadow-md"
                         onError={(e) => {
                           const target = e.currentTarget;
+                          if (target.dataset.fallback) return;
+                          target.dataset.fallback = '1';
                           target.style.display = 'none';
                           target.parentElement?.insertAdjacentHTML('beforeend', '<span class="text-4xl text-white drop-shadow-md">👑</span>');
                         }}
@@ -476,6 +496,7 @@ export default function GamePage() {
                       >
                         <button
                           onClick={(e) => handleDeleteRecent(r.tag, e)}
+                          aria-label={`Remove ${r.username} from recent searches`}
                           className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/10 hover:bg-red-500/80 flex items-center justify-center text-white/50 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
                         >
                           ×
