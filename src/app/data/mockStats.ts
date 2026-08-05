@@ -91,7 +91,10 @@ export interface BSBattleLogItem {
   battle: {
     mode: string;
     type: string;
+    /** Team modes only; Showdown is normalised into this by the service. */
     result?: string;
+    /** Showdown placement, kept for display. */
+    rank?: number;
     duration?: number;
     trophyChange?: number;
     starPlayer?: { tag: string; name: string; brawler: { id: number; name: string } };
@@ -282,6 +285,8 @@ export interface PlayerStats {
   level: number;
   /** Current trophies as a plain number (source of truth for recent-search cards). */
   trophies?: number;
+  /** Set when part of the payload could not be fetched, so the UI can say so instead of showing a confident zero. */
+  dataNotice?: string;
   recentMatches: Match[];
   performanceData: PerformancePoint[];
   statLabels?: StatLabels;
@@ -301,10 +306,13 @@ export interface Match {
   duration: string;
 }
 
+/** One battle on the trophy trend: where the player stood after it, and by how much it moved. */
 export interface PerformancePoint {
   date: string;
-  winRate: number;
-  kd: number;
+  trophies: number;
+  delta: number;
+  mode?: string;
+  result?: 'win' | 'loss' | 'draw';
 }
 
 const ranks = [
@@ -329,6 +337,7 @@ export const generatePlayerStats = (username: string, gameId: string): PlayerSta
   const totalMatches = 100 + (hash % 500);
   const hoursPlayed = 50 + (hash % 450);
   const level = 20 + (hash % 80);
+  const trophies = 2000 + (hash % 6000);
 
   const recentMatches: Match[] = Array.from({ length: 10 }, (_, i) => {
     const matchHash = hash + i;
@@ -345,12 +354,16 @@ export const generatePlayerStats = (username: string, gameId: string): PlayerSta
     };
   });
 
-  const performanceData: PerformancePoint[] = Array.from({ length: 14 }, (_, i) => {
-    const dayHash = hash + i * 100;
+  // Trophy walk ending on the player's current trophy count.
+  const deltas = Array.from({ length: 14 }, (_, i) => ((hash + i * 37) % 2 === 0 ? 1 : -1) * (20 + ((hash + i * 13) % 15)));
+  let running = trophies - deltas.reduce((a, b) => a + b, 0);
+  const performanceData: PerformancePoint[] = deltas.map((delta, i) => {
+    running += delta;
     return {
       date: new Date(Date.now() - (13 - i) * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      winRate: Math.max(30, Math.min(70, winRate + ((dayHash % 20) - 10))),
-      kd: Math.max(0.5, Math.min(3, kd + ((dayHash % 10) / 10 - 0.5)))
+      trophies: running,
+      delta,
+      result: delta > 0 ? ('win' as const) : ('loss' as const),
     };
   });
 
@@ -383,7 +396,7 @@ export const generatePlayerStats = (username: string, gameId: string): PlayerSta
       id: 26000000 + k,
       name: `Card ${k + 1}`,
       level: 1 + (hash + k) % 15,
-      maxLevel: 15,
+      maxLevel: 16,
       count: (hash * k) % 1000,
       maxCount: 1000,
       iconUrl: '',
@@ -435,6 +448,7 @@ export const generatePlayerStats = (username: string, gameId: string): PlayerSta
     totalMatches,
     hoursPlayed,
     level,
+    trophies,
     recentMatches,
     performanceData,
     gameVisuals

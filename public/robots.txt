@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Player pages are generated per tag: infinite, thin, and useless to index.
+Disallow: /game/*/player/
+
+Sitemap: https://supercellstats.com/sitemap.xml

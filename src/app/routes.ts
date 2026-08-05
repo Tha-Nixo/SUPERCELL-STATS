@@ -8,5 +8,11 @@ export const router = createBrowserRouter([
     path: "/game/:gameId",
     lazy: async () => ({ Component: (await import("./pages/GamePage")).default }),
   },
+  {
+    // A searched player gets a real address: shareable, bookmarkable, and
+    // survives a refresh or the back button.
+    path: "/game/:gameId/player/:tag",
+    lazy: async () => ({ Component: (await import("./pages/GamePage")).default }),
+  },
   { path: "*", Component: NotFound },
 ]);

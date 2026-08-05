@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CoCTroopData } from '../data/mockStats';
+import { resolveCocIcon } from '../data/cocIconIndex';
 
 interface CoCArmyDisplayProps {
     troops?: CoCTroopData[];
@@ -11,124 +12,139 @@ interface CoCArmyDisplayProps {
     accent: string;
 }
 
+// Once a name/category resolves to a real file we keep it, so remounting the grid
+// (tab switches, filter changes) never re-walks the candidate list.
+const resolvedIconCache = new Map<string, string>();
+
+function buildCandidatePaths(rawName: string, category: string): string[] {
+    const formatName = rawName.replace(/ /g, '_');
+    const baseName = rawName.replace(/ Spell$/i, '').replace(/ /g, '_');
+    const petsName = formatName.replace(/\./g, '');
+
+    const pathsToTry: string[] = [];
+
+    if (category === 'Troops') {
+        pathsToTry.push(`/images/coc/troops/Icon_HV_${formatName}.webp`);
+        if (rawName === 'Minion') pathsToTry.push(`/images/coc/troops/Icon_HV_Minion.webp`);
+        if (rawName === 'Skeleton') pathsToTry.push(`/images/coc/troops/Icon_HV_Skeleton.webp`);
+        if (rawName === 'Apprentice Warden') pathsToTry.push(`/images/coc/troops/Icon_HV_Apprentice_Warden.webp`);
+        if (rawName === 'Druid') pathsToTry.push(`/images/coc/troops/Druid_HV_01.webp`);
+        if (rawName === 'Electro Titan') pathsToTry.push(`/images/coc/troops/Icon_HV_Electro_Titan.webp`);
+        if (rawName === 'Root Rider') pathsToTry.push(`/images/coc/troops/Icon_HV_Root_Rider.webp`);
+        if (rawName === 'Dragon Rider') pathsToTry.push(`/images/coc/troops/Icon_HV_Dragon_Rider.webp`);
+        if (rawName === 'Meteor Golem') pathsToTry.push(
+            `/images/coc/troops/Icon_HV_Meteor_Golem.webp`,
+            `/images/coc/troops/MeteoriteGolem_withGrassbase_f22_3k.webp`,
+            `/images/coc/troops/Icon_HV_Meteorite_Golem.webp`
+        );
+        if (rawName === 'Furnace') pathsToTry.push(`/images/coc/troops/Icon_HV_Furnace.webp`);
+        if (rawName === 'Thrower') pathsToTry.push(`/images/coc/troops/Thrower_05_grass.webp`);
+        if (rawName === 'Sneezy') pathsToTry.push(`/images/coc/troops/Icon_HV_Sneaky_Goblin.webp`);
+        if (rawName === 'Greedy Raven') pathsToTry.push(`/images/coc/pets/pet_Greedy_Raven_3_grasspng.webp`, `/images/coc/pets/Raven.webp`);
+        pathsToTry.push(`/images/coc/clan_capital/Icon_CC_Troop_${formatName}.webp`);
+        pathsToTry.push(`/images/coc/builder_base/Icon_BB_${formatName}.webp`);
+    } else if (category === 'Super Troops') {
+        pathsToTry.push(`/images/coc/troops/Icon_HV_${formatName}.webp`);
+        pathsToTry.push(`/images/coc/troops/Icon_HV_Super_${formatName}.webp`);
+        if (rawName === 'Rocket Balloon') pathsToTry.push(`/images/coc/troops/Icon_HV_Super_Rocket_Balloon.webp`);
+        if (rawName === 'Ice Hound') pathsToTry.push(`/images/coc/troops/Icon_HV_Super_Ice_Hound.webp`, `/images/coc/troops/Icon_HV_Ice_Hound.webp`);
+        if (rawName === 'Super Yeti') pathsToTry.push(`/images/coc/troops/icon_super_yeti.webp`);
+        if (rawName === 'Inferno Dragon') pathsToTry.push(`/images/coc/troops/Icon_HV_Super_Inferno_Dragon.webp`, `/images/coc/troops/Icon_HV_Inferno_Dragon.webp`, `/images/coc/troops/Icon_HV_Super_Infernodragon.webp`);
+        if (rawName === 'Sneaky Goblin') pathsToTry.push(`/images/coc/troops/Icon_HV_Sneaky_Goblin.webp`);
+    } else if (category === 'Builder Base') {
+        pathsToTry.push(`/images/coc/builder_base/Icon_BB_${formatName}.webp`);
+        if (rawName === 'Power P.E.K.K.A') pathsToTry.push(`/images/coc/builder_base/Icon_BB_Power_P.E.K.K.A.webp`);
+    } else if (category === 'Spells') {
+        if (rawName === 'Lightning Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_Lightning_new.webp`, `/images/coc/spells/Icon_HV_Spell_Lightning.webp`, `/images/coc/spells/lightning_spell.webp`);
+        pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_${baseName}.webp`);
+        pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_${baseName}.webp`);
+        pathsToTry.push(`/images/coc/spells/Icon_CC_Spell_${baseName}.webp`);
+        pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_${baseName}_new.webp`);
+        pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_${baseName}_new.webp`);
+        if (rawName === 'Poison Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Poison.webp`);
+        if (rawName === 'Earthquake Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Earthquake.webp`);
+        if (rawName === 'Haste Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Haste.webp`);
+        if (rawName === 'Skeleton Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Skeleton.webp`);
+        if (rawName === 'Bat Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Bat.webp`);
+        if (rawName === 'Overgrowth Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Overgrowth.webp`);
+        if (rawName === 'Healing Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_Heal.webp`);
+        if (rawName.includes('Ice')) pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Ice_block.webp`);
+        if (rawName === 'Invisibility Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_Invisibility.webp`);
+        if (rawName === 'Recall Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_Recall.webp`);
+        if (rawName === 'Revive Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_Revive.webp`);
+        if (rawName === 'Totem Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_totem.webp`);
+    } else if (category === 'Siege Machines') {
+        pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_${formatName}.webp`);
+        if (rawName === 'Wall Wrecker') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Wall_Wrecker.webp`);
+        if (rawName === 'Battle Blimp') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Battle_Blimp.webp`);
+        if (rawName === 'Stone Slammer') pathsToTry.push(`/images/coc/siege_machines/Siege_Machine_HV_Stone_Slammer_2.webp`, `/images/coc/siege_machines/Icon_HV_Siege_Machine_Stone_Slammer.webp`);
+        if (rawName === 'Siege Barracks') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Siege_Barracks.webp`);
+        if (rawName === 'Log Launcher') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Log_Launcher.webp`);
+        if (rawName === 'Flame Flinger') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Flame_Flinger.webp`);
+        if (rawName === 'Battle Drill' || rawName === 'Drill') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Battle_Drill.webp`);
+        if (rawName === 'Troop Launcher') pathsToTry.push(`/images/coc/siege_machines/icon_troop_launcher.webp`);
+    } else if (category === 'Hero Pets') {
+        pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_${petsName}.webp`);
+        pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_${formatName}.webp`);
+        if (rawName === 'L.A.S.S.I') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_LASSI.webp`);
+        if (rawName === 'Mighty Yak') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_Mighty_Yak.webp`);
+        if (rawName === 'Electro Owl') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_Electro_Owl.webp`);
+        if (rawName === 'Poison Lizard') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_Poison_Lizard.webp`);
+        if (rawName === 'Spirit Fox') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_Spirit_Fox.webp`);
+        if (rawName === 'Angry Jelly') pathsToTry.push(`/images/coc/pets/Hero_Pet_HV_Angry_Jelly_02.webp`, `/images/coc/pets/jelly_2024.webp`);
+        if (rawName === 'Raven') pathsToTry.push(`/images/coc/pets/pet_Greedy_Raven_3_grasspng.webp`, `/images/coc/pets/Raven.webp`);
+        if (rawName === 'Vampbat') pathsToTry.push(`/images/coc/pets/Vampbat.webp`);
+        // Greedy Crow — try multiple name variants
+        if (rawName === 'Greedy Crow' || rawName === 'Greedy Raven') {
+            pathsToTry.push(
+                `/images/coc/pets/Icon_HV_Hero_Pets_Greedy_Crow.webp`,
+                `/images/coc/pets/Icon_HV_Hero_Pets_Greedy_Raven.webp`,
+                `/images/coc/pets/pet_Greedy_Raven_3_grasspng.webp`,
+                `/images/coc/pets/Raven.webp`,
+                `/images/coc/pets/Greedy_Crow.webp`
+            );
+        }
+    }
+
+    pathsToTry.push(`/images/coc/troops/${rawName.toLowerCase().replace(/ /g, '_')}.webp`);
+
+    // Resolve against the build-time index instead of letting the browser
+    // discover the misses. In production a missing icon is not a 404 — the SPA
+    // fallback answers 200 with index.html — so every wrong candidate cost a
+    // full request that could only fail at decode time.
+    const found = resolveCocIcon(pathsToTry);
+    return found ? [found] : [];
+}
+
 function TroopIcon({ troop, category, accent }: { troop: CoCTroopData; category: string; accent: string }) {
-    const [hasError, setHasError] = useState(false);
+    const cacheKey = `${category}|${troop.name}`;
+    // The rendered <img> walks the candidate list itself, so nothing is fetched
+    // until the browser decides the tile is worth loading.
+    const paths = useMemo(() => {
+        const cached = resolvedIconCache.get(cacheKey);
+        if (cached !== undefined) return cached ? [cached] : [];
+        return buildCandidatePaths(troop.name, category);
+    }, [cacheKey, troop.name, category]);
+
+    const [idx, setIdx] = useState(0);
     const [loaded, setLoaded] = useState(false);
-    const [imgSrc, setImgSrc] = useState<string>('');
 
     useEffect(() => {
-        const formatName = troop.name.replace(/ /g, '_');
-        const baseName = troop.name.replace(/ Spell$/i, '').replace(/ /g, '_');
-        const petsName = formatName.replace(/\./g, '');
-
-        const pathsToTry: string[] = [];
-        const rawName = troop.name;
-
-        if (category === 'Troops') {
-            pathsToTry.push(`/images/coc/troops/Icon_HV_${formatName}.png`);
-            if (rawName === 'Minion') pathsToTry.push(`/images/coc/troops/Icon_HV_Minion.png`);
-            if (rawName === 'Skeleton') pathsToTry.push(`/images/coc/troops/Icon_HV_Skeleton.png`);
-            if (rawName === 'Apprentice Warden') pathsToTry.push(`/images/coc/troops/Icon_HV_Apprentice_Warden.png`);
-            if (rawName === 'Druid') pathsToTry.push(`/images/coc/troops/Druid_HV_01.png`);
-            if (rawName === 'Electro Titan') pathsToTry.push(`/images/coc/troops/Icon_HV_Electro_Titan.png`);
-            if (rawName === 'Root Rider') pathsToTry.push(`/images/coc/troops/Icon_HV_Root_Rider.png`);
-            if (rawName === 'Dragon Rider') pathsToTry.push(`/images/coc/troops/Icon_HV_Dragon_Rider.png`);
-            if (rawName === 'Meteor Golem') pathsToTry.push(
-                `/images/coc/troops/Icon_HV_Meteor_Golem.png`,
-                `/images/coc/troops/MeteoriteGolem_withGrassbase_f22_3k.png`,
-                `/images/coc/troops/Icon_HV_Meteorite_Golem.png`
-            );
-            if (rawName === 'Furnace') pathsToTry.push(`/images/coc/troops/Icon_HV_Furnace.png`);
-            if (rawName === 'Thrower') pathsToTry.push(`/images/coc/troops/Thrower_05_grass.png`);
-            if (rawName === 'Sneezy') pathsToTry.push(`/images/coc/troops/Icon_HV_Sneaky_Goblin.png`);
-            if (rawName === 'Greedy Raven') pathsToTry.push(`/images/coc/pets/pet_Greedy_Raven_3_grasspng.png`, `/images/coc/pets/Raven.png`);
-            pathsToTry.push(`/images/coc/clan_capital/Icon_CC_Troop_${formatName}.png`);
-            pathsToTry.push(`/images/coc/builder_base/Icon_BB_${formatName}.png`);
-        } else if (category === 'Super Troops') {
-            pathsToTry.push(`/images/coc/troops/Icon_HV_${formatName}.png`);
-            pathsToTry.push(`/images/coc/troops/Icon_HV_Super_${formatName}.png`);
-            if (rawName === 'Rocket Balloon') pathsToTry.push(`/images/coc/troops/Icon_HV_Super_Rocket_Balloon.png`);
-            if (rawName === 'Ice Hound') pathsToTry.push(`/images/coc/troops/Icon_HV_Super_Ice_Hound.png`, `/images/coc/troops/Icon_HV_Ice_Hound.png`);
-            if (rawName === 'Super Yeti') pathsToTry.push(`/images/coc/troops/icon_super_yeti.png`);
-            if (rawName === 'Inferno Dragon') pathsToTry.push(`/images/coc/troops/Icon_HV_Super_Inferno_Dragon.png`, `/images/coc/troops/Icon_HV_Inferno_Dragon.png`, `/images/coc/troops/Icon_HV_Super_Infernodragon.png`);
-            if (rawName === 'Sneaky Goblin') pathsToTry.push(`/images/coc/troops/Icon_HV_Sneaky_Goblin.png`);
-        } else if (category === 'Builder Base') {
-            pathsToTry.push(`/images/coc/builder_base/Icon_BB_${formatName}.png`);
-            if (rawName === 'Power P.E.K.K.A') pathsToTry.push(`/images/coc/builder_base/Icon_BB_Power_P.E.K.K.A.png`);
-        } else if (category === 'Spells') {
-            if (rawName === 'Lightning Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_Lightning_new.png`, `/images/coc/spells/Icon_HV_Spell_Lightning.png`, `/images/coc/spells/lightning_spell.png`);
-            pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_${baseName}.png`);
-            pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_${baseName}.png`);
-            pathsToTry.push(`/images/coc/spells/Icon_CC_Spell_${baseName}.png`);
-            pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_${baseName}_new.png`);
-            pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_${baseName}_new.png`);
-            if (rawName === 'Poison Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Poison.png`);
-            if (rawName === 'Earthquake Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Earthquake.png`);
-            if (rawName === 'Haste Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Haste.png`);
-            if (rawName === 'Skeleton Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Skeleton.png`);
-            if (rawName === 'Bat Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Bat.png`);
-            if (rawName === 'Overgrowth Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Overgrowth.png`);
-            if (rawName === 'Healing Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_Heal.png`);
-            if (rawName.includes('Ice')) pathsToTry.push(`/images/coc/spells/Icon_HV_Dark_Spell_Ice_block.png`);
-            if (rawName === 'Invisibility Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_Invisibility.png`);
-            if (rawName === 'Recall Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_Recall.png`);
-            if (rawName === 'Revive Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_Revive.png`);
-            if (rawName === 'Totem Spell') pathsToTry.push(`/images/coc/spells/Icon_HV_Spell_totem.png`);
-        } else if (category === 'Siege Machines') {
-            pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_${formatName}.png`);
-            if (rawName === 'Wall Wrecker') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Wall_Wrecker.png`);
-            if (rawName === 'Battle Blimp') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Battle_Blimp.png`);
-            if (rawName === 'Stone Slammer') pathsToTry.push(`/images/coc/siege_machines/Siege_Machine_HV_Stone_Slammer_2.png`, `/images/coc/siege_machines/Icon_HV_Siege_Machine_Stone_Slammer.png`);
-            if (rawName === 'Siege Barracks') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Siege_Barracks.png`);
-            if (rawName === 'Log Launcher') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Log_Launcher.png`);
-            if (rawName === 'Flame Flinger') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Flame_Flinger.png`);
-            if (rawName === 'Battle Drill' || rawName === 'Drill') pathsToTry.push(`/images/coc/siege_machines/Icon_HV_Siege_Machine_Battle_Drill.png`);
-            if (rawName === 'Troop Launcher') pathsToTry.push(`/images/coc/siege_machines/icon_troop_launcher.png`);
-        } else if (category === 'Hero Pets') {
-            pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_${petsName}.png`);
-            pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_${formatName}.png`);
-            if (rawName === 'L.A.S.S.I') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_LASSI.png`);
-            if (rawName === 'Mighty Yak') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_Mighty_Yak.png`);
-            if (rawName === 'Electro Owl') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_Electro_Owl.png`);
-            if (rawName === 'Poison Lizard') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_Poison_Lizard.png`);
-            if (rawName === 'Spirit Fox') pathsToTry.push(`/images/coc/pets/Icon_HV_Hero_Pets_Spirit_Fox.png`);
-            if (rawName === 'Angry Jelly') pathsToTry.push(`/images/coc/pets/Hero_Pet_HV_Angry_Jelly_02.png`, `/images/coc/pets/jelly_2024.png`);
-            if (rawName === 'Raven') pathsToTry.push(`/images/coc/pets/pet_Greedy_Raven_3_grasspng.png`, `/images/coc/pets/Raven.png`);
-            if (rawName === 'Vampbat') pathsToTry.push(`/images/coc/pets/Vampbat.png`);
-            // Greedy Crow — try multiple name variants
-            if (rawName === 'Greedy Crow' || rawName === 'Greedy Raven') {
-                pathsToTry.push(
-                    `/images/coc/pets/Icon_HV_Hero_Pets_Greedy_Crow.png`,
-                    `/images/coc/pets/Icon_HV_Hero_Pets_Greedy_Raven.png`,
-                    `/images/coc/pets/pet_Greedy_Raven_3_grasspng.png`,
-                    `/images/coc/pets/Raven.png`,
-                    `/images/coc/pets/Greedy_Crow.png`
-                );
-            }
-        }
-
-        pathsToTry.push(`/images/coc/troops/${troop.name.toLowerCase().replace(/ /g, '_')}.png`);
-
-        let currentIdx = 0;
-        let isMounted = true;
-
-        const tryNextImage = () => {
-            if (currentIdx >= pathsToTry.length) {
-                if (isMounted) { setHasError(true); setLoaded(true); }
-                return;
-            }
-            const img = new Image();
-            img.src = pathsToTry[currentIdx];
-            img.onload = () => { if (isMounted) { setImgSrc(pathsToTry[currentIdx]); setLoaded(true); } };
-            img.onerror = () => { currentIdx++; tryNextImage(); };
-        };
-
+        setIdx(0);
         setLoaded(false);
-        setHasError(false);
-        tryNextImage();
+    }, [paths]);
 
-        return () => { isMounted = false; };
-    }, [troop.name, category]);
+    const hasError = idx >= paths.length;
+
+    const handleLoad = () => {
+        resolvedIconCache.set(cacheKey, paths[idx]);
+        setLoaded(true);
+    };
+
+    const handleError = () => {
+        if (idx + 1 >= paths.length) resolvedIconCache.set(cacheKey, '');
+        setIdx(idx + 1);
+    };
 
     return (
         <div
@@ -138,11 +154,17 @@ function TroopIcon({ troop, category, accent }: { troop: CoCTroopData; category:
             <div className={`absolute inset-0 flex items-center justify-center text-white font-black text-xl drop-shadow-md transition-opacity duration-300 ${hasError ? 'opacity-100' : 'opacity-0'}`}>
                 {troop.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()}
             </div>
-            {imgSrc && (
+            {!hasError && (
                 <img
-                    src={imgSrc}
+                    src={paths[idx]}
                     alt={troop.name}
-                    className={`w-full h-full object-contain filter drop-shadow-lg scale-125 transition-opacity duration-300 absolute inset-0 ${(loaded && !hasError) ? 'opacity-100' : 'opacity-0'}`}
+                    width={48}
+                    height={48}
+                    loading="lazy"
+                    decoding="async"
+                    onLoad={handleLoad}
+                    onError={handleError}
+                    className={`w-full h-full object-contain filter drop-shadow-lg scale-125 transition-opacity duration-300 absolute inset-0 ${loaded ? 'opacity-100' : 'opacity-0'}`}
                 />
             )}
         </div>
@@ -154,14 +176,18 @@ function TroopGrid({ items, title, accent }: { items: CoCTroopData[]; title: str
 
     return (
         <div className="mb-6 last:mb-0">
-            <h5 className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">
-                {title} <span className="text-[10px] ml-2 text-white/30">({items.length})</span>
+            <h5 className="text-xs font-semibold text-white/70 uppercase tracking-widest mb-3">
+                {title} <span className="text-[10px] ml-2 text-white/55">({items.length})</span>
             </h5>
             <div className="flex flex-wrap gap-2">
                 {items.map((t, idx) => {
                     const isMax = t.level === t.maxLevel;
                     return (
-                        <div key={`${t.name}-${idx}`} className="group relative flex items-center justify-center w-12 h-12 rounded-lg bg-black/40 border border-white/10 overflow-hidden hover:scale-110 transition-transform">
+                        <div
+                            key={`${t.name}-${idx}`}
+                            title={`${t.name} (Max: ${t.maxLevel})`}
+                            className="group relative flex items-center justify-center w-12 h-12 rounded-lg bg-black/40 border border-white/10 overflow-hidden hover:scale-110 transition-transform"
+                        >
                             <TroopIcon troop={t} category={title} accent={accent} />
                             <div
                                 className="absolute bottom-0 inset-x-0 h-4 flex items-center justify-center text-[9px] font-bold text-white shadow-md bg-black/60 backdrop-blur-sm"

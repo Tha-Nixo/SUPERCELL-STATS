@@ -3,14 +3,14 @@ import { Shield } from 'lucide-react';
 
 // Hero image URLs
 const HERO_IMAGE_URLS: Record<string, string> = {
-    'Barbarian King': '/images/coc/heroes/Barbarian_King_2_grass.png',
-    'Archer Queen': '/images/coc/heroes/Archer_Queen_1.png',
-    'Grand Warden': '/images/coc/heroes/Grand_Warden_2_grass.png',
-    'Royal Champion': '/images/coc/heroes/Royal_Champion_2_grass.png',
-    'Battle Machine': '/images/coc/heroes/Battle_Machine_2_grass.png',
-    'Battle Copter': '/images/coc/heroes/Battle_Copter_1.png',
-    'Minion Prince': '/images/coc/heroes/Hero_Minion_Prince_02_grass.png',
-    'Dragon Duke': '/images/coc/heroes/DragonDuke_f011_4k.png',
+    'Barbarian King': '/images/coc/heroes/Barbarian_King_2_grass.webp',
+    'Archer Queen': '/images/coc/heroes/Archer_Queen_1.webp',
+    'Grand Warden': '/images/coc/heroes/Grand_Warden_2_grass.webp',
+    'Royal Champion': '/images/coc/heroes/Royal_Champion_2_grass.webp',
+    'Battle Machine': '/images/coc/heroes/Battle_Machine_2_grass.webp',
+    'Battle Copter': '/images/coc/heroes/Battle_Copter_1.webp',
+    'Minion Prince': '/images/coc/heroes/Hero_Minion_Prince_02_grass.webp',
+    'Dragon Duke': '/images/coc/heroes/DragonDuke_f011_4k.webp',
 };
 
 function HeroProgressBar({ level, maxLevel, color }: { level: number; maxLevel: number; color: string }) {
@@ -46,12 +46,12 @@ export function CoCHeroesDisplay({ heroes, heroEquipment = [], leagueBadgeUrl, c
                 <div className="flex items-center gap-3">
                     {leagueBadgeUrl && (
                         <div className="flex items-center gap-1.5">
-                            <img src={leagueBadgeUrl} alt={leagueName} className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <img src={leagueBadgeUrl} alt={leagueName} width={32} height={32} loading="lazy" decoding="async" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             <span className="text-white/60 text-xs">{leagueName}</span>
                         </div>
                     )}
                     {clanBadgeUrl && (
-                        <img src={clanBadgeUrl} alt="Clan" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        <img src={clanBadgeUrl} alt="Clan" width={32} height={32} loading="lazy" decoding="async" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     )}
                 </div>
             </div>
@@ -77,6 +77,10 @@ export function CoCHeroesDisplay({ heroes, heroEquipment = [], leagueBadgeUrl, c
                                         <img
                                             src={imgUrl}
                                             alt={hero.name}
+                                            width={80}
+                                            height={80}
+                                            loading="lazy"
+                                            decoding="async"
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
                                                 const img = e.target as HTMLImageElement;
@@ -105,7 +109,7 @@ export function CoCHeroesDisplay({ heroes, heroEquipment = [], leagueBadgeUrl, c
                                 {/* Progress bar */}
                                 <div className="w-full mt-2">
                                     <HeroProgressBar level={hero.level} maxLevel={hero.maxLevel} color={hero.color} />
-                                    <p className="text-right text-[9px] text-white/30 mt-0.5">{pct}%</p>
+                                    <p className="text-right text-[9px] text-white/55 mt-0.5">{pct}%</p>
                                 </div>
 
                                 {/* Equipped Items */}
@@ -142,6 +146,10 @@ export function CoCHeroesDisplay({ heroes, heroEquipment = [], leagueBadgeUrl, c
                                     <img
                                         src={HERO_IMAGE_URLS[bhHero.name]}
                                         alt={bhHero.name}
+                                        width={58}
+                                        height={58}
+                                        loading="lazy"
+                                        decoding="async"
                                         className="absolute top-1 w-[120%] h-[120%] object-cover"
                                         style={{ objectPosition: 'top' }}
                                     />
@@ -179,7 +187,7 @@ export function CoCHeroesDisplay({ heroes, heroEquipment = [], leagueBadgeUrl, c
                                         {isMax && <span className="text-[10px] text-yellow-500 font-black ml-1 uppercase bg-yellow-500/10 px-1 rounded-sm">Max</span>}
                                     </div>
                                     <div>
-                                        <div className="flex justify-between text-[10px] text-white/40 mb-1 font-mono">
+                                        <div className="flex justify-between text-[10px] text-white/55 mb-1 font-mono">
                                             <span>Lv {eq.level}</span>
                                             <span>Max {eq.maxLevel}</span>
                                         </div>

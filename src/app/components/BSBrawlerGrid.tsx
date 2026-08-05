@@ -19,10 +19,14 @@ function PowerLevel({ power, hasOverdrive = false }: { power: number; hasOverdri
         return (
             <div className="absolute top-1 right-1 z-10">
                 <img
-                    src="/images/bs/icon_hypercharge.png"
+                    src="/images/bs/icon_hypercharge.webp"
                     alt="Hypercharge Power 11"
                     className="w-7 h-7 object-contain drop-shadow-md"
                     title="Power 11 (Hypercharge)"
+                    width={28}
+                    height={28}
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                         const img = e.target as HTMLImageElement;
                         img.style.display = 'none';
@@ -45,6 +49,10 @@ function PowerLevel({ power, hasOverdrive = false }: { power: number; hasOverdri
                 alt={`Power ${power}`}
                 className="w-6 h-6 object-contain drop-shadow-md"
                 title={`Power ${power}`}
+                width={24}
+                height={24}
+                loading="lazy"
+                decoding="async"
                 onError={(e) => {
                     const img = e.target as HTMLImageElement;
                     img.style.display = 'none';
@@ -79,6 +87,10 @@ function TrophyBar({ trophies, accent }: { trophies: number; accent: string }) {
                     alt={nextTier.name}
                     className="w-3.5 h-3.5 object-contain drop-shadow-md"
                     title={`Next: ${nextTier.name}`}
+                    width={14}
+                    height={14}
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                         const img = e.target as HTMLImageElement;
                         img.style.display = 'none';
@@ -95,7 +107,7 @@ function TrophyBar({ trophies, accent }: { trophies: number; accent: string }) {
             <div className="w-full h-1.5 rounded-full bg-black/40 overflow-hidden border border-white/5 relative">
                 <div className="absolute top-0 left-0 h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: accent }} />
             </div>
-            <div className="flex justify-between items-center text-[8px] font-mono text-white/40 px-0.5">
+            <div className="flex justify-between items-center text-[8px] font-mono text-white/55 px-0.5">
                 <span>{trophies}</span>
                 <span>{tier.nextThreshold}</span>
             </div>
@@ -131,7 +143,7 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                                 className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-2 mb-3 z-10 shadow-2xl flex-shrink-0 bg-black/50"
                                 style={{ borderColor: accent }}
                             >
-                                {b.imageUrl && <img src={b.imageUrl} alt={b.name} className="w-full h-full object-cover" />}
+                                {b.imageUrl && <img src={b.imageUrl} alt={b.name} className="w-full h-full object-cover" width={96} height={96} decoding="async" />}
                             </motion.div>
                             {/* Podium Step */}
                             <motion.div
@@ -162,7 +174,7 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {listToDisplay.map(b => {
-                    const hasHypercharge = b.power === 11;
+                    const hasHypercharge = (b.hyperCharges?.length ?? 0) > 0;
                     const tierInfo = getBSTierInfo(b.trophies);
 
                     return (
@@ -173,18 +185,18 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                             {/* Header */}
                             <div className="flex gap-4 items-center">
                                 <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-white/20 flex-shrink-0 bg-black/60 shadow-inner">
-                                    {b.imageUrl && <img src={b.imageUrl} alt={b.name} className="w-full h-full object-cover" />}
+                                    {b.imageUrl && <img src={b.imageUrl} alt={b.name} className="w-full h-full object-cover" width={64} height={64} loading="lazy" decoding="async" />}
                                     <PowerLevel power={b.power} hasOverdrive={hasHypercharge} />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-black text-lg sm:text-xl text-white uppercase truncate tracking-widest">{b.name}</h3>
                                     <div className="flex items-center gap-2 mt-0.5">
                                         <div className="bg-white/10 p-1 rounded-lg border border-white/10">
-                                            <img src={tierInfo.iconPath} alt={tierInfo.name} className="w-5 h-5 object-contain drop-shadow" />
+                                            <img src={tierInfo.iconPath} alt={tierInfo.name} className="w-5 h-5 object-contain drop-shadow" width={20} height={20} loading="lazy" decoding="async" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-white font-mono text-sm font-bold leading-tight">{b.trophies} <span className="text-white/40 text-xs">/ {tierInfo.nextThreshold}</span></span>
-                                            <span className="text-white/40 text-[9px] font-bold uppercase tracking-widest leading-none">{tierInfo.name}</span>
+                                            <span className="text-white font-mono text-sm font-bold leading-tight">{b.trophies} <span className="text-white/55 text-xs">/ {tierInfo.nextThreshold}</span></span>
+                                            <span className="text-white/55 text-[9px] font-bold uppercase tracking-widest leading-none">{tierInfo.name}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -195,8 +207,8 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                             {/* Equipped (Active) */}
                             <div className="bg-white/5 rounded-2xl p-4 flex justify-between items-center border border-white/5 shadow-inner mt-1">
                                 <div className="flex flex-col">
-                                    <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Equipped</span>
-                                    <span className="text-[10px] text-white/50 font-medium">Last active setup</span>
+                                    <span className="text-[9px] font-black text-white/55 uppercase tracking-[0.2em] mb-1">Equipped</span>
+                                    <span className="text-[10px] text-white/55 font-medium">Last active setup</span>
                                 </div>
                                 <div className="flex gap-1.5 sm:gap-2">
                                     {hasHypercharge && (
@@ -206,16 +218,16 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                                     )}
                                     {b.starPowersList?.[0] && (
                                         <div className="relative">
-                                            <img src={`https://cdn.brawlify.com/star-powers/borderless/${b.starPowersList[0].id}.png`} className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-yellow-900/30 rounded-xl border-2 border-yellow-500/60 p-1" title={b.starPowersList[0].name} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/star-powers/${b.starPowersList![0].id}.png`; } else if (!t.src.includes('icon_star_power.png')) { t.src = '/images/bs/icon_star_power.png'; t.className = "w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-yellow-900/30 rounded-xl border-2 border-yellow-500/60 p-2 opacity-50"; } }} />
+                                            <img src={`https://cdn.brawlify.com/star-powers/borderless/${b.starPowersList[0].id}.png`} alt={`Star Power: ${b.starPowersList[0].name}`} className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-yellow-900/30 rounded-xl border-2 border-yellow-500/60 p-1" title={b.starPowersList[0].name} width={32} height={32} loading="lazy" decoding="async" onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/star-powers/${b.starPowersList![0].id}.png`; } else if (!t.src.includes('icon_star_power.png')) { t.src = '/images/bs/icon_star_power.webp'; t.className = "w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-yellow-900/30 rounded-xl border-2 border-yellow-500/60 p-2 opacity-50"; } }} />
                                         </div>
                                     )}
                                     {b.gadgetsList?.[0] && (
                                         <div className="relative">
-                                            <img src={`https://cdn.brawlify.com/gadgets/borderless/${b.gadgetsList[0].id}.png`} className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-green-900/30 rounded-xl border-2 border-green-500/60 p-1" title={b.gadgetsList[0].name} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${b.gadgetsList![0].id}.png`; } else if (!t.src.includes('icon_gadget.png')) { t.src = '/images/bs/icon_gadget.png'; t.className = "w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-green-900/30 rounded-xl border-2 border-green-500/60 p-2 opacity-50"; } }} />
+                                            <img src={`https://cdn.brawlify.com/gadgets/borderless/${b.gadgetsList[0].id}.png`} alt={`Gadget: ${b.gadgetsList[0].name}`} className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-green-900/30 rounded-xl border-2 border-green-500/60 p-1" title={b.gadgetsList[0].name} width={32} height={32} loading="lazy" decoding="async" onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${b.gadgetsList![0].id}.png`; } else if (!t.src.includes('icon_gadget.png')) { t.src = '/images/bs/icon_gadget.webp'; t.className = "w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg bg-green-900/30 rounded-xl border-2 border-green-500/60 p-2 opacity-50"; } }} />
                                         </div>
                                     )}
                                     {!hasHypercharge && !b.starPowersList?.[0] && !b.gadgetsList?.[0] && (
-                                        <span className="text-white/20 text-xs italic py-2">No items</span>
+                                        <span className="text-white/55 text-xs italic py-2">No items</span>
                                     )}
                                 </div>
                             </div>
@@ -224,7 +236,7 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                             {/* Collection */}
                             <div className="bg-white/5 rounded-2xl p-4 flex flex-col gap-3 border border-white/5 shadow-inner">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Collection</span>
+                                    <span className="text-[9px] font-black text-white/55 uppercase tracking-[0.2em]">Collection</span>
                                     <div className="flex-1 h-px bg-white/5" />
                                 </div>
                                 <div className="flex flex-wrap gap-2">
@@ -234,13 +246,13 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                                         </div>
                                     )}
                                     {b.starPowersList?.map(sp => (
-                                        <img key={sp.id} src={`https://cdn.brawlify.com/star-powers/borderless/${sp.id}.png`} className="w-7 h-7 object-contain opacity-70 hover:opacity-100 transition-opacity drop-shadow cursor-help" title={`Star Power: ${sp.name}`} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/star-powers/${sp.id}.png`; } else if (!t.src.includes('icon_star_power.png')) { t.src = '/images/bs/icon_star_power.png'; t.className = "w-7 h-7 object-contain opacity-40 hover:opacity-100 transition-opacity drop-shadow cursor-help p-1 bg-yellow-900/30 rounded border border-yellow-500/50"; } }} />
+                                        <img key={sp.id} src={`https://cdn.brawlify.com/star-powers/borderless/${sp.id}.png`} alt={`Star Power: ${sp.name}`} className="w-7 h-7 object-contain opacity-70 hover:opacity-100 transition-opacity drop-shadow cursor-help" title={`Star Power: ${sp.name}`} width={28} height={28} loading="lazy" decoding="async" onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/star-powers/${sp.id}.png`; } else if (!t.src.includes('icon_star_power.png')) { t.src = '/images/bs/icon_star_power.webp'; t.className = "w-7 h-7 object-contain opacity-40 hover:opacity-100 transition-opacity drop-shadow cursor-help p-1 bg-yellow-900/30 rounded border border-yellow-500/50"; } }} />
                                     ))}
                                     {b.gadgetsList?.map(g => (
-                                        <img key={g.id} src={`https://cdn.brawlify.com/gadgets/borderless/${g.id}.png`} className="w-7 h-7 object-contain opacity-70 hover:opacity-100 transition-opacity drop-shadow cursor-help" title={`Gadget: ${g.name}`} onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${g.id}.png`; } else if (!t.src.includes('icon_gadget.png')) { t.src = '/images/bs/icon_gadget.png'; t.className = "w-7 h-7 object-contain opacity-40 hover:opacity-100 transition-opacity drop-shadow cursor-help p-1 bg-green-900/30 rounded border border-green-500/50"; } }} />
+                                        <img key={g.id} src={`https://cdn.brawlify.com/gadgets/borderless/${g.id}.png`} alt={`Gadget: ${g.name}`} className="w-7 h-7 object-contain opacity-70 hover:opacity-100 transition-opacity drop-shadow cursor-help" title={`Gadget: ${g.name}`} width={28} height={28} loading="lazy" decoding="async" onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('borderless')) { t.src = `https://cdn.brawlify.com/gadgets/${g.id}.png`; } else if (!t.src.includes('icon_gadget.png')) { t.src = '/images/bs/icon_gadget.webp'; t.className = "w-7 h-7 object-contain opacity-40 hover:opacity-100 transition-opacity drop-shadow cursor-help p-1 bg-green-900/30 rounded border border-green-500/50"; } }} />
                                     ))}
                                     {!hasHypercharge && !b.starPowersList?.length && !b.gadgetsList?.length && (
-                                        <span className="text-white/20 text-[10px] italic">Empty Collection</span>
+                                        <span className="text-white/55 text-[10px] italic">Empty Collection</span>
                                     )}
                                 </div>
                             </div>
@@ -260,8 +272,10 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                 </h4>
                 {allBrawlers && allBrawlers.length > brawlers.length && (
                     <button
+                        type="button"
                         onClick={() => setShowAll(!showAll)}
-                        className="text-white/60 hover:text-white text-xs flex items-center gap-1 transition-colors"
+                        aria-expanded={showAll}
+                        className="text-white/60 hover:text-white text-xs flex items-center justify-center gap-1 min-h-11 px-3 -mr-3 transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                     >
                         {showAll ? (
                             <>Show Less <ChevronUp className="w-3 h-3" /></>
@@ -277,16 +291,16 @@ export function BSBrawlerGrid({ brawlers, allBrawlers, accent, variant = 'grid' 
                         <div key={b.id} className="group flex flex-col items-center">
                             <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-b from-white/10 to-black/40 transition-all duration-200 group-hover:scale-105 group-hover:border-white/25 group-hover:shadow-lg">
                                 {b.imageUrl ? (
-                                    <img src={b.imageUrl} alt={b.name} className="w-full h-full object-cover" onError={(e) => {
+                                    <img src={b.imageUrl} alt={b.name} className="w-full h-full object-cover" loading="lazy" decoding="async" onError={(e) => {
                                         const img = e.target as HTMLImageElement;
                                         img.style.display = 'none';
                                         if (img.nextSibling) (img.nextSibling as HTMLElement).style.display = 'flex';
                                     }} />
                                 ) : null}
                                 <div className="hidden w-full h-full items-center justify-center text-3xl">⭐</div>
-                                <PowerLevel power={b.power} hasOverdrive={b.power === 11} />
+                                <PowerLevel power={b.power} hasOverdrive={(b.hyperCharges?.length ?? 0) > 0} />
                                 <div className="absolute top-1 left-1 leading-none drop-shadow-md z-10 flex items-center justify-center">
-                                    <img src={getBSTierInfo(b.trophies).iconPath} alt={getBSTierInfo(b.trophies).name} className="w-7 h-7 object-contain drop-shadow-lg scale-110" title={getBSTierInfo(b.trophies).name} onError={(e) => {
+                                    <img src={getBSTierInfo(b.trophies).iconPath} alt={getBSTierInfo(b.trophies).name} className="w-7 h-7 object-contain drop-shadow-lg scale-110" title={getBSTierInfo(b.trophies).name} width={28} height={28} loading="lazy" decoding="async" onError={(e) => {
                                         const img = e.target as HTMLImageElement;
                                         img.style.display = 'none';
                                         if (img.nextSibling) (img.nextSibling as HTMLElement).style.display = 'flex';

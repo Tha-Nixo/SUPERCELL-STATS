@@ -47,7 +47,7 @@ export function CRTowerTroops({ playerStats, accent }: CRTowerTroopsProps) {
                                 )}
 
                                 <div className="flex justify-center mb-4 min-h-[140px] relative w-full items-end pb-2">
-                                    <img src={troop.iconUrl} alt={troop.name} className="h-28 w-auto object-contain drop-shadow-2xl hover:scale-110 transition-transform origin-bottom" />
+                                    <img src={troop.iconUrl} alt={troop.name} width={93} height={112} loading="lazy" decoding="async" className="h-28 w-auto object-contain drop-shadow-2xl hover:scale-110 transition-transform origin-bottom" />
                                 </div>
 
                                 <div className="text-center w-full">

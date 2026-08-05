@@ -29,13 +29,28 @@ export default defineConfig({
             },
         }
     },
+    preview: {
+        // `vite preview` serves the production build, which by design carries no
+        // API key. Borrow the deployed origin's proxy so a release can be smoke
+        // tested against real data before it is deployed.
+        proxy: {
+            '/api': {
+                target: 'https://supercellstats.com',
+                changeOrigin: true,
+            },
+        },
+    },
     build: {
         rollupOptions: {
             output: {
-                manualChunks: {
-                    react: ['react', 'react-dom', 'react-router'],
-                    charts: ['recharts'],
-                    motion: ['motion'],
+                // Match on the resolved module path, not on the bare specifier:
+                // the id-array form missed deep imports like `react-dom/client`
+                // and `scheduler`, which then leaked into whichever chunk pulled
+                // them in first.
+                manualChunks(id) {
+                    if (!id.includes('node_modules')) return;
+                    if (/node_modules\/(react|react-dom|react-router|scheduler)\//.test(id)) return 'react';
+                    if (/node_modules\/(motion|framer-motion|motion-dom|motion-utils)\//.test(id)) return 'motion';
                 },
             },
         },

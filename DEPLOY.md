@@ -90,8 +90,11 @@ supercellstats.com {
     }
 
     handle {
-        root * /opt/projects/supercellstats/dist
-        try_files {path} /index.html   # SPA fallback
+        root * /home/nixo/apps/supercellstats/dist
+        # The middle term serves the per-route shells the build emits under
+        # dist/game/<id>/index.html; without it every route falls through to the
+        # generic root document and the per-page <head> never reaches a crawler.
+        try_files {path} {path}/index.html /index.html
         file_server
     }
 }
@@ -124,10 +127,23 @@ running on the server — nothing game-specific to maintain here.
 ## 5. Update procedure
 
 ```bash
-cd ~/apps/supercellstats && git pull && npm ci && npm run build
+~/apps/supercellstats/scripts/deploy.sh              # deploy origin/main
+~/apps/supercellstats/scripts/deploy.sh --rollback   # restore the previous build
 ```
 
-No Caddy reload needed for frontend-only changes.
+The script builds into a scratch directory and swaps it in with a `mv`, so no
+visitor can be served a half-written `dist/`. It keeps the previous build as
+`dist.previous` and writes the deployed commit to `dist/VERSION`, so
+`curl https://supercellstats.com/VERSION` answers "what is live".
+
+No Caddy reload is needed for frontend-only changes. **Apply the Cache-Control
+rules in `docs/SERVER-HARDENING.md` before the first rebuild** — asset hashes
+change on rebuild, and a client holding a stale `index.html` would request chunks
+that no longer exist and get the SPA fallback (`200 text/html`) instead of a 404,
+which renders as a blank page with nothing in the console.
+
+Do not use a bare `git pull` here: that clone is checked out on a feature branch,
+so it would pull the wrong ref.
 
 ## Notes
 

@@ -43,6 +43,9 @@ export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps
                             <div className="flex items-center gap-2 border-l border-white/10 pl-4">
                                 {(cr.arenaIconUrl || cr.arenaId) && <img
                                     src={cr.arenaIconUrl || `https://api-assets.clashroyale.com/arenas/72/${cr.arenaId}.png`}
+                                    width={24}
+                                    height={24}
+                                    decoding="async"
                                     className="w-6 h-6 object-contain drop-shadow"
                                     alt="Arena"
                                     onError={(e) => {
@@ -67,7 +70,7 @@ export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps
                 <div className="space-y-6">
                     {/* Quick Stats */}
                     <div className="p-5 rounded-2xl border border-white/5 bg-white/2">
-                        <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">Quick Stats</h3>
+                        <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-4">Quick Stats</h3>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
                                 <span className="text-white/60">Win/Loss</span>
@@ -86,13 +89,17 @@ export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps
 
                     {/* Clan Box */}
                     <div className="p-5 rounded-2xl border border-white/5 bg-white/2">
-                        <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><Users className="w-4 h-4" /> Clan</h3>
+                        <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><Users className="w-4 h-4" /> Clan</h3>
                         {playerStats.extraStats?.find(s => s.label === 'Clan')?.value ? (
                             <div>
                                 <div className="flex items-center gap-3 mb-4">
                                     {cr.clanBadgeUrl ? (
                                         <img
                                             src={cr.clanBadgeUrl}
+                                            width={40}
+                                            height={40}
+                                            loading="lazy"
+                                            decoding="async"
                                             className="w-10 h-10 object-contain"
                                             alt="Clan Badge"
                                             onError={(e) => {
@@ -106,7 +113,7 @@ export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps
                                     )}
                                     <div>
                                         <h4 className="text-white font-bold">{playerStats.extraStats?.find(s => s.label === 'Clan')?.value.toString().split(' · ')[0]}</h4>
-                                        <div className="text-xs font-mono text-white/40">{cr.clanTag}</div>
+                                        <div className="text-xs font-mono text-white/70">{cr.clanTag}</div>
                                     </div>
                                 </div>
                                 <div className="space-y-2 text-sm pt-2 border-t border-white/5">
@@ -127,27 +134,28 @@ export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-center py-6 text-white/30 text-sm">Not currently in a Clan</div>
+                            <div className="text-center py-6 text-white/70 text-sm">Not currently in a Clan</div>
                         )}
                     </div>
 
                     {/* Deck Preview */}
                     {deckCards.length > 0 && (
                         <button
+                            type="button"
                             onClick={() => onTabChange?.('deck')}
-                            className="w-full p-4 rounded-2xl border border-white/5 bg-white/2 hover:bg-white/5 hover:border-white/10 transition-all text-left group"
+                            className="w-full p-4 rounded-2xl border border-white/5 bg-white/2 hover:bg-white/5 hover:border-white/10 transition-all text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                         >
-                            <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest mb-3 flex items-center justify-between">
+                            <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-3 flex items-center justify-between">
                                 <span>Battle Deck</span>
-                                <span className="text-white/20 group-hover:text-white/50 text-[10px] transition-colors">View →</span>
+                                <span className="text-white/55 group-hover:text-white text-[10px] transition-colors">View →</span>
                             </h3>
                             <div className="grid grid-cols-4 gap-1.5">
                                 {deckCards.map((card, i) => (
                                     <div key={i} className="aspect-[3/4] rounded-lg overflow-hidden bg-black/40 border border-white/10 group-hover:border-white/20 transition-all">
                                         {card.iconUrl ? (
-                                            <img src={card.iconUrl} alt={card.name} className="w-full h-full object-cover" />
+                                            <img src={card.iconUrl} alt={card.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-white/20 text-[8px] text-center p-1">{card.name}</div>
+                                            <div className="w-full h-full flex items-center justify-center text-white/55 text-[8px] text-center p-1">{card.name}</div>
                                         )}
                                     </div>
                                 ))}
@@ -161,7 +169,7 @@ export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps
                     {/* Seasons & Path of Legend */}
                     {(cr.leagueStatistics || cr.pathOfLegend || cr.legacyTrophyRoadHighScore) && (
                         <div className="p-5 rounded-2xl border border-white/5 bg-white/2">
-                            <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
                                 <TrendingUp className="w-4 h-4" />
                                 Ranked Seasons
                             </h3>
@@ -213,7 +221,7 @@ export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps
                                             )}
                                             {cr.legacyTrophyRoadHighScore !== undefined && cr.legacyTrophyRoadHighScore > 0 && (
                                                 <div className="flex justify-between text-sm border-t border-blue-500/10 mt-2 pt-2">
-                                                    <span className="text-white/40">Legacy High</span>
+                                                    <span className="text-white/70">Legacy High</span>
                                                     <span className="text-white/60 font-mono">{cr.legacyTrophyRoadHighScore}</span>
                                                 </div>
                                             )}
@@ -228,12 +236,14 @@ export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps
                     {cr.badges && cr.badges.length > 0 && (
                         <div className="rounded-2xl border border-white/5 bg-white/2 overflow-hidden">
                             <button
+                                type="button"
                                 onClick={() => setBadgesExpanded(prev => !prev)}
-                                className="w-full flex items-center justify-between p-5 hover:bg-white/5 transition-colors"
+                                aria-expanded={badgesExpanded}
+                                className="w-full flex items-center justify-between p-5 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                             >
-                                <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                                <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
                                     Badges
-                                    <span className="text-white/20 font-normal normal-case tracking-normal text-[10px]">({cr.badges.length})</span>
+                                    <span className="text-white/55 font-normal normal-case tracking-normal text-[10px]">({cr.badges.length})</span>
                                 </h3>
                                 {badgesExpanded
                                     ? <ChevronUp className="w-4 h-4 text-white/30" />
@@ -247,6 +257,10 @@ export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps
                                             <img
                                                 src={b.iconUrl}
                                                 alt={b.name}
+                                                width={48}
+                                                height={48}
+                                                loading="lazy"
+                                                decoding="async"
                                                 className="w-12 h-12 object-contain drop-shadow-lg group-hover:scale-110 transition-transform"
                                                 onError={(e) => {
                                                     const img = e.target as HTMLImageElement;
@@ -276,7 +290,7 @@ export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps
                     {/* Achievements List */}
                     {cr.achievements && cr.achievements.length > 0 && (
                         <div className="p-5 rounded-2xl border border-white/5 bg-white/2">
-                            <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">Achievements</h3>
+                            <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-4">Achievements</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {cr.achievements.filter(a => a.value > 0).map((a, i) => {
                                     const percent = a.target ? Math.min(100, (a.value / a.target) * 100) : 100;
@@ -296,7 +310,7 @@ export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps
                                                 <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
                                                     <div className={`h-full ${isComplete ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${percent}%` }} />
                                                 </div>
-                                                <span className="text-[10px] font-mono text-white/40 whitespace-nowrap">
+                                                <span className="text-[10px] font-mono text-white/55 whitespace-nowrap">
                                                     {a.value.toLocaleString()} / {a.target.toLocaleString()}
                                                 </span>
                                             </div>

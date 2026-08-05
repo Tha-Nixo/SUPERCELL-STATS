@@ -27,12 +27,13 @@ export function CoCAchievements({ achievements, accent }: CoCAchievementsProps) 
                         <Award className="w-5 h-5" style={{ color: accent }} />
                         Achievements
                     </h3>
-                    <p className="text-white/40 text-sm mt-1">Tracked progress across villages</p>
+                    <p className="text-white/70 text-sm mt-1">Tracked progress across villages</p>
                 </div>
 
                 <div className="flex items-center gap-2">
                     <select
-                        className="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-sm text-white/80 outline-none"
+                        aria-label="Filter achievements by village"
+                        className="min-h-11 bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-sm text-white/80 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                         value={villageFilter}
                         onChange={e => setVillageFilter(e.target.value as any)}
                     >
@@ -43,7 +44,8 @@ export function CoCAchievements({ achievements, accent }: CoCAchievementsProps) 
                     </select>
 
                     <select
-                        className="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-sm text-white/80 outline-none"
+                        aria-label="Filter achievements by completion status"
+                        className="min-h-11 bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-sm text-white/80 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                         value={statusFilter}
                         onChange={e => setStatusFilter(e.target.value as any)}
                     >
@@ -71,13 +73,13 @@ export function CoCAchievements({ achievements, accent }: CoCAchievementsProps) 
                                         <Circle className="w-4 h-4 text-white/20 shrink-0" />
                                     )}
                                 </div>
-                                <p className="text-white/40 text-[11px] leading-relaxed mb-3">{a.info}</p>
+                                <p className="text-white/70 text-[11px] leading-relaxed mb-3">{a.info}</p>
                             </div>
 
                             <div>
                                 {a.target > 0 && !isComplete ? (
                                     <>
-                                        <div className="flex justify-between text-[10px] text-white/40 mb-1 font-mono">
+                                        <div className="flex justify-between text-[10px] text-white/55 mb-1 font-mono">
                                             <span>{a.value.toLocaleString()}</span>
                                             <span>{a.target.toLocaleString()}</span>
                                         </div>
@@ -97,7 +99,7 @@ export function CoCAchievements({ achievements, accent }: CoCAchievementsProps) 
             </div>
 
             {filtered.length === 0 && (
-                <div className="text-center py-12 text-white/30 text-sm">
+                <div className="text-center py-12 text-white/70 text-sm">
                     No achievements match the selected filters.
                 </div>
             )}
