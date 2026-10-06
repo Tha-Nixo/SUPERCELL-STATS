@@ -1,0 +1,59 @@
+import type { Page } from '@playwright/test';
+import { bsBattlelog, bsPlayer, cocPlayer, crBattlelog, crPlayer } from './fixtures.ts';
+
+export { FIXTURE_TAG } from './fixtures.ts';
+
+export interface MockApiOptions {
+  /** Player requests wait for this promise: lets a test look at the loading state. */
+  hold?: Promise<void>;
+  /** Answer the first `times` player requests with this error instead of the fixture. */
+  fail?: { status: number; reason: string; times: number };
+}
+
+// 1x1 transparent PNG: game art CDNs are answered locally so tests never depend on them.
+const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+const ART_HOSTS = /^https:\/\/(cdn\.brawlify\.com|cdn-old\.brawlify\.com|api-assets\.clashroyale\.com|api-assets\.clashofclans\.com|royaleapi\.github\.io)\//;
+
+const PLAYER = /^\/api\/(clash-royale|brawl-stars|clash-of-clans)\/players\/[^/]+$/;
+
+/**
+ * Serve the Supercell API from fixtures. Returns the list of API paths the
+ * page requested (decoded), in order.
+ */
+export async function mockApi(page: Page, options: MockApiOptions = {}): Promise<string[]> {
+  const calls: string[] = [];
+  let failuresLeft = options.fail?.times ?? 0;
+
+  await page.route(ART_HOSTS, (route) => route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL }));
+
+  await page.route('**/api/**', async (route) => {
+    const path = decodeURIComponent(new URL(route.request().url()).pathname);
+    calls.push(path);
+    const json = (body: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+
+    if (PLAYER.test(path)) {
+      if (options.hold) await options.hold;
+      if (failuresLeft > 0) {
+        failuresLeft--;
+        return json({ reason: options.fail!.reason, message: options.fail!.reason }, options.fail!.status);
+      }
+      if (path.startsWith('/api/clash-royale/')) return json(crPlayer);
+      if (path.startsWith('/api/brawl-stars/')) return json(bsPlayer);
+      return json(cocPlayer);
+    }
+    if (path.endsWith('/battlelog')) {
+      return json(path.startsWith('/api/clash-royale/') ? crBattlelog : bsBattlelog);
+    }
+    if (path === '/api/clash-royale/cards' || path === '/api/brawl-stars/brawlers') return json({ items: [] });
+    return json({ reason: 'notFound', message: 'notFound' }, 404);
+  });
+
+  return calls;
+}
+
+/** A promise plus the function that settles it. */
+export function deferred() {
+  let release!: () => void;
+  const promise = new Promise<void>((resolve) => { release = resolve; });
+  return { promise, release };
+}

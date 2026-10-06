@@ -1,207 +1,141 @@
-import { motion } from 'motion/react';
+import { useState } from 'react';
 import { Link } from 'react-router';
-import { games } from '../data/games';
+import { Trophy } from 'lucide-react';
+import { games, getGameById, type GameTheme } from '../data/games';
+import { getRecentSearches } from '../services/recentSearches';
+import { SearchBox } from '../ui/SearchBox';
+import { SiteFooter } from '../ui/SiteFooter';
 
-const SUPERCELL_FEATURES = [
-  { icon: '⚡', label: 'Live Data', desc: 'Real-time stats from official Supercell APIs' },
-  { icon: '🔍', label: 'Player Search', desc: 'Find any player instantly by tag' },
-  { icon: '📊', label: 'Deep Analytics', desc: 'Trophies, heroes, decks & battle history' },
-];
-
-// Official Supercell Fan Kit character images for each game card — width/height are the
-// intrinsic asset sizes, so the browser knows the aspect ratio before the art streams in
-const GAME_CHARACTERS: Record<string, { src: string; width: number; height: number }> = {
+// Official Supercell Fan Kit art. width/height are the intrinsic asset sizes,
+// so the browser reserves the box before the image streams in.
+const GAME_ART: Record<string, { src: string; width: number; height: number }> = {
   'clash-royale': { src: '/images/characters/cr_character.webp', width: 512, height: 512 },
   'brawl-stars': { src: '/images/bs/shelly_model.webp', width: 160, height: 322 },
   'clash-of-clans': { src: '/images/characters/coc_character.webp', width: 512, height: 512 },
 };
 
-// Official game logo images from Supercell Fan Kit — width/height are the h-14 rendered box
+// Game logos: width/height are the h-12 rendered box.
 const GAME_LOGOS: Record<string, { src: string; width: number; height: number }> = {
-  'clash-royale': { src: '/images/logos/cr_logo.webp', width: 112, height: 56 },
-  'brawl-stars': { src: '/images/logos/bs_logo.webp', width: 69, height: 56 },
-  'clash-of-clans': { src: '/images/logos/coc_logo.webp', width: 122, height: 56 },
+  'clash-royale': { src: '/images/logos/cr_logo.webp', width: 96, height: 48 },
+  'brawl-stars': { src: '/images/logos/bs_logo.webp', width: 59, height: 48 },
+  'clash-of-clans': { src: '/images/logos/coc_logo.webp', width: 105, height: 48 },
 };
+
+function GameCard({ game, first }: { game: GameTheme; first: boolean }) {
+  const art = GAME_ART[game.id];
+  const logo = GAME_LOGOS[game.id];
+  return (
+    <article className="relative flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface-1 p-5 shadow-card transition-colors duration-150 focus-within:border-line-strong hover:border-line-strong sm:p-6">
+      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-0.5 bg-accent" />
+      {art && (
+        <img
+          src={art.src}
+          alt=""
+          width={art.width}
+          height={art.height}
+          loading="lazy"
+          decoding="async"
+          className="pointer-events-none absolute -right-4 -bottom-6 h-44 w-auto opacity-15 select-none"
+        />
+      )}
+      <div className="relative flex items-center gap-4">
+        {logo && (
+          <div className="flex h-12 w-28 shrink-0 items-center justify-center">
+            <img
+              src={logo.src}
+              alt=""
+              width={logo.width}
+              height={logo.height}
+              decoding="async"
+              className="h-12 w-auto object-contain"
+            />
+          </div>
+        )}
+        <div className="min-w-0">
+          <h2 className="font-display text-xl leading-tight font-normal text-fg">
+            <Link to={`/game/${game.id}`} className="inline-flex min-h-11 items-center rounded-sm transition-colors hover:text-accent">
+              {game.name}
+            </Link>
+          </h2>
+          <p className="text-sm text-fg-muted">{game.tagline}</p>
+        </div>
+      </div>
+      <SearchBox className="relative mt-auto pt-6" gameId={game.id} label={`${game.name} player tag`} size="lg" shortcut={first} />
+    </article>
+  );
+}
+
+function RecentSearchesRow() {
+  const [recent] = useState(() =>
+    getRecentSearches()
+      .filter((r) => getGameById(r.gameId))
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 8),
+  );
+  if (recent.length === 0) return null;
+  return (
+    <section aria-labelledby="recent-heading" className="mt-12">
+      <h2 id="recent-heading" className="text-sm font-semibold text-fg">Recent searches</h2>
+      <ul className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+        {recent.map((r) => (
+          <li key={`${r.gameId}-${r.tag}`} data-game={r.gameId} className="shrink-0">
+            <Link
+              to={`/game/${r.gameId}/player/${r.tag.replace(/^#/, '')}`}
+              className="inline-flex min-h-11 items-center gap-2 rounded-pill border border-line bg-surface-1 py-1 pr-4 pl-1.5 text-sm text-fg transition-colors duration-150 hover:border-line-strong"
+            >
+              <span className="rounded-pill bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent">
+                {getGameById(r.gameId)!.shortName}
+              </span>
+              <span className="max-w-48 truncate font-medium">{r.username}</span>
+              {r.trophies > 0 && (
+                <span className="inline-flex items-center gap-1 text-fg-subtle tabular-nums">
+                  <Trophy aria-hidden="true" className="size-3.5" />
+                  {r.trophies.toLocaleString()}
+                </span>
+              )}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0B0F1A]">
+    <div className="flex min-h-dvh flex-col">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6">
+        <section className="pt-12 pb-8 sm:pt-20 sm:pb-12">
+          <h1 className="flex items-center gap-3 font-display text-title font-normal text-fg sm:text-display">
+            <img
+              src="/images/logos/supercell_logo.webp"
+              alt="Supercell"
+              width={74}
+              height={60}
+              decoding="async"
+              fetchPriority="high"
+              className="h-10 w-auto sm:h-12"
+            />
+            <span>Stats</span>
+          </h1>
+          <p className="mt-4 max-w-xl text-base text-balance text-fg-muted sm:text-xl">
+            Live player stats for Clash Royale, Brawl Stars and Clash of Clans. Search any player by tag.
+          </p>
+        </section>
 
-      <main>
-      {/* ─── Hero ─── */}
-      <section className="relative py-28 px-6 overflow-hidden">
-        {/* Background glows — radial gradients instead of large CSS blur() filters, which are
-            very expensive to rasterise on mobile CPUs (long main-thread tasks during the intro). */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-          <div className="absolute -top-20 -left-20 w-[500px] h-[500px] rounded-full bg-[radial-gradient(closest-side,rgba(77,127,255,0.14),transparent)]" />
-          <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] rounded-full bg-[radial-gradient(closest-side,rgba(255,200,0,0.14),transparent)]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-[radial-gradient(closest-side,rgba(139,195,74,0.07),transparent)]" />
-        </div>
+        <section aria-label="Games">
+          <ul className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {games.map((game, i) => (
+              <li key={game.id} data-game={game.id}>
+                <GameCard game={game} first={i === 0} />
+              </li>
+            ))}
+          </ul>
+        </section>
 
-        <div className="relative max-w-4xl mx-auto text-center">
-          <motion.div initial={{ y: 16 }} animate={{ y: 0 }} transition={{ duration: 0.5 }}>
-
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/60 text-sm font-medium mb-8">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              Powered by official Supercell APIs
-            </div>
-
-            <h1 className="flex flex-wrap items-center justify-center gap-4 text-6xl md:text-8xl font-bold text-white mb-6 leading-tight">
-              <img
-                src="/images/logos/supercell_logo.webp"
-                alt="Supercell"
-                width={74}
-                height={60}
-                decoding="async"
-                className="h-[60px] md:h-[80px] w-auto max-w-full object-contain"
-              />
-              <span className="bg-gradient-to-r from-[#4D7FFF] via-[#FFC800] to-[#8BC34A] bg-clip-text text-transparent">
-                Stats
-              </span>
-            </h1>
-
-            <p className="text-xl text-white/50 max-w-xl mx-auto mb-12">
-              Track player statistics for all Supercell games.<br />
-              Search by player tag — get live data instantly.
-            </p>
-
-            {/* Feature pills */}
-            <div className="flex flex-wrap justify-center gap-4">
-              {SUPERCELL_FEATURES.map((f) => (
-                <div key={f.label} className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-left">
-                  <span className="text-2xl" aria-hidden="true">{f.icon}</span>
-                  <div>
-                    <div className="text-white text-sm font-semibold">{f.label}</div>
-                    <div className="text-white/70 text-xs">{f.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ─── Games Grid ─── */}
-      <section className="px-6 pb-24">
-        <div className="max-w-7xl mx-auto">
-          <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xs font-semibold text-white/55 uppercase tracking-widest text-center mb-8"
-          >
-            Select a Game
-          </motion.p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {games.map((game, index) => {
-              const characterImg = GAME_CHARACTERS[game.id];
-              const logoImg = GAME_LOGOS[game.id];
-              return (
-                <motion.div
-                  key={game.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 + Math.min(index, 10) * 0.09 }}
-                >
-                  <Link
-                    to={`/game/${game.id}`}
-                    className="block group rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-                  >
-                    <div
-                      className="relative overflow-hidden rounded-3xl border border-white/8 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl min-h-[200px]"
-                      style={{
-                        background: `linear-gradient(135deg, ${game.gradientFrom} 0%, ${game.gradientTo} 100%)`,
-                        boxShadow: `0 0 0 1px ${game.accent}10`,
-                      }}
-                    >
-                      {/* Character image — right side, anchored to bottom, semi-transparent */}
-                      {characterImg && (
-                        <div className="absolute bottom-0 right-0 w-1/2 h-full pointer-events-none overflow-hidden rounded-br-3xl">
-                          <img
-                            src={characterImg.src}
-                            alt=""
-                            width={characterImg.width}
-                            height={characterImg.height}
-                            loading="lazy"
-                            decoding="async"
-                            className="absolute -bottom-4 right-0 h-[120%] w-auto object-contain object-bottom opacity-30 group-hover:opacity-45 group-hover:scale-105 transition-all duration-500 select-none origin-bottom-right"
-                            style={{ filter: `drop-shadow(0 0 30px ${game.accent}60)` }}
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Hover glow overlay */}
-                      <div
-                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"
-                        style={{ background: `radial-gradient(circle at 70% 50%, ${game.accent}20, transparent 60%)` }}
-                      />
-
-                      {/* Content */}
-                      <div className="relative p-8">
-                        {/* Logo image or emoji fallback */}
-                        <div className="mb-5 flex items-start gap-4">
-                          <div className="shrink-0">
-                            {logoImg ? (
-                              <img
-                                src={logoImg.src}
-                                alt={`${game.name} logo`}
-                                width={logoImg.width}
-                                height={logoImg.height}
-                                loading="lazy"
-                                decoding="async"
-                                className="h-14 w-auto object-contain drop-shadow-lg"
-                                onError={(e) => {
-                                  const img = e.target as HTMLImageElement;
-                                  img.style.display = 'none';
-                                  const fallback = img.nextSibling as HTMLElement;
-                                  if (fallback) fallback.style.display = 'block';
-                                }}
-                              />
-                            ) : null}
-                            <span className="text-5xl" aria-hidden="true" style={{ display: logoImg ? 'none' : 'block' }}>{game.logo}</span>
-                          </div>
-                          <div className="pt-1">
-                            <h2 className={`text-2xl font-bold text-white ${game.fontClass}`}>{game.name}</h2>
-                            <p className="text-white/50 text-sm mt-0.5">{game.tagline}</p>
-                          </div>
-                        </div>
-
-                        {/* Tag hint + CTA */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/30 border border-white/10">
-                            <span className="text-white/55 text-xs font-mono">Search by</span>
-                            <span className="text-white/80 text-xs font-bold font-mono">#PLAYER TAG</span>
-                          </div>
-                          <div
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all group-hover:scale-105"
-                            style={{ backgroundColor: `${game.accent}22`, color: game.accent, border: `1px solid ${game.accent}40` }}
-                          >
-                            Search Stats →
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
+        <RecentSearchesRow />
       </main>
-
-      {/* ─── Footer ─── */}
-      <footer className="border-t border-white/5 py-8">
-        <div className="max-w-7xl mx-auto px-6 text-center text-white/70 text-xs leading-relaxed">
-          <p className="mb-2">
-            This material is unofficial and is not endorsed by Supercell. For more information see Supercell's Fan Content Policy: <a href="https://www.supercell.com/fan-content-policy" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white/80 transition-colors underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-sm">www.supercell.com/fan-content-policy</a>.
-          </p>
-          <p>
-            All game data is provided by the official Supercell Developer API.
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 export interface GameTheme {
   id: string;
   name: string;
+  /** Two or three letters for tight spots (header switcher, recent-search chips). */
+  shortName: string;
   tagline: string;
   background: string;
   surface: string;
@@ -19,6 +21,7 @@ export const games: GameTheme[] = [
   {
     id: 'clash-royale',
     name: 'Clash Royale',
+    shortName: 'CR',
     tagline: 'Real-time card battle arena',
     background: '#0B0F1A',
     surface: '#111827',
@@ -35,6 +38,7 @@ export const games: GameTheme[] = [
   {
     id: 'brawl-stars',
     name: 'Brawl Stars',
+    shortName: 'BS',
     tagline: 'Fast-paced multiplayer brawls',
     background: '#0B0F1A',
     surface: '#111827',
@@ -51,6 +55,7 @@ export const games: GameTheme[] = [
   {
     id: 'clash-of-clans',
     name: 'Clash of Clans',
+    shortName: 'CoC',
     tagline: 'Build, raid, conquer',
     background: '#0B0F1A',
     surface: '#111827',
