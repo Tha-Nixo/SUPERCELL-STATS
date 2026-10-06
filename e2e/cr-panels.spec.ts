@@ -49,7 +49,7 @@ test.describe('Deck tab', () => {
     await mockApi(page);
     await page.goto(cr('?tab=deck'));
     await expect(panel(page).getByTestId('deck-card')).toHaveCount(8);
-    await expect(panel(page).getByText('Average elixir')).toBeVisible();
+    await expect(panel(page).getByText('Avg elixir')).toBeVisible();
     await expect(panel(page).getByText('3.1', { exact: true })).toBeVisible();
     await expect(panel(page).getByTestId('deck-card').filter({ hasText: 'Knight' }).getByText('Evolved')).toBeVisible();
     await expect(panel(page).getByRole('heading', { name: 'Tower troop' })).toBeVisible();

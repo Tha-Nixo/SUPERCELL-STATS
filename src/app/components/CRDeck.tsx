@@ -1,4 +1,4 @@
-import { Droplet, Flame, Heart, Layers, Sparkles, Star } from 'lucide-react';
+import { Droplet, Flame, Heart, Layers, Star } from 'lucide-react';
 import type { CRCardData, PlayerStats } from '../data/mockStats';
 import { Card } from '../ui/Card';
 import { EmptyState } from '../ui/EmptyState';
@@ -33,10 +33,10 @@ export function CRDeck({ playerStats }: CRDeckProps) {
 
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <StatTile label="Average elixir" value={avgElixir.toFixed(1)} icon={<Droplet />} />
-                <StatTile label="Evolutions" value={evolutions} icon={<Sparkles />} />
-                <StatTile label="Cards at max level" value={`${maxed} of ${deck.length}`} icon={<Star />} />
+            <div className="grid grid-cols-3 gap-3">
+                <StatTile label="Avg elixir" value={avgElixir.toFixed(1)} />
+                <StatTile label="Evolutions" value={evolutions} />
+                <StatTile label="Max level" value={`${maxed}/${deck.length}`} />
             </div>
 
             <Card as="section" title="Current deck">
@@ -73,13 +73,13 @@ export function CRDeck({ playerStats }: CRDeckProps) {
             </Card>
 
             {(towerTroop || favorite) && (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     {towerTroop && (
                         <Card as="section" title="Tower troop">
-                            <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
                                 <GameImage sources={[towerTroop.iconUrl]} alt="" width={64} height={77} fallback={<Flame />} className="h-20 w-auto shrink-0 object-contain" />
                                 <div className="min-w-0">
-                                    <p className="truncate font-semibold text-fg">{towerTroop.name}</p>
+                                    <p className="font-semibold text-fg wrap-anywhere">{towerTroop.name}</p>
                                     <p className="mt-1 text-sm text-fg-subtle">{sentenceCase(towerTroop.rarity)} · Level {towerTroop.level}</p>
                                 </div>
                             </div>
@@ -87,10 +87,10 @@ export function CRDeck({ playerStats }: CRDeckProps) {
                     )}
                     {favorite && (
                         <Card as="section" title="Favourite card">
-                            <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
                                 <GameImage sources={[favorite.iconUrl]} alt="" width={64} height={77} fallback={<Heart />} className="h-20 w-auto shrink-0 object-contain" />
                                 <div className="min-w-0">
-                                    <p className="truncate font-semibold text-fg">{favorite.name}</p>
+                                    <p className="font-semibold text-fg wrap-anywhere">{favorite.name}</p>
                                     {favorite.rarity && <p className="mt-1 text-sm text-fg-subtle">{sentenceCase(favorite.rarity)}</p>}
                                 </div>
                             </div>

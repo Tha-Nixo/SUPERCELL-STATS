@@ -36,7 +36,7 @@ export function MatchHistory({ matches }: MatchHistoryProps) {
               {result.label}
             </Pill>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-fg">{match.mode}</p>
+              <p className="text-sm font-medium text-fg wrap-anywhere">{match.mode}</p>
               <p className="text-xs text-fg-subtle">
                 {match.date}
                 {match.duration && ` · ${match.duration}`}
