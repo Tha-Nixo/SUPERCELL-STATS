@@ -54,3 +54,19 @@ export function PlayerSummaryBar({ summary, meta }: PlayerSummaryBarProps) {
     </section>
   );
 }
+
+/** The condensed identity the header shows once the hero has scrolled away. */
+export function PlayerSummaryCompact({ summary }: { summary: PlayerSummary }) {
+  return (
+    // Visual duplicate of the h1 above: hidden from assistive tech so the h1 stays the one heading.
+    <div data-testid="player-summary-compact" aria-hidden="true" className="flex min-w-0 items-center gap-2 pl-1">
+      <span className="truncate text-sm font-semibold text-fg">{summary.name}</span>
+      {summary.trophies !== undefined && (
+        <span className="inline-flex shrink-0 items-center gap-1 text-sm text-fg-muted tabular-nums">
+          <Trophy aria-hidden="true" className="size-3.5 text-accent" />
+          {summary.trophies.toLocaleString('en-US')}
+        </span>
+      )}
+    </div>
+  );
+}

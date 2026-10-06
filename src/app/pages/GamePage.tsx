@@ -10,7 +10,7 @@ import { Button } from '../ui/Button';
 import { cx } from '../ui/cx';
 import { ErrorState } from '../ui/ErrorState';
 import { Pill } from '../ui/Pill';
-import { PlayerSummaryBar } from '../ui/PlayerSummaryBar';
+import { PlayerSummaryBar, PlayerSummaryCompact } from '../ui/PlayerSummaryBar';
 import { PanelSkeleton, PlayerPageSkeleton } from '../ui/Skeleton';
 import { SectionTabs } from '../ui/SectionTabs';
 import { SiteFooter } from '../ui/SiteFooter';
@@ -38,6 +38,9 @@ export default function GamePage() {
   const [isLoading, setIsLoading] = useState(() => Boolean(urlTag));
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>(() => (gameId ? getRecentSearches(gameId) : []));
   const [copied, setCopied] = useState(false);
+  // The hero has scrolled under the header: the header shows the condensed player instead.
+  const [condensed, setCondensed] = useState(false);
+  const heroRef = useRef<HTMLDivElement>(null);
   // Only the most recent search may write its result (a slow older one must not overwrite it).
   const requestId = useRef(0);
 
@@ -89,6 +92,23 @@ export default function GamePage() {
   useEffect(() => {
     if (urlTag && gameId && isGameId(gameId)) preloadGameModule(gameId);
   }, [urlTag, gameId]);
+
+  // Watch the hero rather than listening to scroll events (no work per scrolled pixel).
+  const hasPlayer = Boolean(urlTag && result?.data);
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hasPlayer || !hero) {
+      setCondensed(false);
+      return;
+    }
+    const headerHeight = parseFloat(getComputedStyle(document.documentElement).fontSize) * 3.5; // --header-h
+    const observer = new IntersectionObserver(
+      ([entry]) => setCondensed(!entry.isIntersecting),
+      { rootMargin: `-${headerHeight}px 0px 0px 0px` },
+    );
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, [hasPlayer]);
 
   // Per-page document title
   useEffect(() => {
@@ -154,6 +174,8 @@ export default function GamePage() {
     <div data-game={game.id} className="flex min-h-dvh flex-col">
       <AppHeader
         game={game}
+        title={condensed && summary ? <PlayerSummaryCompact summary={summary} /> : undefined}
+        compactNav={condensed && Boolean(summary)}
         search={urlTag ? { label: 'Player tag', initialValue: `#${urlTag}`, busy: isLoading, onSubmitTag: goToPlayer } : undefined}
       />
 
@@ -191,20 +213,22 @@ export default function GamePage() {
             {playerStats && summary && (
               // Refetch keeps the frame: the previous player stays visible, dimmed.
               <div aria-busy={isLoading} className={cx('transition-opacity duration-200', isLoading && 'opacity-50')}>
-                <PlayerSummaryBar
-                  summary={summary}
-                  meta={
-                    <>
-                      {result?.isReal
-                        ? <Pill tone="win">Live from the official Supercell API</Pill>
-                        : <Pill>Demo data: stats are randomly generated (VITE_DEMO_MODE)</Pill>}
-                      <Button variant="ghost" onClick={() => void copyPlayerLink()}>
-                        {copied ? <Check aria-hidden="true" /> : <Link2 aria-hidden="true" />}
-                        {copied ? 'Link copied' : 'Copy link'}
-                      </Button>
-                    </>
-                  }
-                />
+                <div ref={heroRef}>
+                  <PlayerSummaryBar
+                    summary={summary}
+                    meta={
+                      <>
+                        {result?.isReal
+                          ? <Pill tone="win">Live from the official Supercell API</Pill>
+                          : <Pill>Demo data: stats are randomly generated (VITE_DEMO_MODE)</Pill>}
+                        <Button variant="ghost" onClick={() => void copyPlayerLink()}>
+                          {copied ? <Check aria-hidden="true" /> : <Link2 aria-hidden="true" />}
+                          {copied ? 'Link copied' : 'Copy link'}
+                        </Button>
+                      </>
+                    }
+                  />
+                </div>
 
                 {playerStats.dataNotice && (
                   <div className="mt-4 flex items-start gap-3 rounded-card border border-line bg-surface-1 p-4 text-sm text-fg-muted">
