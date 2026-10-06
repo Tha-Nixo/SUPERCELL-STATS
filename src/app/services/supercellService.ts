@@ -46,12 +46,20 @@ const MODE_ALIASES: Record<string, string> = {
     riverRacePvP: 'River Race',
     riverRaceDuel: 'River Race Duel',
     boatBattle: 'Boat Battle',
-    unknown: 'Brawl Hockey',
 };
 
-function prettyMode(raw: string | undefined): string {
+// "unknown" means a different thing in each game: Brawl Stars sends it for
+// Brawl Hockey, Clash Royale for event modes without a type name. Sharing one alias
+// labelled any Clash Royale battle of type "unknown" as "Brawl Hockey".
+const GAME_MODE_ALIASES: Record<'clash-royale' | 'brawl-stars', Record<string, string>> = {
+    'clash-royale': { unknown: 'Special event' },
+    'brawl-stars': { unknown: 'Brawl Hockey' },
+};
+
+export function prettyMode(raw: string | undefined, game: 'clash-royale' | 'brawl-stars'): string {
     if (!raw) return 'Battle';
-    if (MODE_ALIASES[raw]) return MODE_ALIASES[raw];
+    const alias = GAME_MODE_ALIASES[game][raw] ?? MODE_ALIASES[raw];
+    if (alias) return alias;
     const spaced = raw.replace(/([a-z\d])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').trim();
     return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
@@ -82,6 +90,16 @@ function buildTrophyTrend(
         return point;
     });
     return points.reverse();
+}
+
+/**
+ * Clash Royale battles that moved the Trophy Road count (`player.trophies`).
+ * Path of Legend battles also report a `trophyChange`, but that is a separate
+ * ranked counter (a flat +-30 per battle), so mixing it into the Trophy Road
+ * count draws a climb that never happened.
+ */
+export function crTrophyRoadBattles(battles: any[]): any[] {
+    return battles.filter((b: any) => b?.type !== 'pathOfLegend' && typeof b?.team?.[0]?.trophyChange === 'number');
 }
 
 const FETCH_TIMEOUT_MS = 10_000;
@@ -186,6 +204,30 @@ function getCRCardsTarget(level: number, rarity: string): number {
 // ─────────────────────────────────────────
 // Clash Royale
 // ─────────────────────────────────────────
+/**
+ * Every battle the Clash Royale log returned (the API sends up to 30), newest
+ * first, as app matches. The Battles tab filters this whole list; the overview
+ * shows only its first few (`latestBattles`).
+ */
+export function crRecentMatches(battles: any[]): Match[] {
+    return battles.map((b: any, i: number) => {
+        const myCrowns = b.team?.[0]?.crowns ?? 0;
+        const oppCrowns = b.opponent?.[0]?.crowns ?? 0;
+        const change = b.team?.[0]?.trophyChange;
+        return {
+            id: `match-${i}`,
+            mode: prettyMode(b.type, 'clash-royale'),
+            result: myCrowns > oppCrowns ? 'win' : myCrowns < oppCrowns ? 'loss' : 'draw',
+            kills: myCrowns,
+            deaths: oppCrowns,
+            assists: 0,
+            score: typeof change === 'number' ? change : undefined,
+            date: parseSCDate(b.battleTime),
+            duration: '',
+        };
+    });
+}
+
 async function searchClashRoyale(tag: string): Promise<PlayerStats> {
     const key = apiKeys.get('clashRoyale');
     const encodedTag = encodeURIComponent(normalizeTag(tag));
@@ -334,31 +376,16 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
             ? `${player.leagueStatistics.currentSeason.bestTrophies} PL 🏆`
             : arenaName;
 
-    const recentMatches: Match[] = battles.slice(0, 10).map((b: any, i: number) => {
-        const myCrowns = b.team?.[0]?.crowns ?? 0;
-        const oppCrowns = b.opponent?.[0]?.crowns ?? 0;
-        const change = b.team?.[0]?.trophyChange;
-        return {
-            id: `match-${i}`,
-            mode: prettyMode(b.type),
-            result: myCrowns > oppCrowns ? 'win' : myCrowns < oppCrowns ? 'loss' : 'draw',
-            kills: myCrowns,
-            deaths: oppCrowns,
-            assists: 0,
-            score: typeof change === 'number' ? change : undefined,
-            date: parseSCDate(b.battleTime),
-            duration: '',
-        };
-    });
+    const recentMatches = crRecentMatches(battles);
 
     // Real trophy progression, reconstructed backwards from the current count.
-    // Only battles that actually moved trophies belong on the trend.
+    // Only battles that moved the Trophy Road count belong on the trend.
     const performanceData = buildTrophyTrend(
-        battles.filter((b: any) => typeof b.team?.[0]?.trophyChange === 'number'),
+        crTrophyRoadBattles(battles),
         trophies,
         (b: any) => b.team[0].trophyChange,
         (b: any) => parseSCDate(b.battleTime),
-        (b: any) => prettyMode(b.type)
+        (b: any) => prettyMode(b.type, 'clash-royale')
     );
 
     return {
@@ -555,7 +582,7 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
 
     const recentMatches: Match[] = battles.slice(0, 10).map((b: any, i: number) => ({
         id: `match-${i}`,
-        mode: prettyMode(b.event?.mode ?? b.battle?.mode),
+        mode: prettyMode(b.event?.mode ?? b.battle?.mode, 'brawl-stars'),
         result: bsOutcome(b) ?? 'draw',
         score: b.battle?.trophyChange ?? undefined,
         date: parseSCDate(b.battleTime),
@@ -567,7 +594,7 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
         trophies,
         (b: any) => b.battle.trophyChange,
         (b: any) => parseSCDate(b.battleTime),
-        (b: any) => prettyMode(b.event?.mode ?? b.battle?.mode)
+        (b: any) => prettyMode(b.event?.mode ?? b.battle?.mode, 'brawl-stars')
     );
 
     const allBrawlers: BSBrawlerData[] = sortedBrawlers.map(mapBrawler);

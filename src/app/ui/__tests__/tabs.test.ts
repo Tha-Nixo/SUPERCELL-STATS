@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTab, withTab } from '../tabs';
+import { parseTab, shareSearch, withTab } from '../tabs';
 
 const IDS = ['overview', 'cards', 'deck', 'battles', 'towers'] as const;
 
@@ -31,5 +31,25 @@ describe('withTab', () => {
   it('keeps other parameters', () => {
     expect(withTab('?ref=share&tab=deck', 'cards', 'overview')).toBe('?ref=share&tab=cards');
     expect(withTab('?ref=share&tab=deck', 'overview', 'overview')).toBe('?ref=share');
+  });
+});
+
+describe('withTab with parameters to drop', () => {
+  it('drops the leaving tab\'s parameters and keeps the rest', () => {
+    expect(withTab('?tab=battles&mode=ladder&result=loss&ref=share', 'deck', 'overview', ['mode', 'result'])).toBe('?tab=deck&ref=share');
+    expect(withTab('?tab=battles&result=loss', 'overview', 'overview', ['mode', 'result'])).toBe('');
+  });
+});
+
+describe('shareSearch', () => {
+  it('writes the tab first, then the given parameters, and nothing from the address bar', () => {
+    expect(shareSearch('battles', 'overview', { mode: 'ladder', result: 'loss' })).toBe('?tab=battles&mode=ladder&result=loss');
+  });
+  it('is canonical for the default tab and does not copy the address bar', () => {
+    expect(shareSearch('overview', 'overview')).toBe('');
+    expect(shareSearch('deck', 'overview')).toBe('?tab=deck');
+  });
+  it('skips empty values', () => {
+    expect(shareSearch('battles', 'overview', { mode: '' })).toBe('?tab=battles');
   });
 });

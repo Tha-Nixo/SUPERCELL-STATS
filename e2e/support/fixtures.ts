@@ -9,7 +9,7 @@ const card = (id: number, name: string, rarity: string, level: number, maxLevel:
   id, name, rarity, level, maxLevel, elixirCost, count: 120, iconUrls: { medium: `https://api-assets.clashroyale.com/cards/300/${id}.png` },
 });
 const deck = [
-  card(26000000, 'Knight', 'common', 14, 16, 3),
+  { ...card(26000000, 'Knight', 'common', 14, 16, 3), evolutionLevel: 1, starLevel: 2, iconUrls: { medium: 'https://api-assets.clashroyale.com/cards/300/26000000.png', evolutionMedium: 'https://api-assets.clashroyale.com/cardevolutions/300/26000000.png' } },
   card(26000001, 'Archers', 'common', 14, 16, 3),
   card(26000010, 'Skeleton Army', 'epic', 10, 11, 3),
   card(26000021, 'Hog Rider', 'rare', 12, 14, 4),
@@ -19,14 +19,18 @@ const deck = [
   card(26000035, 'Ice Golem', 'rare', 12, 14, 2),
 ];
 
-const crBattle = (minutesAgo: number, my: number, opp: number, trophyChange: number) => ({
-  type: 'PvP',
+const crBattle = (minutesAgo: number, my: number, opp: number, trophyChange?: number, type = 'PvP') => ({
+  type,
   battleTime: new Date(Date.UTC(2026, 9, 6, 10, 0) - minutesAgo * 60_000).toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '.000Z'),
   gameMode: { id: 72000006, name: 'Ladder' },
   team: [{ tag: `#${FIXTURE_TAG}`, name: 'Vela Storm', crowns: my, trophyChange }],
   opponent: [{ tag: '#2Y0Y', name: 'Opponent', crowns: opp }],
 });
 
+const towerTroop = (id: number, name: string, rarity: string, level: number) => ({
+  id, name, rarity, level, maxLevel: 16, iconUrls: { medium: `https://api-assets.clashroyale.com/cards/300/${id}.png` },
+});
+const towerTroops = [towerTroop(159000000, 'Tower Princess', 'common', 16), towerTroop(159000001, 'Cannoneer', 'epic', 11), towerTroop(159000002, 'Dagger Duchess', 'legendary', 8)];
 export const crPlayer = {
   tag: `#${FIXTURE_TAG}`,
   name: 'Vela Storm',
@@ -37,12 +41,41 @@ export const crPlayer = {
   losses: 3388,
   threeCrownWins: 1530,
   arena: { id: 54000057, name: 'Legendary Arena' },
-  clan: { tag: '#2Y0Y', name: 'Lantern Watch' },
   role: 'elder',
   cards: deck,
   currentDeck: deck,
+  supportCards: towerTroops,
+  currentDeckSupportCards: [towerTroops[1]],
+  clan: { tag: '#2Y0Y', name: 'Lantern Watch', badgeUrl: 'https://api-assets.clashroyale.com/badges/200/16000000.png' },
+  totalDonations: 2048,
+  warDayWins: 12,
+  leagueStatistics: { currentSeason: { trophies: 9123 }, bestSeason: { id: '2026-08', trophies: 9288 } },
+  currentPathOfLegendSeasonResult: { leagueNumber: 7, trophies: 1968, rank: 1520 },
+  bestPathOfLegendSeasonResult: { leagueNumber: 10, trophies: 3371, rank: 37 },
+  legacyTrophyRoadHighScore: 8063,
+  badges: [
+    { name: 'Classic12Wins', level: 3, maxLevel: 8, progress: 30, target: 50, iconUrls: { large: 'https://api-assets.clashroyale.com/badges/1.png' } },
+    { name: 'YearsPlayed', level: 9, maxLevel: 10, progress: 3400, target: 3650, iconUrls: { large: 'https://api-assets.clashroyale.com/badges/2.png' } },
+  ],
+  achievements: [
+    { name: 'Team Player', stars: 3, value: 1, target: 1, info: 'Join a clan' },
+    { name: 'Gatherer', stars: 2, value: 1800, target: 3000, info: 'Collect 3000 cards' },
+  ],
+  currentFavouriteCard: { id: 26000021, name: 'Hog Rider', rarity: 'rare', maxLevel: 14, elixirCost: 4, iconUrls: { medium: 'https://api-assets.clashroyale.com/cards/300/26000021.png' } },
 };
-export const crBattlelog = [crBattle(5, 3, 1, 31), crBattle(30, 0, 1, -28), crBattle(60, 1, 1, 0), crBattle(90, 2, 0, 30)];
+// Newest first. 9 battles: 5 wins, 3 losses, 1 draw; Ladder 4, Path of Legend 3,
+// River Race 1 (a win), Special event 1 (type "unknown", a loss).
+export const crBattlelog = [
+  crBattle(5, 3, 1, 31),
+  crBattle(30, 0, 1, -28),
+  crBattle(60, 1, 1, 0),
+  crBattle(90, 2, 0, 30),
+  crBattle(120, 1, 0, 29, 'pathOfLegend'),
+  crBattle(150, 0, 2, undefined, 'pathOfLegend'),
+  crBattle(180, 2, 1, undefined, 'riverRacePvP'),
+  crBattle(210, 0, 3, undefined, 'unknown'),
+  crBattle(240, 3, 0, undefined, 'pathOfLegend'),
+];
 
 export const bsPlayer = {
   tag: `#${FIXTURE_TAG}`,

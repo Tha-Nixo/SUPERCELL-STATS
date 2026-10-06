@@ -1,327 +1,213 @@
-import { useState } from 'react';
-import { PlayerStats } from '../data/mockStats';
-import { Trophy, Star, Users, TrendingUp, ChevronDown, ChevronUp, Crown, Shield } from 'lucide-react';
+import { useId, useState } from 'react';
+import { ArrowRight, Award, Check, ChevronDown, Crown, Layers, Percent, Shield, Sparkles, Star, Swords, Trophy } from 'lucide-react';
+import type { PlayerStats } from '../data/mockStats';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { cx } from '../ui/cx';
+import { GameImage } from '../ui/GameImage';
+import { Pill } from '../ui/Pill';
+import { Row } from '../ui/Row';
+import { StatTile } from '../ui/StatTile';
+import { sentenceCase } from '../ui/text';
+import { crFacts } from './crFacts';
 
 interface CROverviewProps {
     playerStats: PlayerStats;
-    accent: string;
-    onTabChange?: (tab: string) => void;
+    /** Opens the Deck tab (the deck preview's "View deck"). */
+    onOpenDeck: () => void;
 }
 
-export function CROverview({ playerStats, accent, onTabChange }: CROverviewProps) {
+const n = (value: number | undefined) => (value === undefined ? '–' : value.toLocaleString('en-US'));
+
+/**
+ * Clash Royale overview. Name, tag, league, level and trophies are already in
+ * the page's summary bar, so this starts with the numbers the bar does not show.
+ */
+export function CROverview({ playerStats, onOpenDeck }: CROverviewProps) {
     const cr = playerStats.gameVisuals?.cr;
-    const [badgesExpanded, setBadgesExpanded] = useState(false);
+    const badgesId = useId();
+    const [badgesOpen, setBadgesOpen] = useState(false);
     if (!cr) return null;
 
-    // Deck preview cards (first 8 from current deck)
-    const deckCards = cr.currentDeck?.slice(0, 8) ?? [];
+    const facts = crFacts(playerStats);
+    const deck = cr.currentDeck?.slice(0, 8) ?? [];
+    const pol = cr.pathOfLegend;
+    const league = cr.leagueStatistics;
+    const legacyBest = cr.legacyTrophyRoadHighScore ?? 0;
+    const hasPol = Boolean(pol?.currentSeason || pol?.bestSeason);
+    const hasLeague = Boolean(league?.currentSeason || league?.bestSeason) || legacyBest > 0;
+    const achievements = (cr.achievements ?? []).filter((a) => a.value > 0);
+    const badges = cr.badges ?? [];
+    const xp = cr.expPoints ?? 0;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
+            <div className={cx('grid grid-cols-2 gap-3', xp > 0 ? 'lg:grid-cols-5' : 'lg:grid-cols-4')}>
+                <StatTile
+                    label="Win rate"
+                    value={`${playerStats.winRate}%`}
+                    sub={facts.wins !== undefined ? `${n(facts.wins)} W / ${n(facts.losses)} L` : undefined}
+                    icon={<Percent />}
+                />
+                <StatTile label="Battles" value={n(playerStats.totalMatches)} icon={<Swords />} />
+                <StatTile label="Three-crown wins" value={n(facts.threeCrownWins)} icon={<Crown />} />
+                <StatTile label="Best trophies" value={n(facts.bestTrophies)} sub={cr.arenaName} icon={<Trophy />} />
+                {xp > 0 && (
+                    <div className="col-span-2 lg:col-span-1">
+                        <StatTile label="Experience" value={n(xp)} sub="XP" icon={<Sparkles />} />
+                    </div>
+                )}
+            </div>
 
-            {/* 1. Header Profilo */}
-            <div className="flex flex-col md:flex-row gap-6 p-6 rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0">
-                <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                        <h2 className="text-3xl font-bold text-white">{playerStats.username}</h2>
-                        <span className="text-xs font-mono text-white/50 bg-black/40 px-2 py-1 rounded-md">{playerStats.rank}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                            <Star className="w-4 h-4 text-yellow-400" />
-                            <span className="text-white/80">Lvl {playerStats.level}</span>
-                            {cr.expPoints !== undefined && cr.expPoints > 0 && (
-                                <span className="text-white/50 text-[10px]">({cr.expPoints.toLocaleString()} XP)</span>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Trophy className="w-4 h-4 text-yellow-500" />
-                            <span className="text-white/80">{playerStats.hoursPlayed}</span>
-                            <span className="text-white/50 text-[10px]">Best: {playerStats.statLabels?.stat4Sub?.replace('Best: ', '')}</span>
-                        </div>
-                        {cr.arenaName && (
-                            <div className="flex items-center gap-2 border-l border-white/10 pl-4">
-                                {(cr.arenaIconUrl || cr.arenaId) && <img
-                                    src={cr.arenaIconUrl || `https://api-assets.clashroyale.com/arenas/72/${cr.arenaId}.png`}
-                                    width={24}
-                                    height={24}
-                                    decoding="async"
-                                    className="w-6 h-6 object-contain drop-shadow"
-                                    alt="Arena"
-                                    onError={(e) => {
-                                        const img = e.target as HTMLImageElement;
-                                        if (!img.dataset.tried) {
-                                            img.dataset.tried = '1';
-                                            img.src = `https://royaleapi.github.io/cr-api-assets/arenas/${cr.arenaId}.png`;
-                                        } else {
-                                            img.style.display = 'none';
-                                        }
-                                    }}
-                                />}
-                                <span className="text-white/80 font-semibold">{cr.arenaName}</span>
-                            </div>
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+                <div className="min-w-0 space-y-4">
+                    <Card as="section" title="Clan">
+                        {facts.clan ? (
+                            <>
+                                <div className="mb-2 flex items-center gap-3">
+                                    <GameImage sources={[cr.clanBadgeUrl]} alt="" width={40} height={40} fallback={<Shield />} className="size-10 shrink-0 object-contain" />
+                                    <div className="min-w-0">
+                                        <p dir="auto" className="truncate font-semibold text-fg">{facts.clan.name}</p>
+                                        <p className="text-xs text-fg-subtle">{facts.clan.tag}</p>
+                                    </div>
+                                </div>
+                                <div className="divide-y divide-line">
+                                    <Row label="Role" value={sentenceCase(facts.clan.role)} />
+                                    <Row label="Donations" value={n(facts.donations)} />
+                                    <Row label="War day wins" value={n(facts.warDayWins)} />
+                                </div>
+                            </>
+                        ) : (
+                            <p className="text-sm text-fg-muted">Not in a clan right now.</p>
                         )}
-                    </div>
+                    </Card>
+
+                    {deck.length > 0 && (
+                        <Card
+                            as="section"
+                            title="Battle deck"
+                            action={
+                                <Button variant="ghost" onClick={onOpenDeck}>
+                                    View deck
+                                    <ArrowRight aria-hidden="true" />
+                                </Button>
+                            }
+                        >
+                            <ul className="grid grid-cols-4 gap-2">
+                                {deck.map((card) => (
+                                    <li key={card.id} className="flex justify-center rounded-lg bg-surface-2 p-1">
+                                        <GameImage sources={[card.iconUrl]} alt={card.name} width={60} height={72} fallback={<Layers />} className="h-16 w-auto object-contain" />
+                                    </li>
+                                ))}
+                            </ul>
+                        </Card>
+                    )}
+                </div>
+
+                <div className="min-w-0 space-y-4 lg:col-span-2">
+                    {(hasPol || hasLeague) && (
+                        <Card as="section" title="Ranked seasons">
+                            <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+                                {hasPol && (
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-fg-muted">Path of Legend</h4>
+                                        <div className="divide-y divide-line">
+                                            {pol?.currentSeason && <Row label="This season" value={pol.currentSeason.rank ? `#${n(pol.currentSeason.rank)}` : 'Unranked'} />}
+                                            {pol?.bestSeason?.rank !== undefined && <Row label="Best season" value={`#${n(pol.bestSeason.rank)}`} />}
+                                        </div>
+                                    </div>
+                                )}
+                                {hasLeague && (
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-fg-muted">Trophy Road</h4>
+                                        <div className="divide-y divide-line">
+                                            {league?.currentSeason && <Row label="This season" value={n(league.currentSeason.trophies)} />}
+                                            {league?.bestSeason && (
+                                                <Row label={league.bestSeason.id ? `Best season (${league.bestSeason.id})` : 'Best season'} value={n(league.bestSeason.trophies)} />
+                                            )}
+                                            {legacyBest > 0 && <Row label="Legacy best" value={n(legacyBest)} />}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </Card>
+                    )}
+
+                    {badges.length > 0 && (
+                        <Card as="section" padding="none">
+                            <h3>
+                                <button
+                                    type="button"
+                                    aria-expanded={badgesOpen}
+                                    aria-controls={badgesId}
+                                    onClick={() => setBadgesOpen((open) => !open)}
+                                    className="flex min-h-11 w-full items-center justify-between gap-3 rounded-card px-4 py-3 text-left text-sm font-semibold text-fg hover:bg-surface-2 sm:px-5"
+                                >
+                                    <span>
+                                        Badges <span className="font-normal text-fg-subtle tabular-nums">({badges.length})</span>
+                                    </span>
+                                    <ChevronDown aria-hidden="true" className={cx('size-4 text-fg-muted transition-transform duration-200', badgesOpen && 'rotate-180')} />
+                                </button>
+                            </h3>
+                            {badgesOpen && (
+                                <ul
+                                    id={badgesId}
+                                    data-testid="badge-list"
+                                    className="grid grid-cols-3 gap-3 px-4 pb-4 transition duration-200 ease-out-quick starting:-translate-y-1 starting:opacity-0 sm:grid-cols-5 sm:px-5 sm:pb-5 lg:grid-cols-6"
+                                >
+                                    {badges.map((badge, i) => (
+                                        <li key={`${badge.name}-${i}`} className="flex min-w-0 flex-col items-center gap-1 text-center">
+                                            <GameImage sources={[badge.iconUrl]} alt="" width={48} height={48} fallback={<Award />} className="size-12 object-contain" />
+                                            <span className="w-full truncate text-xs text-fg-muted">{badge.name}</span>
+                                            {badge.level > 0 && (
+                                                <span className="text-xs text-fg-subtle tabular-nums">
+                                                    Level {badge.level}{badge.maxLevel ? ` of ${badge.maxLevel}` : ''}
+                                                </span>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </Card>
+                    )}
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Colonna 1: Quick Stats, Clan & Deck Preview */}
-                <div className="space-y-6">
-                    {/* Quick Stats */}
-                    <div className="p-5 rounded-2xl border border-white/5 bg-white/2">
-                        <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-4">Quick Stats</h3>
-                        <div className="space-y-3">
-                            <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                                <span className="text-white/60">Win/Loss</span>
-                                <span className="text-white font-mono">{playerStats.statLabels?.stat1Sub?.split(' · ')[0]} / {playerStats.statLabels?.stat1Sub?.split(' · ')[1]}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                                <span className="text-white/60">3-Crown Wins</span>
-                                <span className="text-white font-mono font-bold">{playerStats.statLabels?.stat3Sub?.split(' ')[0]} 👑</span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-white/60">Total Battles</span>
-                                <span className="text-white font-mono">{playerStats.totalMatches.toLocaleString()}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Clan Box */}
-                    <div className="p-5 rounded-2xl border border-white/5 bg-white/2">
-                        <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><Users className="w-4 h-4" /> Clan</h3>
-                        {playerStats.extraStats?.find(s => s.label === 'Clan')?.value ? (
-                            <div>
-                                <div className="flex items-center gap-3 mb-4">
-                                    {cr.clanBadgeUrl ? (
-                                        <img
-                                            src={cr.clanBadgeUrl}
-                                            width={40}
-                                            height={40}
-                                            loading="lazy"
-                                            decoding="async"
-                                            className="w-10 h-10 object-contain"
-                                            alt="Clan Badge"
-                                            onError={(e) => {
-                                                const img = e.target as HTMLImageElement;
-                                                img.style.display = 'none';
-                                                img.parentElement?.insertAdjacentHTML('afterbegin', '<div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-white/40 text-lg">🛡️</div>');
-                                            }}
-                                        />
-                                    ) : (
-                                        <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-white/40 text-lg"><Shield className="w-5 h-5" /></div>
-                                    )}
-                                    <div>
-                                        <h4 className="text-white font-bold">{playerStats.extraStats?.find(s => s.label === 'Clan')?.value.toString().split(' · ')[0]}</h4>
-                                        <div className="text-xs font-mono text-white/70">{cr.clanTag}</div>
-                                    </div>
-                                </div>
-                                <div className="space-y-2 text-sm pt-2 border-t border-white/5">
-                                    <div className="flex justify-between">
-                                        <span className="text-white/60">Role</span>
-                                        <span className="text-white font-semibold uppercase text-xs" style={{ color: accent }}>
-                                            {playerStats.extraStats?.find(s => s.label === 'Clan')?.value.toString().split(' · ')[1]}
+            {achievements.length > 0 && (
+                <Card as="section" title="Achievements">
+                    <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                        {achievements.map((a) => {
+                            const pct = a.target ? Math.min(100, (a.value / a.target) * 100) : 100;
+                            const done = a.target > 0 && a.value >= a.target;
+                            return (
+                                <li key={a.name} className="rounded-card border border-line p-3">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <span className="text-sm font-semibold text-fg">{a.name}</span>
+                                        <span className="flex shrink-0 gap-0.5" role="img" aria-label={`${a.stars} of 3 stars`}>
+                                            {[0, 1, 2].map((i) => (
+                                                <Star key={i} aria-hidden="true" className={cx('size-3.5', i < a.stars ? 'fill-accent text-accent' : 'text-fg-subtle')} />
+                                            ))}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-white/60">Donations</span>
-                                        <span className="text-white">{playerStats.extraStats?.find(s => s.label === 'Total Donations')?.value}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-white/60">War Day Wins</span>
-                                        <span className="text-white">{playerStats.extraStats?.find(s => s.label === 'War Day Wins')?.value}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center py-6 text-white/70 text-sm">Not currently in a Clan</div>
-                        )}
-                    </div>
-
-                    {/* Deck Preview */}
-                    {deckCards.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => onTabChange?.('deck')}
-                            className="w-full p-4 rounded-2xl border border-white/5 bg-white/2 hover:bg-white/5 hover:border-white/10 transition-all text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-                        >
-                            <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-3 flex items-center justify-between">
-                                <span>Battle Deck</span>
-                                <span className="text-white/55 group-hover:text-white text-[10px] transition-colors">View →</span>
-                            </h3>
-                            <div className="grid grid-cols-4 gap-1.5">
-                                {deckCards.map((card, i) => (
-                                    <div key={i} className="aspect-[3/4] rounded-lg overflow-hidden bg-black/40 border border-white/10 group-hover:border-white/20 transition-all">
-                                        {card.iconUrl ? (
-                                            <img src={card.iconUrl} alt={card.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                                    {a.info && <p className="mt-1 text-xs text-fg-subtle">{a.info}</p>}
+                                    <div className="mt-3 flex items-center gap-3">
+                                        <div aria-hidden="true" className="h-1.5 flex-1 overflow-hidden rounded-pill bg-surface-2">
+                                            <div className="h-full rounded-pill bg-accent" style={{ width: `${pct}%` }} />
+                                        </div>
+                                        {done ? (
+                                            <Pill tone="solid" icon={<Check />}>Done</Pill>
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-white/55 text-[8px] text-center p-1">{card.name}</div>
+                                            <span className="text-xs whitespace-nowrap text-fg-subtle tabular-nums">
+                                                {n(a.value)} / {n(a.target)}
+                                            </span>
                                         )}
                                     </div>
-                                ))}
-                            </div>
-                        </button>
-                    )}
-                </div>
-
-                {/* Colonna 2 & 3: Competitive & Badges */}
-                <div className="col-span-1 lg:col-span-2 space-y-6">
-                    {/* Seasons & Path of Legend */}
-                    {(cr.leagueStatistics || cr.pathOfLegend || cr.legacyTrophyRoadHighScore) && (
-                        <div className="p-5 rounded-2xl border border-white/5 bg-white/2">
-                            <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <TrendingUp className="w-4 h-4" />
-                                Ranked Seasons
-                            </h3>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {/* Path of Legend Block */}
-                                {cr.pathOfLegend && (cr.pathOfLegend.currentSeason || cr.pathOfLegend.bestSeason) && (
-                                    <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/10">
-                                        <div className="flex items-center gap-2 mb-3 text-purple-400 font-semibold">
-                                            <Crown className="w-4 h-4" />
-                                            Path of Legend
-                                        </div>
-                                        <div className="space-y-2">
-                                            {cr.pathOfLegend.currentSeason && (
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-white/60">Current Rank</span>
-                                                    <span className="text-white font-bold">{cr.pathOfLegend.currentSeason.rank ?? 'Unranked'}</span>
-                                                </div>
-                                            )}
-                                            {cr.pathOfLegend.bestSeason && (
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-white/60">Best Rank</span>
-                                                    <span className="text-purple-400 font-bold">#{cr.pathOfLegend.bestSeason.rank}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* League Statistics Block */}
-                                {cr.leagueStatistics && (cr.leagueStatistics.currentSeason || cr.leagueStatistics.bestSeason) && (
-                                    <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
-                                        <div className="flex items-center gap-2 mb-3 text-blue-400 font-semibold">
-                                            <Trophy className="w-4 h-4" />
-                                            Trophy Road
-                                        </div>
-                                        <div className="space-y-2">
-                                            {cr.leagueStatistics.currentSeason && (
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-white/60">Current</span>
-                                                    <span className="text-white font-bold">{cr.leagueStatistics.currentSeason.trophies} 🏆</span>
-                                                </div>
-                                            )}
-                                            {cr.leagueStatistics.bestSeason && (
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-white/60">Best ({cr.leagueStatistics.bestSeason.id})</span>
-                                                    <span className="text-blue-400 font-bold">{cr.leagueStatistics.bestSeason.trophies} 🏆</span>
-                                                </div>
-                                            )}
-                                            {cr.legacyTrophyRoadHighScore !== undefined && cr.legacyTrophyRoadHighScore > 0 && (
-                                                <div className="flex justify-between text-sm border-t border-blue-500/10 mt-2 pt-2">
-                                                    <span className="text-white/70">Legacy High</span>
-                                                    <span className="text-white/60 font-mono">{cr.legacyTrophyRoadHighScore}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Badges Grid — collapsible, collapsed by default */}
-                    {cr.badges && cr.badges.length > 0 && (
-                        <div className="rounded-2xl border border-white/5 bg-white/2 overflow-hidden">
-                            <button
-                                type="button"
-                                onClick={() => setBadgesExpanded(prev => !prev)}
-                                aria-expanded={badgesExpanded}
-                                className="w-full flex items-center justify-between p-5 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-                            >
-                                <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                                    Badges
-                                    <span className="text-white/55 font-normal normal-case tracking-normal text-[10px]">({cr.badges.length})</span>
-                                </h3>
-                                {badgesExpanded
-                                    ? <ChevronUp className="w-4 h-4 text-white/30" />
-                                    : <ChevronDown className="w-4 h-4 text-white/30" />
-                                }
-                            </button>
-                            {badgesExpanded && (
-                                <div className="px-5 pb-5 flex flex-wrap gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                                    {cr.badges.map((b, i) => (
-                                        <div key={i} className="group relative w-16 h-16 flex items-center justify-center bg-black/40 rounded-xl border border-white/5 hover:border-white/20 transition-all cursor-help">
-                                            <img
-                                                src={b.iconUrl}
-                                                alt={b.name}
-                                                width={48}
-                                                height={48}
-                                                loading="lazy"
-                                                decoding="async"
-                                                className="w-12 h-12 object-contain drop-shadow-lg group-hover:scale-110 transition-transform"
-                                                onError={(e) => {
-                                                    const img = e.target as HTMLImageElement;
-                                                    img.style.display = 'none';
-                                                    img.parentElement?.insertAdjacentHTML('beforeend', `<span class="text-2xl opacity-40">🏅</span>`);
-                                                }}
-                                            />
-                                            {/* Tooltip */}
-                                            <div className="absolute bottom-full mb-2 bg-gray-900 border border-white/10 text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none drop-shadow-xl min-w-[120px] text-center">
-                                                <div className="font-bold mb-1">{b.name}</div>
-                                                {b.level > 0 && (
-                                                    <div className="text-white/60 mb-1">Level {b.level}{b.maxLevel ? ` / ${b.maxLevel}` : ''}</div>
-                                                )}
-                                                {b.target > 0 && (
-                                                    <div className="w-full h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
-                                                        <div className="h-full bg-blue-500" style={{ width: `${Math.min(100, (b.progress / b.target) * 100)}%` }} />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Achievements List */}
-                    {cr.achievements && cr.achievements.length > 0 && (
-                        <div className="p-5 rounded-2xl border border-white/5 bg-white/2">
-                            <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-4">Achievements</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {cr.achievements.filter(a => a.value > 0).map((a, i) => {
-                                    const percent = a.target ? Math.min(100, (a.value / a.target) * 100) : 100;
-                                    const isComplete = a.value >= a.target;
-                                    return (
-                                        <div key={i} className="p-3 bg-black/30 rounded-xl border border-white/5">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <span className="text-sm font-semibold text-white/90">{a.name}</span>
-                                                <div className="flex gap-0.5">
-                                                    {Array.from({ length: 3 }).map((_, si) => (
-                                                        <Star key={si} className={`w-3 h-3 ${si < a.stars ? 'text-yellow-500 fill-yellow-500' : 'text-white/10'}`} />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <p className="text-[10px] text-white/50 mb-3">{a.info}</p>
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                                    <div className={`h-full ${isComplete ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${percent}%` }} />
-                                                </div>
-                                                <span className="text-[10px] font-mono text-white/55 whitespace-nowrap">
-                                                    {a.value.toLocaleString()} / {a.target.toLocaleString()}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </Card>
+            )}
         </div>
     );
 }

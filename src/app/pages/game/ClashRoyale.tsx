@@ -3,12 +3,15 @@ import { CRCardsList } from '../../components/CRCardsList';
 import { CRDeck } from '../../components/CRDeck';
 import { CROverview } from '../../components/CROverview';
 import { CRTowerTroops } from '../../components/CRTowerTroops';
-import { MatchHistory } from '../../components/MatchHistory';
 import { EmptyState } from '../../ui/EmptyState';
+import { BattlesPanel } from './BattlesPanel';
 import { OverviewExtras } from './OverviewExtras';
+import type { TabId } from './tabs';
 import type { GameModuleProps } from './types';
 
-/** Clash Royale sections: overview | cards | deck | battles | towers. The data components are restyled in phase 2. */
+type CRTab = TabId<'clash-royale'>;
+
+/** Clash Royale sections: overview | cards | deck | battles | towers. */
 export default function ClashRoyale({ game, playerStats, tab, onTabChange }: GameModuleProps) {
   const cr = playerStats.gameVisuals?.cr;
   if (!cr) {
@@ -19,27 +22,28 @@ export default function ClashRoyale({ game, playerStats, tab, onTabChange }: Gam
     );
   }
 
-  switch (tab) {
+  const go = (id: CRTab) => onTabChange(id);
+  // `tab` was validated against GAME_TABS by the shell; the union makes a misspelt id a type error.
+  switch (tab as CRTab) {
     case 'cards':
-      return <CRCardsList cards={cr.cards} accent={game.accent} />;
+      return <CRCardsList cards={cr.cards} />;
     case 'deck':
-      return <CRDeck playerStats={playerStats} accent={game.accent} />;
+      return <CRDeck playerStats={playerStats} />;
     case 'towers':
-      return <CRTowerTroops playerStats={playerStats} accent={game.accent} />;
+      return <CRTowerTroops playerStats={playerStats} />;
     case 'battles':
-      return playerStats.recentMatches.length > 0 ? (
-        <MatchHistory matches={playerStats.recentMatches} accentColor={game.accent} />
-      ) : (
-        <EmptyState icon={<Swords />} title="No recent battles">
-          Battles from the last few days appear here once this player has played.
-        </EmptyState>
-      );
+      return <BattlesPanel matches={playerStats.recentMatches} />;
     default:
       return (
-        <div className="space-y-8">
-          {/* CROverview's "view deck" link still says 'deck'; older code said 'tower' for towers. */}
-          <CROverview playerStats={playerStats} accent={game.accent} onTabChange={(id) => onTabChange(id === 'tower' ? 'towers' : id)} />
-          <OverviewExtras playerStats={playerStats} accent={game.accent} chartColor={game.chartPrimary} onShowBattles={() => onTabChange('battles')} />
+        <div className="space-y-4">
+          <CROverview playerStats={playerStats} onOpenDeck={() => go('deck')} />
+          <OverviewExtras
+            playerStats={playerStats}
+            chartColor={game.chartPrimary}
+            onShowBattles={() => go('battles')}
+            trendScope="Trophy Road battles"
+            trendEmptyNote="Path of Legend battles don't change your Trophy Road count."
+          />
         </div>
       );
   }

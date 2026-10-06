@@ -59,7 +59,7 @@ export default function BrawlStars({ game, playerStats, tab, onTabChange }: Game
             ))}
           </div>
           <BSHome playerStats={playerStats} accentColor={accent} />
-          <OverviewExtras playerStats={playerStats} accent={accent} chartColor={game.chartPrimary} onShowBattles={() => onTabChange('battles')} />
+          <OverviewExtras playerStats={playerStats} chartColor={game.chartPrimary} onShowBattles={() => onTabChange('battles')} />
         </div>
       );
   }

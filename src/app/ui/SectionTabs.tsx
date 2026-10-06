@@ -5,6 +5,8 @@ export interface TabDef {
   id: string;
   label: string;
   icon?: ReactNode;
+  /** Short figure after the label ("12/123"); part of the tab's accessible name. */
+  count?: string;
 }
 
 interface SectionTabsProps {
@@ -85,6 +87,12 @@ export function SectionTabs({ tabs, active, onSelect, label, idPrefix }: Section
           >
             {tab.icon && <span aria-hidden="true" className={selected ? 'text-accent' : undefined}>{tab.icon}</span>}
             {tab.label}
+            {tab.count && (
+              <>
+                <span aria-hidden="true" className="text-xs font-normal tabular-nums text-fg-subtle">{tab.count}</span>
+                <span className="sr-only">{tab.count.replace('/', ' of ')}</span>
+              </>
+            )}
           </button>
         );
       })}

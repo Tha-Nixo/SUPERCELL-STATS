@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { ART_HOSTS } from './mockApi.ts';
 
 /**
  * Collect everything that counts as a bug during a page visit: uncaught
@@ -8,18 +9,21 @@ import { expect, type Locator, type Page } from '@playwright/test';
  * `documentNotFound` tolerates the browser's 404 console message ONLY for the
  * page's own navigation response (production serves the SPA shell with a real
  * 404 status on unknown URLs); a 404 on any script, style or fetch still fails.
+ * A 404 on third-party game art (ART_HOSTS) is tolerated too: CDNs miss new
+ * content and every art slot has a fallback; a 404 on our own images fails.
  */
 export function watch(page: Page, allow: RegExp[] = [], opts: { documentNotFound?: boolean } = {}) {
   const problems: string[] = [];
   const notFoundDocs = new Set<string>();
   const NOT_FOUND = /Failed to load resource: the server responded with a status of 404/;
   const pending404: Array<{ msg: string; url: string }> = [];
-  const isDocument404 = (url: string) => opts.documentNotFound === true && notFoundDocs.has(url);
+  const missingArt = new Set<string>();
+  const isTolerated404 = (url: string) => (opts.documentNotFound === true && notFoundDocs.has(url)) || missingArt.has(url);
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
     if (m.type() !== 'error') return;
     if (allow.some((re) => re.test(m.text()))) return;
-    if (NOT_FOUND.test(m.text()) && isDocument404(m.location().url)) return;
+    if (NOT_FOUND.test(m.text()) && isTolerated404(m.location().url)) return;
     const msg = `console: ${m.text()}`;
     if (NOT_FOUND.test(m.text())) pending404.push({ msg, url: m.location().url });
     problems.push(msg);
@@ -30,16 +34,21 @@ export function watch(page: Page, allow: RegExp[] = [], opts: { documentNotFound
     if (r.resourceType() === 'image') return;
     problems.push(`requestfailed: ${r.url()} ${r.failure()?.errorText}`);
   });
+  // The console message can arrive before the response event: drop it then.
+  const forget404 = (url: string) => {
+    for (const p of pending404.filter((x) => x.url === url)) {
+      const i = problems.indexOf(p.msg);
+      if (i >= 0) problems.splice(i, 1);
+    }
+  };
   page.on('response', (r) => {
     if (r.status() === 404 && r.request().isNavigationRequest() && r.frame() === page.mainFrame()) {
       notFoundDocs.add(r.url());
-      if (opts.documentNotFound) {
-        // The console message can arrive before the response event: drop it now.
-        for (const p of pending404.filter((x) => x.url === r.url())) {
-          const i = problems.indexOf(p.msg);
-          if (i >= 0) problems.splice(i, 1);
-        }
-      }
+      if (opts.documentNotFound) forget404(r.url());
+    }
+    if (r.status() === 404 && r.request().resourceType() === 'image' && ART_HOSTS.test(r.url())) {
+      missingArt.add(r.url());
+      forget404(r.url());
     }
     if (r.status() >= 500) problems.push(`http ${r.status()}: ${r.url()}`);
   });

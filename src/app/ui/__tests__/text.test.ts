@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { stripEmoji } from '../text';
+import { sentenceCase, stripEmoji } from '../text';
 
 describe('stripEmoji', () => {
   it.each([
@@ -16,5 +16,17 @@ describe('stripEmoji', () => {
     ['', ''],
   ])('%j -> %j', (input, expected) => {
     expect(stripEmoji(input)).toBe(expected);
+  });
+});
+
+describe('sentenceCase', () => {
+  it.each([
+    ['legendary', 'Legendary'],
+    ['coLeader', 'Co leader'],
+    ['ELDER', 'Elder'],
+    ['tower_princess', 'Tower princess'],
+    ['', ''],
+  ])('%j -> %j', (input, expected) => {
+    expect(sentenceCase(input)).toBe(expected);
   });
 });
