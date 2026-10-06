@@ -6,6 +6,7 @@ import { searchPlayer, type SearchResult } from '../services/gameApiRouter';
 import { normalizeTag } from '../services/supercellService';
 import { getRecentSearches, removeRecentSearch, saveRecentSearch, type RecentSearch } from '../services/recentSearches';
 import { AppHeader } from '../ui/AppHeader';
+import { BATTLE_FILTER_PARAMS } from '../ui/battleFilters';
 import { Button } from '../ui/Button';
 import { cx } from '../ui/cx';
 import { ErrorState } from '../ui/ErrorState';
@@ -14,7 +15,7 @@ import { PlayerSummaryBar, PlayerSummaryCompact } from '../ui/PlayerSummaryBar';
 import { PanelSkeleton, PlayerPageSkeleton } from '../ui/Skeleton';
 import { SectionTabs, type TabDef } from '../ui/SectionTabs';
 import { SiteFooter } from '../ui/SiteFooter';
-import { parseTab, withTab } from '../ui/tabs';
+import { parseTab, shareSearch, withTab } from '../ui/tabs';
 import { tagSlug } from '../ui/tag';
 import { GameLanding } from './game/GameLanding';
 import { GAME_MODULES, isGameId, preloadGameModule } from './game/modules';
@@ -142,15 +143,17 @@ export default function GamePage() {
 
   const tabs: readonly TabDef[] = GAME_TABS[game.id as keyof typeof GAME_TABS];
   const defaultTab = tabs[0].id;
-  const activeTab = parseTab(location.search, tabs.map((t) => t.id), defaultTab);
+  const tabIds = tabs.map((t) => t.id);
+  const activeTab = parseTab(location.search, tabIds, defaultTab);
   // Clicks push a history entry (back returns to the previous section); arrow keys replace it.
   // Reads window.location, not the rendered `location`: two quick key presses
   // can arrive before the first URL change has re-rendered this component.
+  // Selecting the tab already shown does nothing (its Battles filters stay);
+  // moving to another tab drops the filters, which belong to the Battles tab.
   const selectTab = (id: string, via: 'pointer' | 'keyboard' = 'pointer') => {
     const { pathname, search, hash } = window.location;
-    const next = withTab(search, id, defaultTab);
-    if (next === search) return;
-    navigate(pathname + next + hash, { replace: via === 'keyboard' });
+    if (parseTab(search, tabIds, defaultTab) === id) return;
+    navigate(pathname + withTab(search, id, defaultTab, BATTLE_FILTER_PARAMS) + hash, { replace: via === 'keyboard' });
   };
 
   const removeRecent = (tag: string) => {
@@ -160,7 +163,9 @@ export default function GamePage() {
 
   const copyPlayerLink = async () => {
     try {
-      const url = `${window.location.origin}/game/${gameId}/player/${tagSlug(urlTag ?? '')}${withTab('', activeTab, defaultTab)}`;
+      // The tab and, on Battles, its filters: what the visitor is looking at, nothing else.
+      const query = shareSearch(window.location.search, activeTab, defaultTab, BATTLE_FILTER_PARAMS);
+      const url = `${window.location.origin}/game/${gameId}/player/${tagSlug(urlTag ?? '')}${query}`;
       await navigator.clipboard.writeText(url);
       setCopied(true);
       window.clearTimeout(copiedTimer.current);

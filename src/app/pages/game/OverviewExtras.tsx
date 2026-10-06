@@ -3,6 +3,7 @@ import { MatchHistory } from '../../components/MatchHistory';
 import { TrophyTrend } from '../../components/TrophyTrend';
 import type { PlayerStats } from '../../data/mockStats';
 import { Button } from '../../ui/Button';
+import { latestBattles } from '../../ui/battleFilters';
 import { Card } from '../../ui/Card';
 import { EmptyState } from '../../ui/EmptyState';
 
@@ -14,7 +15,7 @@ interface OverviewExtrasProps {
 
 /** Bottom of the Clash Royale and Brawl Stars overview: trend left, latest battles right (stacked on phones). */
 export function OverviewExtras({ playerStats, chartColor, onShowBattles }: OverviewExtrasProps) {
-  const latest = playerStats.recentMatches.slice(0, 5);
+  const latest = latestBattles(playerStats.recentMatches);
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
       <div className="min-w-0">

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { LATEST_BATTLES, latestBattles } from '../../ui/battleFilters';
 import {
-  normalizeTag, isValidTag, toBattleLog, displayCardLevel, bsOutcome, bsWinStats, crTrophyRoadBattles,
+  normalizeTag, isValidTag, toBattleLog, displayCardLevel, bsOutcome, bsWinStats, crTrophyRoadBattles, crRecentMatches, prettyMode,
 } from '../supercellService';
 
 describe('tags', () => {
@@ -97,5 +98,39 @@ describe('crTrophyRoadBattles', () => {
   });
   it('copes with malformed entries', () => {
     expect(crTrophyRoadBattles([{}, { team: [] }, null as never])).toEqual([]);
+  });
+});
+
+describe('prettyMode', () => {
+  it('names the API battle types', () => {
+    expect(prettyMode('PvP', 'clash-royale')).toBe('Ladder');
+    expect(prettyMode('pathOfLegend', 'clash-royale')).toBe('Path of Legend');
+    expect(prettyMode('clanMate', 'clash-royale')).toBe('Clan Mate');
+    expect(prettyMode('gemGrab', 'brawl-stars')).toBe('Gem Grab');
+    expect(prettyMode(undefined, 'brawl-stars')).toBe('Battle');
+  });
+  it('reads "unknown" per game: Brawl Hockey is a Brawl Stars mode only', () => {
+    expect(prettyMode('unknown', 'brawl-stars')).toBe('Brawl Hockey');
+    expect(prettyMode('unknown', 'clash-royale')).toBe('Special event');
+  });
+});
+
+describe('crRecentMatches', () => {
+  const battle = (i: number) => ({
+    type: i % 2 ? 'PvP' : 'pathOfLegend',
+    battleTime: '20261006T120000.000Z',
+    team: [{ crowns: 1, trophyChange: 30 }],
+    opponent: [{ crowns: 0 }],
+  });
+  it('keeps every battle the API returns (up to 30) for the Battles tab', () => {
+    const matches = crRecentMatches(Array.from({ length: 30 }, (_, i) => battle(i)));
+    expect(matches).toHaveLength(30);
+    expect(matches[0]).toMatchObject({ id: 'match-0', mode: 'Path of Legend', result: 'win', score: 30 });
+  });
+  it('the overview still shows only its latest few', () => {
+    const matches = crRecentMatches(Array.from({ length: 30 }, (_, i) => battle(i)));
+    expect(latestBattles(matches)).toHaveLength(LATEST_BATTLES);
+    expect(LATEST_BATTLES).toBe(5);
+    expect(latestBattles(matches.slice(0, 3))).toHaveLength(3);
   });
 });

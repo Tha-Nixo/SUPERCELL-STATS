@@ -151,3 +151,22 @@ test('changing tab keeps the URL hash', async ({ page }) => {
   await page.getByRole('tab', { name: 'Deck' }).click();
   await expect(page).toHaveURL(player('clash-royale', '?tab=deck#x'));
 });
+
+test('leaving the Battles tab drops its filters; clicking Battles again keeps them', async ({ page }) => {
+  await page.goto(player('clash-royale', '?tab=battles&result=loss&ref=share'));
+  await page.getByRole('tab', { name: 'Battles' }).click();
+  await expect(page).toHaveURL(player('clash-royale', '?tab=battles&result=loss&ref=share'));
+  await page.getByRole('tab', { name: 'Deck' }).click();
+  await expect(page).toHaveURL(player('clash-royale', '?tab=deck&ref=share'));
+  await page.goBack();
+  await expect(page).toHaveURL(player('clash-royale', '?tab=battles&result=loss&ref=share'));
+});
+
+test('Copy link on Battles keeps the filters and nothing else', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto(player('clash-royale', '?ref=x&result=loss&tab=battles'));
+  await page.getByRole('button', { name: 'Copy link' }).click();
+  await expect(page.getByRole('button', { name: 'Link copied' })).toBeVisible();
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toBe(`${new URL(page.url()).origin}${player('clash-royale', '?tab=battles&result=loss')}`);
+});
