@@ -164,7 +164,7 @@ missing asset is never cached (even under `/assets/*`, whose `immutable` header 
 inline scripts, hence `script-src 'self'`. Allowed external origins:
 
 - styles: `fonts.googleapis.com`; fonts: `fonts.gstatic.com`
-- images: `cdn.brawlify.com`, `cdn-old.brawlify.com`, `api-assets.clashroyale.com`, `royaleapi.github.io` (plus `data:`)
+- images: `cdn.brawlify.com`, `cdn-old.brawlify.com`, `api-assets.clashroyale.com`, `api-assets.clashofclans.com`, `royaleapi.github.io` (plus `data:`)
 - `connect-src 'self'` only: all API calls go through the same-origin `/api/*` proxy
 
 To add a new CDN, add its origin to the right directive (`img-src`, `font-src`, ...) in
