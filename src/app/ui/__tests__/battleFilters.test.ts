@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  battleModes, filterBattles, modeSlug, NO_FILTERS, parseBattleFilters, resultCounts, shareableFilters, trophyLabel, withBattleFilters,
+  battleModes, filterBattles, modeSlug, NO_FILTERS, parseBattleFilters, resultCounts, shareableFilters, trophyLabel, trophyQualifier, withBattleFilters,
   type BattleLike,
 } from '../battleFilters';
 
@@ -108,5 +108,11 @@ describe('trophyLabel', () => {
   it('names the separate Path of Legend counter, plain Trophies elsewhere', () => {
     expect(trophyLabel('Path of Legend')).toBe('Path of Legend trophies');
     expect(trophyLabel('Ladder')).toBe('Trophies');
+  });
+
+  it('gives a short visible qualifier only for the Path of Legend counter', () => {
+    expect(trophyQualifier('Path of Legend')).toBe('PoL');
+    expect(trophyQualifier('Ladder')).toBeNull();
+    expect(trophyQualifier('Special event')).toBeNull();
   });
 });

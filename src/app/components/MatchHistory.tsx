@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Crown, Minus, Trophy, X } from 'lucide-react';
 import type { Match } from '../data/mockStats';
-import { trophyLabel } from '../ui/battleFilters';
+import { trophyLabel, trophyQualifier } from '../ui/battleFilters';
 import { cx } from '../ui/cx';
 import { Pill, type PillTone } from '../ui/Pill';
 
@@ -24,6 +24,8 @@ const RESULT: Record<Match['result'], { label: string; tone: PillTone; icon: Rea
 export function MatchHistory({ matches }: MatchHistoryProps) {
   // One trophy column for the whole list, so crowns line up when some battles moved no trophies.
   const trophyColumn = matches.some((m) => m.score !== undefined);
+  // Room for the "PoL" tag, only in lists that contain such a row.
+  const qualified = matches.some((m) => m.score !== undefined && trophyQualifier(m.mode));
   return (
     <ol className="divide-y divide-line">
       {matches.map((match) => {
@@ -52,7 +54,8 @@ export function MatchHistory({ matches }: MatchHistoryProps) {
                 <span
                   title={match.score !== undefined ? trophyLabel(match.mode) : undefined}
                   className={cx(
-                    'inline-flex w-12 items-center justify-end gap-1 font-semibold',
+                    'inline-flex items-center justify-end gap-1 font-semibold',
+                    qualified ? 'w-16' : 'w-12',
                     (match.score ?? 0) > 0 ? 'text-win' : (match.score ?? 0) < 0 ? 'text-loss' : 'text-fg-muted',
                   )}
                 >
@@ -60,6 +63,11 @@ export function MatchHistory({ matches }: MatchHistoryProps) {
                     <>
                       <span className="sr-only">{trophyLabel(match.mode)} </span>
                       {match.score > 0 ? `+${match.score}` : match.score}
+                      {trophyQualifier(match.mode) && (
+                        <span aria-hidden="true" className="text-xs font-normal text-fg-subtle">
+                          {trophyQualifier(match.mode)}
+                        </span>
+                      )}
                     </>
                   )}
                 </span>

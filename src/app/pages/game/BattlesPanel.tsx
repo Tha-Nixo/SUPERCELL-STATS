@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { SearchX, Swords } from 'lucide-react';
 import { MatchHistory } from '../../components/MatchHistory';
@@ -21,6 +22,19 @@ const RESULT_LABELS: Record<ResultFilter, string> = { all: 'All', win: 'Wins', l
 export function BattlesPanel({ matches }: { matches: Match[] }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const root = useRef<HTMLDivElement>(null);
+  const refocus = useRef(false);
+
+  // "Show all battles" unmounts with the empty state; hand focus to the
+  // selected Result option so keyboard users land on the controls, not <body>.
+  useEffect(() => {
+    if (!refocus.current) return;
+    const target = root.current?.querySelector<HTMLInputElement>('fieldset input[value="all"]:checked');
+    if (target) {
+      refocus.current = false;
+      target.focus();
+    }
+  });
 
   if (matches.length === 0) {
     return (
@@ -44,7 +58,7 @@ export function BattlesPanel({ matches }: { matches: Match[] }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div ref={root} className="space-y-4">
       <Card as="section" aria-label="Battle filters" className="grid grid-cols-1 gap-4">
         <FilterGroup
           legend="Result"
@@ -77,7 +91,10 @@ export function BattlesPanel({ matches }: { matches: Match[] }) {
         <EmptyState
           icon={<SearchX />}
           title="No battles match these filters"
-          action={<Button onClick={() => apply(NO_FILTERS)}>Show all battles</Button>}
+          action={<Button onClick={() => {
+            refocus.current = true;
+            apply(NO_FILTERS);
+          }}>Show all battles</Button>}
         >
           None of the last {matches.length} battles fits this mode and result.
         </EmptyState>

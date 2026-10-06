@@ -70,7 +70,7 @@ export const crBattlelog = [
   crBattle(30, 0, 1, -28),
   crBattle(60, 1, 1, 0),
   crBattle(90, 2, 0, 30),
-  crBattle(120, 1, 0, undefined, 'pathOfLegend'),
+  crBattle(120, 1, 0, 29, 'pathOfLegend'),
   crBattle(150, 0, 2, undefined, 'pathOfLegend'),
   crBattle(180, 2, 1, undefined, 'riverRacePvP'),
   crBattle(210, 0, 3, undefined, 'unknown'),

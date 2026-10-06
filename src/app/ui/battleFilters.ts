@@ -43,6 +43,11 @@ export function trophyLabel(mode: string): string {
   return mode === 'Path of Legend' ? 'Path of Legend trophies' : 'Trophies';
 }
 
+/** Short visible tag for a counter that is not the Trophy Road total; null when the plain number is the Trophy Road one. */
+export function trophyQualifier(mode: string): string | null {
+  return mode === 'Path of Legend' ? 'PoL' : null;
+}
+
 /** URL-safe id of a mode label: 'Path of Legend' -> 'path-of-legend'. Never 'all'. */
 export function modeSlug(mode: string): string {
   const slug = mode

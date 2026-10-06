@@ -70,6 +70,28 @@ test('mode and result combine; no match shows an empty state that resets both', 
   expect(params(page)).toEqual({ tab: 'battles' });
 });
 
+test('after "Show all battles" by keyboard, focus lands on the selected Result option, not <body>', async ({ page }) => {
+  await page.goto(url('?tab=battles&mode=river-race&result=draw'));
+  const button = page.getByTestId('empty-state').getByRole('button', { name: 'Show all battles' });
+  await button.focus();
+  await page.keyboard.press('Enter');
+  await expect(rows(page)).toHaveCount(9);
+  await expect(result(page).getByRole('radio', { name: 'All 9' })).toBeFocused();
+  expect(await page.evaluate(() => document.activeElement?.tagName)).toBe('INPUT');
+});
+
+test('a Path of Legend trophy change carries a visible PoL qualifier and the full name for screen readers', async ({ page }) => {
+  await page.goto(url('?tab=battles&mode=path-of-legend'));
+  const withChange = rows(page).filter({ hasText: '+29' });
+  await expect(withChange).toHaveCount(1);
+  await expect(withChange.getByText('PoL', { exact: true })).toBeVisible();
+  await expect(withChange.locator('.sr-only', { hasText: 'Path of Legend trophies' })).toHaveCount(1);
+  // Ladder rows keep the plain counter and no qualifier.
+  await page.goto(url('?tab=battles&mode=ladder'));
+  await expect(page.getByText('PoL', { exact: true })).toHaveCount(0);
+  await expect(rows(page).first().locator('.sr-only', { hasText: /^Trophies / })).toHaveCount(1);
+});
+
 test('"Special event" is how a Clash Royale battle of type unknown is named', async ({ page }) => {
   await page.goto(url('?tab=battles&mode=special-event'));
   await expect(rows(page)).toHaveCount(1);
