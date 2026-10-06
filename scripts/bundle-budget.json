@@ -22,7 +22,11 @@
   "playerPageEntries": [
     "GamePage"
   ],
-  "gameModules": [],
+  "gameModules": [
+    "ClashRoyale",
+    "BrawlStars",
+    "ClashOfClans"
+  ],
   "allowedPreloadFonts": [
     "/fonts/Inter-latin.woff2"
   ]

@@ -1,42 +1,13 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
-import {
-  Search, ArrowLeft, Trophy, Target, Clock, Award,
-  WifiOff, Swords, Shield, Star, Users, Zap, BarChart3, Link2, Check, AlertTriangle
-} from 'lucide-react';
+import { Search, ArrowLeft, Clock, WifiOff, Users, Link2, Check, AlertTriangle } from 'lucide-react';
 import { getGameById } from '../data/games';
-import { StatCard } from '../components/StatCard';
-import { TrophyTrend } from '../components/TrophyTrend';
-import { MatchHistory } from '../components/MatchHistory';
-import { BSProfile } from '../components/BSProfile';
-import { CoCHeroesDisplay } from '../components/CoCHeroesDisplay';
-import { CoCArmyDisplay } from '../components/CoCArmyDisplay';
-import { CoCAchievements } from '../components/CoCAchievements';
-import { CoCOverview } from '../components/CoCOverview';
-import { CRProfile } from '../components/CRProfile';
+import { GAME_MODULES, isGameId } from './game/modules';
+import { PanelSkeleton } from '../ui/Skeleton';
 import { searchPlayer, SearchResult } from '../services/gameApiRouter';
 import { normalizeTag } from '../services/supercellService';
 import { saveRecentSearch, getRecentSearches, removeRecentSearch, RecentSearch } from '../services/recentSearches';
-
-// Auto icon mapping for extra stat labels
-const STAT_ICONS: Array<{ keywords: string[]; icon: React.ReactNode }> = [
-  { keywords: ['trophy', 'trophies', 'crown', 'pb'], icon: <Trophy className="w-4 h-4" /> },
-  { keywords: ['win', 'victory', 'victories'], icon: <Star className="w-4 h-4" /> },
-  { keywords: ['war', 'stars', 'atk', 'attack'], icon: <Swords className="w-4 h-4" /> },
-  { keywords: ['defense', 'def', 'unbreakable'], icon: <Shield className="w-4 h-4" /> },
-  { keywords: ['brawler', 'hero', 'troops', 'cards'], icon: <Zap className="w-4 h-4" /> },
-  { keywords: ['clan', 'club', 'team'], icon: <Users className="w-4 h-4" /> },
-  { keywords: ['challenge', 'time', 'account', 'age', 'played'], icon: <Clock className="w-4 h-4" /> },
-  { keywords: ['donation', 'star points', 'points'], icon: <Award className="w-4 h-4" /> },
-];
-function getStatIcon(label: string) {
-  const lower = label.toLowerCase();
-  for (const { keywords, icon } of STAT_ICONS) {
-    if (keywords.some(k => lower.includes(k))) return icon;
-  }
-  return <BarChart3 className="w-4 h-4" />;
-}
 
 // ─── Town Hall hero images (CoC — stored locally under /images/coc/townhall/)
 // Only levels with an asset on disk belong here: a missing entry renders the
@@ -87,13 +58,11 @@ export default function GamePage() {
   // A percent-encoded '#' (%23) is decoded by the router into a leading '#'; strip one so we never build '##TAG'.
   const urlTag = rawUrlTag?.replace(/^#/, '');
   const navigate = useNavigate();
-  const game = gameId ? getGameById(gameId) : null;
+  const game = gameId && isGameId(gameId) ? getGameById(gameId) : null;
 
   const [searchInput, setSearchInput] = useState(urlTag ? `#${urlTag}` : '');
   const [result, setResult] = useState<SearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [bsActiveTab, setBsActiveTab] = useState<string>('home');
-  const [cocActiveTab, setCocActiveTab] = useState<'overview' | 'army' | 'heroes' | 'achievements'>('overview');
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>(
     () => (gameId ? getRecentSearches(gameId) : []),
   );
@@ -203,6 +172,8 @@ export default function GamePage() {
   };
 
   const playerStats = result?.data;
+
+  const GameModule = GAME_MODULES[game.id as keyof typeof GAME_MODULES];
 
   return (
     <div className="min-h-screen bg-[#0B0F1A]">
@@ -435,157 +406,10 @@ export default function GamePage() {
                 )}
               </motion.div>
 
-              {/* ── BRAWL STARS: Main Profile ── */}
-              {gameId === 'brawl-stars' && (
-                <BSProfile
-                  playerStats={playerStats}
-                  accentUrl={game.logo || ''}
-                  accentColor={playerStats.gameVisuals?.bs?.nameColor ? `#${playerStats.gameVisuals.bs.nameColor.replace('0xff', '')}` : game.accent}
-                  bsActiveTab={bsActiveTab}
-                  setBsActiveTab={setBsActiveTab}
-                />
-              )}
-
-              {/* ── Tab Navigation (Clash of Clans) ── */}
-              {gameId === 'clash-of-clans' && (
-                <div className="flex justify-center mt-6">
-                  <div className="flex bg-black/40 backdrop-blur-md rounded-2xl p-1 border border-white/10 shadow-xl overflow-x-auto max-w-full no-scrollbar">
-                    {['overview', 'army', 'heroes', 'achievements'].map((tab) => (
-                      <button
-                        key={tab}
-                        onClick={() => setCocActiveTab(tab as any)}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all capitalize whitespace-nowrap ${cocActiveTab === tab ? 'bg-white/15 text-white shadow-md' : 'text-white/40 hover:text-white/80 hover:bg-white/5'}`}
-                      >
-                        {tab === 'heroes' ? 'Heroes & Equip' : tab}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* ── 4 stat cards ── */}
-              {((gameId !== 'brawl-stars' && gameId !== 'clash-of-clans' && gameId !== 'clash-royale') || (gameId === 'brawl-stars' && bsActiveTab === 'home')) && (() => {
-                const L = playerStats.statLabels ?? {};
-                const wins = Math.round(playerStats.totalMatches * playerStats.winRate / 100);
-                const kdDisplay = typeof playerStats.kd === 'number'
-                  ? (Number.isInteger(playerStats.kd) ? String(playerStats.kd) : playerStats.kd.toFixed(2))
-                  : String(playerStats.kd);
-                return (
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-                    className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard title={L.stat1Title ?? 'Win Rate'} value={`${playerStats.winRate}%`}
-                      subtitle={L.stat1Sub ?? `${wins} wins`}
-                      icon={<Trophy className="w-6 h-6" />} accentColor={game.accent} />
-                    <StatCard title={L.stat2Title ?? 'K/D Ratio'} value={L.stat2Value ?? kdDisplay}
-                      subtitle={L.stat2Sub ?? 'Average per game'}
-                      icon={<Target className="w-6 h-6" />} accentColor={game.chartPrimary} />
-                    <StatCard title={L.stat3Title ?? 'Total Matches'} value={L.stat3Value ?? playerStats.totalMatches.toLocaleString()}
-                      subtitle={L.stat3Sub ?? `${playerStats.hoursPlayed} hours`}
-                      icon={<Award className="w-6 h-6" />} accentColor={game.chartSecondary} />
-                    <StatCard title={L.stat4Title ?? 'Trophies'} value={L.stat4Value ?? playerStats.hoursPlayed}
-                      subtitle={L.stat4Sub ?? ''}
-                      icon={<Clock className="w-6 h-6" />} accentColor={game.accent} />
-                  </motion.div>
-                );
-              })()}
-
-              {/* ══════════════════════════════════════════════
-                   GAME-SPECIFIC VISUAL SECTIONS
-              ══════════════════════════════════════════════ */}
-
-              {/* ── CLASH ROYALE: Profile ── */}
-              {gameId === 'clash-royale' && playerStats.gameVisuals?.cr && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
-                  <CRProfile playerStats={playerStats} accentUrl={game.logo || ''} accentColor={game.accent} />
-                </motion.div>
-              )}
-
-
-
-              {/* ── CLASH OF CLANS: Overview ── */}
-              {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && cocActiveTab === 'overview' && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
-                  <CoCOverview playerStats={playerStats} accent={game.accent} />
-                </motion.div>
-              )}
-
-              {/* ── CLASH OF CLANS: Heroes & Equip ── */}
-              {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && cocActiveTab === 'heroes' && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
-                  <CoCHeroesDisplay
-                    heroes={playerStats.gameVisuals.coc.heroes}
-                    heroEquipment={playerStats.gameVisuals.coc.heroEquipment}
-                    leagueName={playerStats.gameVisuals.coc.leagueName}
-                    leagueBadgeUrl={playerStats.gameVisuals.coc.leagueBadgeUrl}
-                    clanBadgeUrl={playerStats.gameVisuals.coc.clanBadgeUrl}
-                    accent={game.accent}
-                  />
-                </motion.div>
-              )}
-              {/* ── CLASH OF CLANS: Army ── */}
-              {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && cocActiveTab === 'army' && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
-                  <CoCArmyDisplay
-                    troops={playerStats.gameVisuals.coc.troops}
-                    superTroops={playerStats.gameVisuals.coc.superTroops}
-                    builderBaseTroops={playerStats.gameVisuals.coc.builderBaseTroops}
-                    spells={playerStats.gameVisuals.coc.spells}
-                    siegeMachines={playerStats.gameVisuals.coc.siegeMachines}
-                    pets={playerStats.gameVisuals.coc.pets}
-                    accent={game.accent}
-                  />
-                </motion.div>
-              )}
-              {/* ── CLASH OF CLANS: Achievements ── */}
-              {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && cocActiveTab === 'achievements' && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
-                  <CoCAchievements
-                    achievements={playerStats.gameVisuals.coc.achievements ?? []}
-                    accent={game.accent}
-                  />
-                </motion.div>
-              )}
-
-              {/* ── Detailed Stats (all games) ── */}
-              {((gameId !== 'brawl-stars' && gameId !== 'clash-of-clans' && gameId !== 'clash-royale')) && playerStats.extraStats && playerStats.extraStats.length > 0 && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
-                  <h3 className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">All Stats</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
-                    {playerStats.extraStats.map((stat, i) => (
-                      <motion.div key={i}
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.04 * i }}
-                        className="group flex items-center gap-3 px-4 py-3 rounded-xl bg-white/4 border border-white/8 hover:bg-white/7 hover:border-white/14 transition-all"
-                      >
-                        <div className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-white/40"
-                          style={{ backgroundColor: `${game.accent}18` }}>
-                          {getStatIcon(stat.label)}
-                        </div>
-                        <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
-                          <span className="text-white/45 text-[11px] font-medium truncate">{stat.label}</span>
-                          <span className="text-white font-semibold text-sm text-right shrink-0 break-words max-w-[55%]">{stat.value}</span>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ── Trophy trend ── */}
-              {((gameId !== 'brawl-stars' && gameId !== 'clash-of-clans') || (gameId === 'brawl-stars' && bsActiveTab === 'home')) && playerStats.performanceData.length > 1 && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                  <TrophyTrend data={playerStats.performanceData} accentColor={game.chartPrimary} />
-                </motion.div>
-              )}
-
-              {/* ── Recent Battles ── */}
-              {((gameId !== 'brawl-stars' && gameId !== 'clash-of-clans') || (gameId === 'brawl-stars' && bsActiveTab === 'home')) && playerStats.recentMatches.length > 0 && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
-                  <h3 className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Recent Battles</h3>
-                  <MatchHistory matches={playerStats.recentMatches} accentColor={game.accent} />
-                </motion.div>
-              )}
+              {/* ── Per-game content: one lazily loaded module per game ── */}
+              <Suspense fallback={<PanelSkeleton />}>
+                <GameModule game={game} playerStats={playerStats} />
+              </Suspense>
 
             </div>
           </section>
