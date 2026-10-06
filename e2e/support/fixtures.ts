@@ -19,8 +19,8 @@ const deck = [
   card(26000035, 'Ice Golem', 'rare', 12, 14, 2),
 ];
 
-const crBattle = (minutesAgo: number, my: number, opp: number, trophyChange: number) => ({
-  type: 'PvP',
+const crBattle = (minutesAgo: number, my: number, opp: number, trophyChange?: number, type = 'PvP') => ({
+  type,
   battleTime: new Date(Date.UTC(2026, 9, 6, 10, 0) - minutesAgo * 60_000).toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '.000Z'),
   gameMode: { id: 72000006, name: 'Ladder' },
   team: [{ tag: `#${FIXTURE_TAG}`, name: 'Vela Storm', crowns: my, trophyChange }],
@@ -63,7 +63,19 @@ export const crPlayer = {
   ],
   currentFavouriteCard: { id: 26000021, name: 'Hog Rider', rarity: 'rare', maxLevel: 14, elixirCost: 4, iconUrls: { medium: 'https://api-assets.clashroyale.com/cards/300/26000021.png' } },
 };
-export const crBattlelog = [crBattle(5, 3, 1, 31), crBattle(30, 0, 1, -28), crBattle(60, 1, 1, 0), crBattle(90, 2, 0, 30)];
+// Newest first. 9 battles: 5 wins, 3 losses, 1 draw; Ladder 4, Path of Legend 3,
+// River Race 1 (a win), Special event 1 (type "unknown", a loss).
+export const crBattlelog = [
+  crBattle(5, 3, 1, 31),
+  crBattle(30, 0, 1, -28),
+  crBattle(60, 1, 1, 0),
+  crBattle(90, 2, 0, 30),
+  crBattle(120, 1, 0, undefined, 'pathOfLegend'),
+  crBattle(150, 0, 2, undefined, 'pathOfLegend'),
+  crBattle(180, 2, 1, undefined, 'riverRacePvP'),
+  crBattle(210, 0, 3, undefined, 'unknown'),
+  crBattle(240, 3, 0, undefined, 'pathOfLegend'),
+];
 
 export const bsPlayer = {
   tag: `#${FIXTURE_TAG}`,

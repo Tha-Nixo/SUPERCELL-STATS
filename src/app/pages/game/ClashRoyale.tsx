@@ -3,9 +3,8 @@ import { CRCardsList } from '../../components/CRCardsList';
 import { CRDeck } from '../../components/CRDeck';
 import { CROverview } from '../../components/CROverview';
 import { CRTowerTroops } from '../../components/CRTowerTroops';
-import { MatchHistory } from '../../components/MatchHistory';
-import { Card } from '../../ui/Card';
 import { EmptyState } from '../../ui/EmptyState';
+import { BattlesPanel } from './BattlesPanel';
 import { OverviewExtras } from './OverviewExtras';
 import type { TabId } from './tabs';
 import type { GameModuleProps } from './types';
@@ -33,20 +32,18 @@ export default function ClashRoyale({ game, playerStats, tab, onTabChange }: Gam
     case 'towers':
       return <CRTowerTroops playerStats={playerStats} />;
     case 'battles':
-      return playerStats.recentMatches.length > 0 ? (
-        <Card as="section" title="Recent battles">
-          <MatchHistory matches={playerStats.recentMatches} />
-        </Card>
-      ) : (
-        <EmptyState icon={<Swords />} title="No recent battles">
-          Battles from the last few days appear here once this player has played.
-        </EmptyState>
-      );
+      return <BattlesPanel matches={playerStats.recentMatches} />;
     default:
       return (
         <div className="space-y-4">
           <CROverview playerStats={playerStats} onOpenDeck={() => go('deck')} />
-          <OverviewExtras playerStats={playerStats} chartColor={game.chartPrimary} onShowBattles={() => go('battles')} />
+          <OverviewExtras
+            playerStats={playerStats}
+            chartColor={game.chartPrimary}
+            onShowBattles={() => go('battles')}
+            trendScope="Trophy Road battles"
+            trendEmptyNote="Path of Legend battles don't change your Trophy Road count."
+          />
         </div>
       );
   }

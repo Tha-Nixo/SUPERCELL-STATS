@@ -6,7 +6,7 @@ import { searchPlayer, type SearchResult } from '../services/gameApiRouter';
 import { normalizeTag } from '../services/supercellService';
 import { getRecentSearches, removeRecentSearch, saveRecentSearch, type RecentSearch } from '../services/recentSearches';
 import { AppHeader } from '../ui/AppHeader';
-import { BATTLE_FILTER_PARAMS } from '../ui/battleFilters';
+import { BATTLE_FILTER_PARAMS, battleModes, shareableFilters } from '../ui/battleFilters';
 import { Button } from '../ui/Button';
 import { cx } from '../ui/cx';
 import { ErrorState } from '../ui/ErrorState';
@@ -163,8 +163,11 @@ export default function GamePage() {
 
   const copyPlayerLink = async () => {
     try {
-      // The tab and, on Battles, its filters: what the visitor is looking at, nothing else.
-      const query = shareSearch(window.location.search, activeTab, defaultTab, BATTLE_FILTER_PARAMS);
+      // The tab and, on Clash Royale Battles, its valid filters: what the visitor is looking at, nothing else.
+      const filters = gameId === 'clash-royale' && activeTab === 'battles' && result?.data
+        ? shareableFilters(window.location.search, battleModes(result.data.recentMatches))
+        : {};
+      const query = shareSearch(activeTab, defaultTab, filters);
       const url = `${window.location.origin}/game/${gameId}/player/${tagSlug(urlTag ?? '')}${query}`;
       await navigator.clipboard.writeText(url);
       setCopied(true);

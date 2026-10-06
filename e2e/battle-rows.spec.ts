@@ -9,13 +9,16 @@ test('Clash Royale latest battles: result, mode, crowns and trophy change per ro
   // On the overview the only battle rows are the "Latest battles" card.
   const latest = page.getByRole('tabpanel');
   const rows = latest.getByTestId('battle-row');
-  await expect(rows).toHaveCount(4);
+  await expect(rows).toHaveCount(5);
   await expect(rows.first()).toBeVisible();
   const first = await rows.first().innerText();
   expect(first).toContain('Win');
   expect(first).toContain('Ladder');
   expect(first).toContain('+31');
   await expect(rows.first().getByText('Crowns', { exact: false })).toHaveCount(1);
+  await expect(latest.getByText(/over \d+ Trophy Road battles/)).toBeVisible();
+  await expect(latest.getByText('Trophy Road battles only, oldest on the left.')).toBeVisible();
+  await expect(latest.getByRole('img', { name: /trend across the last \d+ Trophy Road battles/ })).toBeVisible();
   await expectNoEmoji(latest);
   expect(problems).toEqual([]);
 });
@@ -47,4 +50,5 @@ test('Clash Royale trophy trend ignores Path of Legend battles (a separate count
   await page.goto(`/game/clash-royale/player/${FIXTURE_TAG}`);
   await expect(page.getByTestId('battle-row')).toHaveCount(3);
   await expect(page.getByRole('heading', { name: 'No trophy trend yet' })).toBeVisible();
+  await expect(page.getByText("Path of Legend battles don't change your Trophy Road count.")).toBeVisible();
 });

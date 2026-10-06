@@ -6,6 +6,8 @@ interface TrophyTrendProps {
   accentColor: string;
   /** What the y axis counts — "Trophies" for CR/BS. */
   unit?: string;
+  /** Which battles the points come from, when not all of them ("Trophy Road battles"). */
+  scope?: string;
 }
 
 // Ring around the markers: the card surface, so they read as cut out of the line.
@@ -22,7 +24,7 @@ function niceStep(span: number, target: number): number {
   return step * mag;
 }
 
-export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTrendProps) {
+export function TrophyTrend({ data, accentColor, unit = 'Trophies', scope = 'battles' }: TrophyTrendProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(720);
   const [active, setActive] = useState<number | null>(null);
@@ -110,17 +112,19 @@ export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTren
       <div className="flex items-baseline justify-between gap-4 mb-1">
         <h3 className="text-sm font-semibold text-fg">{unit} trend</h3>
         <span className="text-sm text-fg-muted tabular-nums">
-          {net >= 0 ? '+' : ''}{net.toLocaleString()} over {data.length} battles
+          {net >= 0 ? '+' : ''}{net.toLocaleString()} over {data.length} {scope}
         </span>
       </div>
-      <p className="mb-4 text-xs text-fg-subtle">Most recent battles, oldest on the left.</p>
+      <p className="mb-4 text-xs text-fg-subtle">
+        {scope === 'battles' ? 'Most recent battles' : `${scope[0].toUpperCase()}${scope.slice(1)} only`}, oldest on the left.
+      </p>
 
       <div
         ref={wrapRef}
         className="relative w-full rounded-lg"
         tabIndex={0}
         role="img"
-        aria-label={`${unit} trend across the last ${data.length} battles: ${first.trophies.toLocaleString()} to ${last.trophies.toLocaleString()}. Use arrow keys to read each battle.`}
+        aria-label={`${unit} trend across the last ${data.length} ${scope}: ${first.trophies.toLocaleString()} to ${last.trophies.toLocaleString()}. Use arrow keys to read each battle.`}
         onMouseMove={(e) => pick(e.clientX)}
         onMouseLeave={() => setActive(null)}
         onKeyDown={onKeyDown}
@@ -223,7 +227,7 @@ export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTren
         </summary>
         <div className="mt-2 max-h-56 overflow-y-auto rounded-lg border border-line">
           <table className="w-full text-sm">
-            <caption className="sr-only">{unit} after each of the last {data.length} battles</caption>
+            <caption className="sr-only">{unit} after each of the last {data.length} {scope}</caption>
             <thead className="sticky top-0 bg-surface-2">
               <tr className="text-xs text-fg-subtle">
                 <th scope="col" className="text-left font-medium px-3 py-2">Date</th>

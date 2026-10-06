@@ -8,6 +8,8 @@ export interface MockApiOptions {
   brokenArt?: RegExp;
   /** Fields merged over a game's player fixture (e.g. `{ 'clash-royale': { supportCards: [] } }`). */
   patch?: Partial<Record<'clash-royale' | 'brawl-stars' | 'clash-of-clans', Record<string, unknown>>>;
+  /** Replaces a game's battlelog fixture (the raw API payload). */
+  battlelog?: Partial<Record<'clash-royale' | 'brawl-stars', unknown>>;
   /** Player requests wait for this promise: lets a test look at the loading state. */
   hold?: Promise<void>;
   /** Answer the first `times` player requests with this error instead of the fixture. */
@@ -52,7 +54,8 @@ export async function mockApi(page: Page, options: MockApiOptions = {}): Promise
       return json({ ...cocPlayer, ...options.patch?.['clash-of-clans'] });
     }
     if (path.endsWith('/battlelog')) {
-      return json(path.startsWith('/api/clash-royale/') ? crBattlelog : bsBattlelog);
+      if (path.startsWith('/api/clash-royale/')) return json(options.battlelog?.['clash-royale'] ?? crBattlelog);
+      return json(options.battlelog?.['brawl-stars'] ?? bsBattlelog);
     }
     // Catalogue sizes: 121 cards exist in the (fixture) game, so the Cards tab reads "8/121".
     if (path === '/api/clash-royale/cards') return json({ items: Array.from({ length: 121 }, (_, id) => ({ id })) });

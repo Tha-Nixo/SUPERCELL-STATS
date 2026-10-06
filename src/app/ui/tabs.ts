@@ -27,15 +27,13 @@ export function withTab(search: string, id: string, defaultId: string, drop: rea
 }
 
 /**
- * Query string of a shareable link: the tab first, then only the `keep`
- * parameters present in `search` (in `keep` order). Anything else in the
- * address bar is left out. Returns '' or a string starting with '?'.
+ * Query string of a shareable link: the tab first, then the `extra`
+ * parameters the caller vouches for (non-empty values only). Nothing else
+ * from the address bar is copied. Returns '' or a string starting with '?'.
  */
-export function shareSearch(search: string, id: string, defaultId: string, keep: readonly string[]): string {
-  const current = new URLSearchParams(search);
+export function shareSearch(id: string, defaultId: string, extra: Readonly<Record<string, string>> = {}): string {
   const params = new URLSearchParams(withTab('', id, defaultId));
-  for (const key of keep) {
-    const value = current.get(key);
+  for (const [key, value] of Object.entries(extra)) {
     if (value) params.set(key, value);
   }
   const next = params.toString();

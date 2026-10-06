@@ -99,6 +99,15 @@ export function withBattleFilters(search: string, filters: BattleFilters): strin
   return next ? `?${next}` : '';
 }
 
+/** The filters of `search` worth putting in a shared link: valid for these modes and not 'all'. */
+export function shareableFilters(search: string, modes: readonly ModeOption[]): Record<string, string> {
+  const { mode, result } = parseBattleFilters(search, modes);
+  const out: Record<string, string> = {};
+  if (mode !== 'all') out.mode = mode;
+  if (result !== 'all') out.result = result;
+  return out;
+}
+
 export function filterBattles<T extends BattleLike>(battles: readonly T[], filters: BattleFilters): T[] {
   return battles.filter(
     (b) => (filters.mode === 'all' || modeSlug(b.mode) === filters.mode) && (filters.result === 'all' || b.result === filters.result),

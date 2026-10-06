@@ -42,12 +42,14 @@ describe('withTab with parameters to drop', () => {
 });
 
 describe('shareSearch', () => {
-  const KEEP = ['mode', 'result'];
-  it('writes the tab first, then the kept parameters, nothing else', () => {
-    expect(shareSearch('?result=loss&ref=x&mode=ladder&tab=battles', 'battles', 'overview', KEEP)).toBe('?tab=battles&mode=ladder&result=loss');
+  it('writes the tab first, then the given parameters, and nothing from the address bar', () => {
+    expect(shareSearch('battles', 'overview', { mode: 'ladder', result: 'loss' })).toBe('?tab=battles&mode=ladder&result=loss');
   });
-  it('is canonical for the default tab without kept parameters', () => {
-    expect(shareSearch('?ref=x', 'overview', 'overview', KEEP)).toBe('');
-    expect(shareSearch('', 'deck', 'overview', KEEP)).toBe('?tab=deck');
+  it('is canonical for the default tab and does not copy the address bar', () => {
+    expect(shareSearch('overview', 'overview')).toBe('');
+    expect(shareSearch('deck', 'overview')).toBe('?tab=deck');
+  });
+  it('skips empty values', () => {
+    expect(shareSearch('battles', 'overview', { mode: '' })).toBe('?tab=battles');
   });
 });

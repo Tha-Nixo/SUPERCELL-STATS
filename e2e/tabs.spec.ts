@@ -170,3 +170,17 @@ test('Copy link on Battles keeps the filters and nothing else', async ({ page, c
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toBe(`${new URL(page.url()).origin}${player('clash-royale', '?tab=battles&result=loss')}`);
 });
+
+test('Copy link on another tab leaves out stray or invalid filters', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const origin = () => new URL(page.url()).origin;
+  const copy = async () => {
+    await page.getByRole('button', { name: 'Copy link' }).click();
+    await expect(page.getByRole('button', { name: 'Link copied' })).toBeVisible();
+    return page.evaluate(() => navigator.clipboard.readText());
+  };
+  await page.goto(player('clash-royale', '?tab=deck&mode=ladder&result=loss'));
+  expect(await copy()).toBe(`${origin()}${player('clash-royale', '?tab=deck')}`);
+  await page.goto(player('clash-royale', '?tab=battles&mode=brawl-ball&result=victory'));
+  expect(await copy()).toBe(`${origin()}${player('clash-royale', '?tab=battles')}`);
+});

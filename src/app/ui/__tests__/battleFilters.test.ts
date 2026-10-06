@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  battleModes, filterBattles, modeSlug, NO_FILTERS, parseBattleFilters, resultCounts, withBattleFilters,
+  battleModes, filterBattles, modeSlug, NO_FILTERS, parseBattleFilters, resultCounts, shareableFilters, withBattleFilters,
   type BattleLike,
 } from '../battleFilters';
 
@@ -89,5 +89,17 @@ describe('filterBattles', () => {
     expect(filterBattles(battles, { mode: 'all', result: 'win' })).toHaveLength(3);
     expect(filterBattles(battles, NO_FILTERS)).toEqual(battles);
     expect(filterBattles(battles, { mode: 'river-race', result: 'loss' })).toEqual([]);
+  });
+});
+
+describe('shareableFilters', () => {
+  const modes = battleModes([{ mode: 'Ladder', result: 'win' }, { mode: 'River Race', result: 'loss' }]);
+  it('keeps the filters that are valid for this player', () => {
+    expect(shareableFilters('?tab=battles&mode=ladder&result=loss&ref=x', modes)).toEqual({ mode: 'ladder', result: 'loss' });
+  });
+  it('drops unknown modes and results, and the "all" values', () => {
+    expect(shareableFilters('?mode=brawl-ball&result=victory', modes)).toEqual({});
+    expect(shareableFilters('?mode=all&result=all', modes)).toEqual({});
+    expect(shareableFilters('?mode=LADDER', modes)).toEqual({ mode: 'ladder' });
   });
 });
