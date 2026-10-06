@@ -145,6 +145,39 @@ which renders as a blank page with nothing in the console.
 Do not use a bare `git pull` here: that clone is checked out on a feature branch,
 so it would pull the wrong ref.
 
+## HTTP behaviour (production)
+
+The part of the vhost below the three `/api/*` handlers is kept in
+`docs/caddy-tail.caddy` and applied by `~/crowdsec/10-supercellstats-caddy.sh`
+(run as root; it validates, reloads, smoke-tests and rolls back by itself).
+The `/api/*` handlers hold the injected Authorization headers and are never touched.
+
+| Route | Served as |
+|---|---|
+| `/assets/*` | hashed build output, `Cache-Control: public, max-age=31536000, immutable` |
+| `/`, `/game/clash-royale`, `/game/brawl-stars`, `/game/clash-of-clans` | prerendered shell (`<path>/index.html`), revalidated on every load |
+| `/game/<id>/player/<tag>` | SPA shell (`/index.html`), client-side routed |
+| any other existing file (`/VERSION`, `/robots.txt`, ...) | the file itself |
+| anything else | **HTTP 404** with the SPA shell as body, so React Router still renders its `NotFound` page |
+
+Every response carries `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options: DENY`,
+`Strict-Transport-Security`, `Permissions-Policy` and a Content-Security-Policy. The build has no
+inline scripts, hence `script-src 'self'`. Allowed external origins:
+
+- styles: `fonts.googleapis.com`; fonts: `fonts.gstatic.com`
+- images: `cdn.brawlify.com`, `cdn-old.brawlify.com`, `api-assets.clashroyale.com`, `royaleapi.github.io` (plus `data:`)
+- `connect-src 'self'` only: all API calls go through the same-origin `/api/*` proxy
+
+To add a new CDN, add its origin to the right directive (`img-src`, `font-src`, ...) in
+`docs/caddy-tail.caddy`, then re-run the apply script. A blocked resource shows up as a
+`console:` failure in the e2e suite (`E2E_BASE_URL=https://supercellstats.com npm run e2e`).
+
+Rollback to the Caddyfile saved before the change:
+
+```bash
+sudo cp "$(ls -t /etc/caddy/Caddyfile.bak-presupercell-* | head -1)" /etc/caddy/Caddyfile && sudo systemctl reload caddy
+```
+
 ## Notes
 
 - The client sends no Authorization header in production; Caddy injects it.
