@@ -362,9 +362,10 @@ export default function GamePage() {
                 <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl shrink-0 shadow-xl"
                   style={{ background: `linear-gradient(135deg, ${game.gradientFrom}, ${game.gradientTo})`, border: `2px solid ${game.accent}40` }}>
                   {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc ? (
-                    <TownHallMark level={playerStats.gameVisuals.coc.townHallLevel} className="w-14 h-14 text-2xl" />
+                    <TownHallMark key={urlTag} level={playerStats.gameVisuals.coc.townHallLevel} className="w-14 h-14 text-2xl" />
                   ) : gameId === 'brawl-stars' && playerStats.gameVisuals?.bs?.iconId ? (
                     <img
+                      key={urlTag}
                       src={`https://cdn.brawlify.com/profile-icons/regular/${playerStats.gameVisuals.bs.iconId}.png`}
                       alt="Player Icon"
                       className="w-12 h-12 object-contain filter drop-shadow-md"
@@ -378,6 +379,7 @@ export default function GamePage() {
                     />
                   ) : gameId === 'clash-royale' && (playerStats.gameVisuals?.cr?.arenaIconUrl || playerStats.gameVisuals?.cr?.arenaId) ? (
                     <img
+                      key={urlTag}
                       src={playerStats.gameVisuals.cr?.arenaIconUrl || `https://api-assets.clashroyale.com/arenas/72/${playerStats.gameVisuals.cr?.arenaId}.png`}
                       alt="Arena"
                       className="w-12 h-12 object-contain filter drop-shadow-md"
@@ -425,7 +427,7 @@ export default function GamePage() {
                 {gameId === 'clash-of-clans' && playerStats.gameVisuals?.coc && (
                   <div className="shrink-0 flex flex-col items-center">
                     <div className="w-16 h-16 flex items-center justify-center">
-                      <TownHallMark level={playerStats.gameVisuals.coc.townHallLevel} className="w-full h-full text-3xl" />
+                      <TownHallMark key={urlTag} level={playerStats.gameVisuals.coc.townHallLevel} className="w-full h-full text-3xl" />
                     </div>
                     <p className="text-white/50 text-[11px] mt-1 font-semibold tracking-wider">TH {playerStats.gameVisuals.coc.townHallLevel}</p>
                   </div>

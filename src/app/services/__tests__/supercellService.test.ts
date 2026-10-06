@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  normalizeTag, isValidTag, toBattleLog, displayCardLevel, bsOutcome,
+  normalizeTag, isValidTag, toBattleLog, displayCardLevel, bsOutcome, bsWinStats,
 } from '../supercellService';
 
 describe('tags', () => {
@@ -61,5 +61,22 @@ describe('bsOutcome', () => {
   it('returns undefined when the outcome cannot be determined', () => {
     expect(bsOutcome({ battle: {} })).toBeUndefined();
     expect(bsOutcome(undefined)).toBeUndefined();
+  });
+});
+
+describe('bsWinStats', () => {
+  const b = (result: string) => ({ battle: { result } });
+  it('excludes draws from the denominator and from losses (5W 3L 2D -> 62.5%)', () => {
+    const log = [
+      ...Array(5).fill(b('victory')), ...Array(3).fill(b('defeat')), ...Array(2).fill(b('draw')),
+    ];
+    const s = bsWinStats(log);
+    expect(s.battleWins).toBe(5);
+    expect(s.battleLosses).toBe(3);
+    expect(s.winRate).toBe(63); // 62.5 rounded; a draw-as-loss bug would give 50
+  });
+  it('returns 0 for an all-draw or empty log', () => {
+    expect(bsWinStats([b('draw')]).winRate).toBe(0);
+    expect(bsWinStats([])).toEqual({ battleWins: 0, battleLosses: 0, winRate: 0 });
   });
 });

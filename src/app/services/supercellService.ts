@@ -503,6 +503,19 @@ export function bsOutcome(b: any): 'win' | 'loss' | 'draw' | undefined {
     return undefined;
 }
 
+/**
+ * Win/loss tally for a Brawl Stars battle log. Only decisive battles count: a
+ * draw or an unparsable mode is neither a win nor a loss and stays out of the
+ * win-rate denominator.
+ */
+export function bsWinStats(battles: any[]): { battleWins: number; battleLosses: number; winRate: number } {
+    const outcomes = battles.map(bsOutcome);
+    const battleWins = outcomes.filter((o) => o === 'win').length;
+    const battleLosses = outcomes.filter((o) => o === 'loss').length;
+    const decided = battleWins + battleLosses;
+    return { battleWins, battleLosses, winRate: decided > 0 ? Math.round((battleWins / decided) * 100) : 0 };
+}
+
 async function searchBrawlStars(tag: string): Promise<PlayerStats> {
     const key = apiKeys.get('brawlStars');
     const encodedTag = encodeURIComponent(normalizeTag(tag));
@@ -520,12 +533,7 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
     }
 
     const { battles, failed: battleLogFailed } = toBattleLog(rawBattleLog);
-    const decided = battles.map(bsOutcome).filter((o): o is 'win' | 'loss' => o !== undefined);
-    const battleWins = decided.filter((o) => o === 'win').length;
-    const battleLosses = decided.length - battleWins;
-    // Denominator counts only battles with a determinable outcome — a draw or an
-    // unparsable mode must not silently count as a loss.
-    const winRate = decided.length > 0 ? Math.round((battleWins / decided.length) * 100) : 0;
+    const { battleWins, battleLosses, winRate } = bsWinStats(battles);
 
     const trophies: number = player.trophies ?? 0;
     const highestTrophies: number = player.highestTrophies ?? trophies;
@@ -579,8 +587,8 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
         performanceData,
         statLabels: {
             stat1Title: 'Win Rate',
-            stat1Sub: decided.length > 0
-                ? `${battleWins} of last ${decided.length} battles`
+            stat1Sub: battleWins + battleLosses > 0
+                ? `${battleWins} of last ${battleWins + battleLosses} battles`
                 : 'No recent battles',
             stat2Title: 'W/L Ratio',
             stat2Sub: 'Recent battles',
