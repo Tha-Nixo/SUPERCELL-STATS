@@ -30,6 +30,7 @@ const ART_TABS: Array<[string, number]> = [
   ['cards', 8],
   ['towers', 3],
   ['deck', 10],
+  ['overview', 9],
 ];
 for (const [tab, slots] of ART_TABS) {
   test(`${tab}: missing game art falls back in place without errors`, async ({ page }) => {
@@ -90,5 +91,61 @@ test.describe('Cards tab', () => {
     await expect(cards).toHaveCount(8);
     await expectNoEmoji(panel(page));
     expect(problems).toEqual([]);
+  });
+});
+
+test.describe('Overview tab', () => {
+  test('starts with numbers the summary bar does not show, without repeating the player name', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(cr());
+    const p = panel(page);
+    await expect(p.getByText('Three-crown wins')).toBeVisible();
+    await expect(p.getByText('1,530', { exact: true })).toBeVisible();
+    await expect(p.getByText('Best trophies')).toBeVisible();
+    await expect(p.getByText('9,301', { exact: true })).toBeVisible();
+    // The hero already shows the name: the panel must not repeat it.
+    await expect(p.getByText('Vela Storm')).toHaveCount(0);
+    await expect(p.getByRole('heading', { name: 'Clan' })).toBeVisible();
+    await expect(p.getByText('Elder', { exact: true })).toBeVisible();
+    await expect(p.getByRole('heading', { name: 'Ranked seasons' })).toBeVisible();
+    await expect(p.getByText('#1,520')).toBeVisible();
+    await expect(p.getByText('Best season (2026-08)')).toBeVisible();
+    await expectNoEmoji(p);
+    expect(problems).toEqual([]);
+  });
+
+  test('"View deck" opens the Deck tab', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(cr());
+    await panel(page).getByRole('button', { name: 'View deck' }).click();
+    await expect(page).toHaveURL(cr('?tab=deck'));
+  });
+
+  test('hides the ranked seasons card when the player has no season data', async ({ page }) => {
+    await mockApi(page, {
+      patch: { 'clash-royale': { leagueStatistics: undefined, currentPathOfLegendSeasonResult: undefined, bestPathOfLegendSeasonResult: undefined, legacyTrophyRoadHighScore: 0 } },
+    });
+    await page.goto(cr());
+    await expect(panel(page).getByRole('heading', { name: 'Clan' })).toBeVisible();
+    await expect(panel(page).getByRole('heading', { name: 'Ranked seasons' })).toHaveCount(0);
+  });
+
+  test('a player without a clan says so instead of showing "No Clan" as a clan name', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-royale': { clan: undefined } } });
+    await page.goto(cr());
+    await expect(panel(page).getByText('Not in a clan right now.')).toBeVisible();
+    await expect(panel(page).getByText('No Clan')).toHaveCount(0);
+  });
+
+  test('badges expand with a button that reports its state', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(cr());
+    const toggle = panel(page).getByRole('button', { name: /Badges/ });
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(panel(page).getByTestId('badge-list')).toHaveCount(0);
+    await toggle.press('Enter');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(panel(page).getByTestId('badge-list').getByRole('listitem')).toHaveCount(2);
   });
 });

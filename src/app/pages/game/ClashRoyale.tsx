@@ -22,6 +22,7 @@ export default function ClashRoyale({ game, playerStats, tab, onTabChange }: Gam
     );
   }
 
+  const go = (id: CRTab) => onTabChange(id);
   // `tab` was validated against GAME_TABS by the shell; the union makes a misspelt id a type error.
   switch (tab as CRTab) {
     case 'cards':
@@ -40,10 +41,9 @@ export default function ClashRoyale({ game, playerStats, tab, onTabChange }: Gam
       );
     default:
       return (
-        <div className="space-y-8">
-          {/* CROverview's "view deck" link still says 'deck'; older code said 'tower' for towers. */}
-          <CROverview playerStats={playerStats} accent={game.accent} onTabChange={(id) => onTabChange(id === 'tower' ? 'towers' : id)} />
-          <OverviewExtras playerStats={playerStats} accent={game.accent} chartColor={game.chartPrimary} onShowBattles={() => onTabChange('battles')} />
+        <div className="space-y-4">
+          <CROverview playerStats={playerStats} onOpenDeck={() => go('deck')} />
+          <OverviewExtras playerStats={playerStats} accent={game.accent} chartColor={game.chartPrimary} onShowBattles={() => go('battles')} />
         </div>
       );
   }

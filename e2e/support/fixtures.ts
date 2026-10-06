@@ -41,12 +41,26 @@ export const crPlayer = {
   losses: 3388,
   threeCrownWins: 1530,
   arena: { id: 54000057, name: 'Legendary Arena' },
-  clan: { tag: '#2Y0Y', name: 'Lantern Watch' },
   role: 'elder',
   cards: deck,
   currentDeck: deck,
   supportCards: towerTroops,
   currentDeckSupportCards: [towerTroops[1]],
+  clan: { tag: '#2Y0Y', name: 'Lantern Watch', badgeUrl: 'https://api-assets.clashroyale.com/badges/200/16000000.png' },
+  totalDonations: 2048,
+  warDayWins: 12,
+  leagueStatistics: { currentSeason: { trophies: 9123 }, bestSeason: { id: '2026-08', trophies: 9288 } },
+  currentPathOfLegendSeasonResult: { leagueNumber: 7, trophies: 1968, rank: 1520 },
+  bestPathOfLegendSeasonResult: { leagueNumber: 10, trophies: 3371, rank: 37 },
+  legacyTrophyRoadHighScore: 8063,
+  badges: [
+    { name: 'Classic12Wins', level: 3, maxLevel: 8, progress: 30, target: 50, iconUrls: { large: 'https://api-assets.clashroyale.com/badges/1.png' } },
+    { name: 'YearsPlayed', level: 9, maxLevel: 10, progress: 3400, target: 3650, iconUrls: { large: 'https://api-assets.clashroyale.com/badges/2.png' } },
+  ],
+  achievements: [
+    { name: 'Team Player', stars: 3, value: 1, target: 1, info: 'Join a clan' },
+    { name: 'Gatherer', stars: 2, value: 1800, target: 3000, info: 'Collect 3000 cards' },
+  ],
   currentFavouriteCard: { id: 26000021, name: 'Hog Rider', rarity: 'rare', maxLevel: 14, elixirCost: 4, iconUrls: { medium: 'https://api-assets.clashroyale.com/cards/300/26000021.png' } },
 };
 export const crBattlelog = [crBattle(5, 3, 1, 31), crBattle(30, 0, 1, -28), crBattle(60, 1, 1, 0), crBattle(90, 2, 0, 30)];
