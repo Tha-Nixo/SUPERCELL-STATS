@@ -57,8 +57,29 @@ Tokens live in `src/styles/theme.css` as CSS variables exposed to Tailwind 4 (`@
 
 - Routes: `/`, `/game/:gameId`, `/game/:gameId/player/:tag` (bare tag; `%23TAG` keeps working). `?tab=` is additive.
 - Production CSP in `docs/caddy-tail.caddy`: **no new third-party origin, no inline script, fonts self-hosted.** (Changing it requires the root apply script and is out of scope.)
-- Bundle budget enforced by `scripts/check-bundle.mjs` (entry chunk ≈12 KB); no heavy new dependency; no API key in `dist/`.
+- Performance budget (next section) is enforced by the build; no API key in `dist/`.
 - Data layer (`supercellService.ts`, `gameApiRouter.ts`) is not modified except for bugs found while restyling.
+
+## Performance budget
+
+Baseline measured 2026-10-06 on the production build (`86be52c`), gzip sizes:
+
+| Item | Baseline | Budget (build fails above) |
+|---|---|---|
+| Initial JS on `/` (entry 4.5 + react 76.6 + motion 41.5 KB) | 122.6 KB | **135 KB** (+10%) |
+| JS to render a player page (initial + `GamePage` chunk 40.6 KB) | 163.2 KB | **180 KB** (+10%) |
+| Entry chunk alone | 4.5 KB | **8 KB** |
+| CSS (single file) | 12.7 KB | **16 KB** |
+| Fonts (woff2 actually requested on first paint: latin only) | 48 KB | **50 KB**, no extra font files on the critical path |
+
+Rules:
+
+1. **No new runtime dependency over 5 KB gzip** unless the PR description justifies it (what it replaces, why a ~50-line own implementation is not enough) and the budget table above is raised in the same PR with the new number. Prefer what is already shipped: Tailwind utilities, CSS transitions, lucide icons (imported individually, never the whole set), `motion` (already in the initial bundle — new animations use it instead of a second library).
+2. **Per phase growth ≤ 5%** on each budgeted line versus the previous phase; the cumulative cap is the +10% column. Anything above must be paid for by removing something else in the same PR.
+3. **Enforced, not honour-system:** `scripts/bundle-budget.json` holds the numbers; `scripts/check-bundle.mjs` computes the gzip sizes of the chunks reachable from `dist/index.html` (and of the `GamePage` chunk) and fails `npm run build` when any exceeds its budget, printing the delta. The file and the check land in the first task of phase 1 (before any UI work) so every later PR is measured against it.
+4. **Lab Web Vitals on production** (Lighthouse mobile profile, same method as the 2026-10-06 audit): CLS ≤ 0.05, Total Blocking Time ≤ 150 ms, LCP ≤ 3.0 s (lab values are noisy: re-run once before treating a miss as real), performance score ≥ 90.
+5. **Heavy assets stay lazy:** images below the fold use `loading="lazy"` with explicit width/height (no layout shift); the per-game page module and its data components load only on their route (route-level code splitting stays as it is).
+6. **Visual effects budget:** no `filter: blur()` / `backdrop-filter` on large areas, no animated gradients, no more than one continuously running animation on screen.
 
 ## Phases (each = branch → PR → CI → review → merge → deploy → prod verification)
 
@@ -72,6 +93,7 @@ Tokens live in `src/styles/theme.css` as CSS variables exposed to Tailwind 4 (`@
 - `npm run lint`, `typecheck`, `test`, `build` (incl. bundle check) green; CI green.
 - Playwright e2e green locally and, after deploy, against production with the three public tags; new e2e per phase: tab selection updates the URL and survives reload/back, `/` focuses search, no console errors, no failed non-image requests.
 - Screenshots at 390, 768 and 1440 px for Home and one player page per game committed under `docs/screenshots/` for review (reviewers must look at them).
+- Performance budget respected (`npm run build` green) and production Lab Web Vitals within the budget above.
 - Lighthouse on production: accessibility 100, best practices 100, SEO 100, performance ≥ 90 on `/` and the three `/game/<id>` pages; no text below AA contrast; every interactive element ≥ 44 px tall on mobile; keyboard: all controls reachable, visible focus ring.
 - No clipped text or horizontal scroll at 320 px width.
 
