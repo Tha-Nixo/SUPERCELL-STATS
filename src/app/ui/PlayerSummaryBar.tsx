@@ -31,7 +31,7 @@ export function PlayerSummaryBar({ summary, meta }: PlayerSummaryBarProps) {
         <div className="flex min-w-0 items-center gap-4">
           <Avatar key={summary.tag} {...summary.avatar} />
           <div className="min-w-0">
-            <h1 className="font-display text-title leading-tight font-normal text-fg wrap-anywhere sm:text-display">{summary.name}</h1>
+            <h1 dir="auto" className="font-display text-title leading-tight font-normal text-fg wrap-anywhere sm:text-display">{summary.name}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Pill>{summary.tag}</Pill>
               {summary.league && <Pill tone="accent">{summary.league}</Pill>}

@@ -31,7 +31,7 @@ export default function GamePage() {
 
   const [result, setResult] = useState<SearchResult | null>(null);
   // A player URL starts loading on the first render: no empty frame before the skeleton.
-  const [isLoading, setIsLoading] = useState(() => Boolean(rawUrlTag));
+  const [isLoading, setIsLoading] = useState(() => Boolean(urlTag));
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>(() => (gameId ? getRecentSearches(gameId) : []));
   const [copied, setCopied] = useState(false);
   // Only the most recent search may write its result (a slow older one must not overwrite it).
@@ -197,7 +197,7 @@ export default function GamePage() {
                 )}
 
                 <div className="mt-6 space-y-10">
-                  <ModuleBoundary>
+                  <ModuleBoundary key={`${game.id}:${urlTag}`}>
                     <Suspense fallback={<PanelSkeleton />}>
                       <GameModule game={game} playerStats={playerStats} />
                     </Suspense>

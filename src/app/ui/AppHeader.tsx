@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { ArrowLeft, Search, X } from 'lucide-react';
 import { games, type GameTheme } from '../data/games';
@@ -23,6 +23,22 @@ interface AppHeaderProps {
  */
 export function AppHeader({ game, title, compactNav = false, search }: AppHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  // Set by the toggle only: the "/" shortcut moves focus on its own.
+  const focusOnOpen = useRef(false);
+
+  useEffect(() => {
+    if (!searchOpen || !focusOnOpen.current) return;
+    focusOnOpen.current = false;
+    panelRef.current?.querySelector('input')?.focus();
+  }, [searchOpen]);
+
+  const closeSearch = () => {
+    setSearchOpen(false);
+    // Hidden on wide screens, where the input keeps focus instead.
+    toggleRef.current?.focus();
+  };
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-canvas">
@@ -60,7 +76,13 @@ export function AppHeader({ game, title, compactNav = false, search }: AppHeader
         {search && (
           <>
             <div
+              ref={panelRef}
               id="header-search"
+              onKeyDown={(e) => {
+                if (e.key !== 'Escape' || !searchOpen) return;
+                e.stopPropagation();
+                closeSearch();
+              }}
               className={cx(
                 'md:block md:w-72 lg:w-80',
                 searchOpen ? 'absolute inset-x-0 top-full border-b border-line bg-canvas px-4 py-3 md:static md:border-0 md:p-0' : 'hidden',
@@ -72,17 +94,21 @@ export function AppHeader({ game, title, compactNav = false, search }: AppHeader
                 shortcut
                 onBeforeFocus={() => setSearchOpen(true)}
                 onSubmitTag={(slug) => {
-                  setSearchOpen(false);
+                  closeSearch();
                   search.onSubmitTag?.(slug);
                 }}
               />
             </div>
             <button
+              ref={toggleRef}
               type="button"
               aria-label={searchOpen ? 'Close search' : 'Search a player'}
               aria-expanded={searchOpen}
               aria-controls="header-search"
-              onClick={() => setSearchOpen((open) => !open)}
+              onClick={() => {
+                focusOnOpen.current = !searchOpen;
+                setSearchOpen(!searchOpen);
+              }}
               className={buttonClasses('ghost', 'w-11 shrink-0 px-0 md:hidden')}
             >
               {searchOpen ? <X aria-hidden="true" /> : <Search aria-hidden="true" />}

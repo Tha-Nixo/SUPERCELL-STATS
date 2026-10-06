@@ -29,8 +29,8 @@ export class ModuleBoundary extends Component<Props, State> {
     if (!this.state.failed) return this.props.children;
     return (
       <ErrorState
-        title="Could not load this page"
-        message="Part of the page failed to download, usually because the site was updated. Reload to get the latest version."
+        title="Could not load this section"
+        message="This section could not be loaded. If the site was just updated, reload to get the latest version."
         onRetry={() => window.location.reload()}
       />
     );

@@ -61,7 +61,7 @@ test('a failed game-module download keeps the header and search and offers a rel
   await page.route(/\/assets\/ClashRoyale-.*\.js/, (route) => route.abort());
   await page.goto(`/game/clash-royale/player/${FIXTURE_TAG}`);
   const error = page.getByTestId('error-state');
-  await expect(error.getByText('Could not load this page')).toBeVisible();
+  await expect(error.getByText('Could not load this section')).toBeVisible();
   await expect(error.getByRole('button', { name: 'Retry' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 1, name: 'Vela Storm' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Switch game' })).toBeVisible();
@@ -129,16 +129,55 @@ test.describe('on a phone', () => {
     await expect(page).toHaveURL('/game/clash-royale/player/2PP');
     await expect(page.getByLabel('Player tag')).toBeHidden();
   });
+
+  test('the search toggle manages focus: input on open, toggle on Escape and after a search', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(`/game/clash-royale/player/${FIXTURE_TAG}`);
+    const toggle = page.getByRole('button', { name: 'Search a player' });
+    await toggle.click();
+    await expect(page.getByLabel('Player tag')).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Close search' })).toHaveAttribute('aria-expanded', 'true');
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByLabel('Player tag')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Search a player' })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Search a player' })).toHaveAttribute('aria-expanded', 'false');
+
+    await page.getByRole('button', { name: 'Search a player' }).click();
+    await page.getByLabel('Player tag').fill('#2PP');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL('/game/clash-royale/player/2PP');
+    await expect(page.getByLabel('Player tag')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Search a player' })).toBeFocused();
+  });
+});
+
+test('a lone encoded # in the URL is the game landing, not a stuck search', async ({ page }) => {
+  await mockApi(page);
+  await page.goto('/game/clash-royale/player/%23');
+  await expect(page.getByRole('heading', { level: 1, name: 'Clash Royale' })).toBeVisible();
+  await expect(page.getByRole('status')).not.toHaveText('Searching…');
+  await expect(page.getByTestId('player-skeleton')).toHaveCount(0);
+});
+
+test('an unknown game with a player renders the shared 404 page', async ({ page }) => {
+  await mockApi(page);
+  await page.goto('/game/foo/player/2PP');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  await expect(page.locator('main')).toHaveCount(1);
 });
 
 test.describe('on a 320px phone', () => {
   test.use({ viewport: { width: 320, height: 640 } });
 
-  for (const { id, player } of GAMES) {
+  for (const { id, player, module } of GAMES) {
     test(`${id}: no sideways scroll, 44px header and summary controls`, async ({ page }) => {
       await mockApi(page);
       await page.goto(`/game/${id}/player/${FIXTURE_TAG}`);
       await expect(page.getByRole('heading', { level: 1, name: player })).toBeVisible();
+      // Measure the settled page, not the lazy module's loading frame.
+      await expect(module(page)).toBeVisible();
+      await expect(page.getByTestId('panel-skeleton')).toHaveCount(0);
       await expectNoHorizontalScroll(page);
       await expectTouchTargets(page.locator('header').locator('a, button'));
       await expectTouchTargets(page.getByTestId('player-summary').locator('a, button'));
