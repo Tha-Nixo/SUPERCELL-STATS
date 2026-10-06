@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#0B0F1A] flex items-center justify-center px-6">
+    <main className="min-h-screen bg-[#0B0F1A] flex items-center justify-center px-6">
       <div className="text-center">
         <div className="text-[100px] leading-none mb-6 opacity-20" aria-hidden="true">🏰</div>
         <h1 className="text-5xl font-extrabold text-white mb-3">404</h1>
@@ -14,6 +14,6 @@ export default function NotFound() {
           ← Back to Home
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

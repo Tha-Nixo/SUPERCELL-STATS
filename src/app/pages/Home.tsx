@@ -27,6 +27,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#0B0F1A]">
 
+      <main>
       {/* ─── Hero ─── */}
       <section className="relative py-28 px-6 overflow-hidden">
         {/* Background blobs */}
@@ -159,7 +160,7 @@ export default function Home() {
                             <span className="text-5xl" aria-hidden="true" style={{ display: logoImg ? 'none' : 'block' }}>{game.logo}</span>
                           </div>
                           <div className="pt-1">
-                            <h3 className={`text-2xl font-bold text-white ${game.fontClass}`}>{game.name}</h3>
+                            <h2 className={`text-2xl font-bold text-white ${game.fontClass}`}>{game.name}</h2>
                             <p className="text-white/50 text-sm mt-0.5">{game.tagline}</p>
                           </div>
                         </div>
@@ -186,6 +187,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      </main>
 
       {/* ─── Footer ─── */}
       <footer className="border-t border-white/5 py-8">
