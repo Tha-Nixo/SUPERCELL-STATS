@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { Check, Info, Link2 } from 'lucide-react';
 import { getGameById } from '../data/games';
 import { searchPlayer, type SearchResult } from '../services/gameApiRouter';
@@ -12,11 +12,14 @@ import { ErrorState } from '../ui/ErrorState';
 import { Pill } from '../ui/Pill';
 import { PlayerSummaryBar } from '../ui/PlayerSummaryBar';
 import { PanelSkeleton, PlayerPageSkeleton } from '../ui/Skeleton';
+import { SectionTabs } from '../ui/SectionTabs';
 import { SiteFooter } from '../ui/SiteFooter';
+import { parseTab, withTab } from '../ui/tabs';
 import { GameLanding } from './game/GameLanding';
 import { GAME_MODULES, isGameId, preloadGameModule } from './game/modules';
 import { ModuleBoundary } from './game/ModuleBoundary';
 import { buildSummary } from './game/summary';
+import { GAME_TABS } from './game/tabs';
 import NotFound from './NotFound';
 
 const SITE_TITLE = 'Supercell Stats — Player stats for Clash Royale, Brawl Stars & Clash of Clans';
@@ -27,6 +30,7 @@ export default function GamePage() {
   // A percent-encoded '#' (%23) is decoded by the router into a leading '#'; strip one so we never build '##TAG'.
   const urlTag = rawUrlTag?.replace(/^#/, '');
   const navigate = useNavigate();
+  const location = useLocation();
   const game = gameId && isGameId(gameId) ? getGameById(gameId) : undefined;
 
   const [result, setResult] = useState<SearchResult | null>(null);
@@ -113,6 +117,19 @@ export default function GamePage() {
     if (urlTag) void performSearch(`#${urlTag}`);
   };
 
+  const tabs = GAME_TABS[game.id as keyof typeof GAME_TABS];
+  const defaultTab = tabs[0].id;
+  const activeTab = parseTab(location.search, tabs.map((t) => t.id), defaultTab);
+  // Clicks push a history entry (back returns to the previous section); arrow keys replace it.
+  // Reads window.location, not the rendered `location`: two quick key presses
+  // can arrive before the first URL change has re-rendered this component.
+  const selectTab = (id: string, via: 'pointer' | 'keyboard' = 'pointer') => {
+    const { pathname, search } = window.location;
+    const next = withTab(search, id, defaultTab);
+    if (next === search) return;
+    navigate(pathname + next, { replace: via === 'keyboard' });
+  };
+
   const removeRecent = (tag: string) => {
     removeRecentSearch(game.id, tag);
     setRecentSearches(getRecentSearches(game.id));
@@ -196,13 +213,30 @@ export default function GamePage() {
                   </div>
                 )}
 
-                <div className="mt-6 space-y-10">
+                <div className="sticky top-(--header-h) z-20 mt-6 border-b border-line bg-canvas">
+                  <SectionTabs
+                    tabs={tabs}
+                    active={activeTab}
+                    onSelect={selectTab}
+                    label={`${game.name} player sections`}
+                    idPrefix="player"
+                  />
+                </div>
+
+                <section
+                  id="player-panel"
+                  role="tabpanel"
+                  aria-labelledby={`player-tab-${activeTab}`}
+                  tabIndex={0}
+                  className="pt-6 focus-visible:outline-offset-4"
+                >
+                  <h2 className="sr-only">{tabs.find((t) => t.id === activeTab)?.label}</h2>
                   <ModuleBoundary key={`${game.id}:${urlTag}`}>
                     <Suspense fallback={<PanelSkeleton />}>
-                      <GameModule game={game} playerStats={playerStats} />
+                      <GameModule game={game} playerStats={playerStats} tab={activeTab} onTabChange={(id) => selectTab(id)} />
                     </Suspense>
                   </ModuleBoundary>
-                </div>
+                </section>
               </div>
             )}
           </div>

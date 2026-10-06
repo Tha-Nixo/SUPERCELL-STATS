@@ -5,4 +5,8 @@ import type { PlayerStats } from '../../data/mockStats';
 export interface GameModuleProps {
   game: GameTheme;
   playerStats: PlayerStats;
+  /** Selected section id, already validated against GAME_TABS (pages/game/tabs.tsx). */
+  tab: string;
+  /** Switch section from inside the content (e.g. "All battles"). Pushes a history entry. */
+  onTabChange: (id: string) => void;
 }

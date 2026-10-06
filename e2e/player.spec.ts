@@ -3,9 +3,9 @@ import { expectNoHorizontalScroll, expectTouchTargets, watch } from './support/h
 import { FIXTURE_TAG, deferred, mockApi } from './support/mockApi';
 
 const GAMES = [
-  { id: 'clash-royale', player: 'Vela Storm', module: (page: Page) => page.getByRole('tab', { name: 'Battle Deck' }) },
-  { id: 'brawl-stars', player: 'Kitebreaker', module: (page: Page) => page.getByRole('heading', { name: 'Recent Battles' }) },
-  { id: 'clash-of-clans', player: 'Harrow Keep', module: (page: Page) => page.getByRole('button', { name: 'Heroes & Equip' }) },
+  { id: 'clash-royale', player: 'Vela Storm', module: (page: Page) => page.getByRole('button', { name: 'All battles' }) },
+  { id: 'brawl-stars', player: 'Kitebreaker', module: (page: Page) => page.getByRole('button', { name: 'All battles' }) },
+  { id: 'clash-of-clans', player: 'Harrow Keep', module: (page: Page) => page.getByRole('tabpanel').getByRole('heading').nth(1) },
 ] as const;
 
 for (const { id, player, module } of GAMES) {

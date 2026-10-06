@@ -1,31 +1,46 @@
-import { motion } from 'motion/react';
-import { CRProfile } from '../../components/CRProfile';
-import { TrophyTrend } from '../../components/TrophyTrend';
+import { Swords } from 'lucide-react';
+import { CRCardsList } from '../../components/CRCardsList';
+import { CRDeck } from '../../components/CRDeck';
+import { CROverview } from '../../components/CROverview';
+import { CRTowerTroops } from '../../components/CRTowerTroops';
 import { MatchHistory } from '../../components/MatchHistory';
+import { EmptyState } from '../../ui/EmptyState';
+import { OverviewExtras } from './OverviewExtras';
 import type { GameModuleProps } from './types';
 
-// Moved verbatim from GamePage.tsx (restyle phase 1, task 4). Tabs move to the URL in task 6.
-export default function ClashRoyale({ game, playerStats }: GameModuleProps) {
-  return (
-    <>
-      {playerStats.gameVisuals?.cr && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
-          <CRProfile playerStats={playerStats} accentUrl={game.logo || ''} accentColor={game.accent} />
-        </motion.div>
-      )}
+/** Clash Royale sections: overview | cards | deck | battles | towers. The data components are restyled in phase 2. */
+export default function ClashRoyale({ game, playerStats, tab, onTabChange }: GameModuleProps) {
+  const cr = playerStats.gameVisuals?.cr;
+  if (!cr) {
+    return (
+      <EmptyState icon={<Swords />} title="No Clash Royale profile in this answer">
+        The API answered without profile details for this tag. Try again in a minute.
+      </EmptyState>
+    );
+  }
 
-      {playerStats.performanceData.length > 1 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <TrophyTrend data={playerStats.performanceData} accentColor={game.chartPrimary} />
-        </motion.div>
-      )}
-
-      {playerStats.recentMatches.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
-          <h3 className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Recent Battles</h3>
-          <MatchHistory matches={playerStats.recentMatches} accentColor={game.accent} />
-        </motion.div>
-      )}
-    </>
-  );
+  switch (tab) {
+    case 'cards':
+      return <CRCardsList cards={cr.cards} accent={game.accent} />;
+    case 'deck':
+      return <CRDeck playerStats={playerStats} accent={game.accent} />;
+    case 'towers':
+      return <CRTowerTroops playerStats={playerStats} accent={game.accent} />;
+    case 'battles':
+      return playerStats.recentMatches.length > 0 ? (
+        <MatchHistory matches={playerStats.recentMatches} accentColor={game.accent} />
+      ) : (
+        <EmptyState icon={<Swords />} title="No recent battles">
+          Battles from the last few days appear here once this player has played.
+        </EmptyState>
+      );
+    default:
+      return (
+        <div className="space-y-8">
+          {/* CROverview's "view deck" link still says 'deck'; older code said 'tower' for towers. */}
+          <CROverview playerStats={playerStats} accent={game.accent} onTabChange={(id) => onTabChange(id === 'tower' ? 'towers' : id)} />
+          <OverviewExtras playerStats={playerStats} accent={game.accent} chartColor={game.chartPrimary} onShowBattles={() => onTabChange('battles')} />
+        </div>
+      );
+  }
 }

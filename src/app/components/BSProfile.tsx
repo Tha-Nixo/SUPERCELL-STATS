@@ -1,8 +1,8 @@
 import { PlayerStats, BSBrawlerData } from '../data/mockStats';
 import { brawlerRarityMap } from '../data/brawlerRarities';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { useState, useMemo } from 'react';
-import { Trophy, Award, Users, Crosshair, Star, History, Flame, BarChart2, Shield, Home, Search, ArrowUpDown, ChevronDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { Trophy, Award, Users, Crosshair, Star, History, Flame, BarChart2, Shield, Search, ArrowUpDown, ChevronDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { BSBrawlerGrid } from '../components/BSBrawlerGrid';
 
 // Helpers
@@ -19,7 +19,7 @@ const getWinDistribution = (bs: any) => {
     };
 };
 
-const BSHome = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
+export const BSHome = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
     const bs = playerStats.gameVisuals?.bs;
     if (!bs) return null;
 
@@ -117,7 +117,7 @@ const BSHome = ({ playerStats, accentColor }: { playerStats: PlayerStats, accent
         </div>
     );
 };
-const BSBrawlers = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
+export const BSBrawlers = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
     const bs = playerStats.gameVisuals?.bs;
     const brawlers = useMemo(() => bs?.allBrawlers ?? [], [bs]);
 
@@ -336,7 +336,7 @@ const BSBrawlers = ({ playerStats, accentColor }: { playerStats: PlayerStats, ac
         </div>
     );
 };
-const BSProgression = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
+export const BSProgression = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
     const bs = playerStats.gameVisuals?.bs;
     if (!bs) return null;
 
@@ -431,7 +431,7 @@ const BSProgression = ({ playerStats, accentColor }: { playerStats: PlayerStats,
         </div>
     );
 };
-const BSBattleLog = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
+export const BSBattleLog = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
     const bs = playerStats.gameVisuals?.bs;
     if (!bs || !bs.battlelog || bs.battlelog.length === 0) {
         return (
@@ -574,7 +574,7 @@ const BSBattleLog = ({ playerStats, accentColor }: { playerStats: PlayerStats, a
         </div>
     );
 };
-const BSClub = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
+export const BSClub = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
     const club = playerStats.gameVisuals?.bs?.club;
     if (!club) return null;
 
@@ -689,102 +689,3 @@ const BSClub = ({ playerStats, accentColor }: { playerStats: PlayerStats, accent
         </div>
     );
 };
-
-interface BSProfileProps {
-    playerStats: PlayerStats;
-    accentUrl: string; // Used for the background glow
-    accentColor?: string; // e.g. the nameColor
-    bsActiveTab: string; // Sync with GamePage state
-    setBsActiveTab: (tab: string) => void;
-}
-
-type TabType = 'home' | 'brawlers' | 'progression' | 'battlelog' | 'club';
-
-export function BSProfile({ playerStats, accentUrl, bsActiveTab, setBsActiveTab, accentColor = "#fbbf24" }: BSProfileProps) {
-    const bs = playerStats.gameVisuals?.bs;
-    if (!bs) return null;
-
-    const tabs = [
-        { id: 'home', label: 'Dashboard', icon: <Home className="w-4 h-4" /> },
-        { id: 'brawlers', label: 'Brawlers', icon: <Users className="w-4 h-4" /> },
-        { id: 'progression', label: 'Progression', icon: <BarChart2 className="w-4 h-4" /> },
-        { id: 'battlelog', label: 'Battle Log', icon: <History className="w-4 h-4" /> },
-    ] as const;
-
-    // Conditionally add Club tab if they are in one
-    const allTabs = bs.clubTag
-        ? [...tabs, { id: 'club', label: 'Club', icon: <Shield className="w-4 h-4" /> }]
-        : tabs;
-
-    const activeTab = (bsActiveTab || 'home') as TabType;
-
-    return (
-        <div className="relative mt-8">
-            {/* Soft Background Accent */}
-            <div className="absolute top-0 left-0 w-full h-96 -z-10 overflow-hidden rounded-[3rem] opacity-30 pointer-events-none">
-                <div
-                    className="absolute inset-0 bg-cover bg-center blur-[80px]"
-                    style={{ backgroundImage: `url(${accentUrl})`, opacity: 0.6 }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0f111a]" />
-            </div>
-
-            {/* Top Navigation */}
-            <div className="flex justify-center mb-8 px-4 w-full">
-                <div role="tablist" aria-label="Brawl Stars profile sections" className="inline-flex flex-wrap justify-center gap-2 p-1.5 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 max-w-full">
-                    {allTabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            type="button"
-                            role="tab"
-                            id={`bs-tab-${tab.id}`}
-                            aria-selected={activeTab === tab.id}
-                            // only the active panel is mounted, so the reference must not dangle
-                            aria-controls={activeTab === tab.id ? `bs-tabpanel-${tab.id}` : undefined}
-                            onClick={() => setBsActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-5 py-3 min-h-11 rounded-xl font-bold text-sm transition-all relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${activeTab === tab.id
-                                ? 'text-white drop-shadow-md'
-                                : 'text-white/55 hover:text-white/80 hover:bg-white/5'
-                                }`}
-                        >
-                            {activeTab === tab.id && (
-                                <motion.div
-                                    layoutId="bs-active-tab"
-                                    className="absolute inset-0 rounded-xl"
-                                    style={{ backgroundColor: accentColor, opacity: 0.25 }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                />
-                            )}
-                            <span className="relative z-10 opacity-70">{tab.icon}</span>
-                            <span className="relative z-10">{tab.label}</span>
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Tab Render Area */}
-            <div className="relative min-h-[500px]">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={activeTab}
-                        role="tabpanel"
-                        id={`bs-tabpanel-${activeTab}`}
-                        aria-labelledby={`bs-tab-${activeTab}`}
-                        tabIndex={0}
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.98 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-2xl"
-                    >
-                        {activeTab === 'home' && <BSHome playerStats={playerStats} accentColor={accentColor} />}
-                        {activeTab === 'brawlers' && <BSBrawlers playerStats={playerStats} accentColor={accentColor} />}
-                        {activeTab === 'progression' && <BSProgression playerStats={playerStats} accentColor={accentColor} />}
-                        {activeTab === 'battlelog' && <BSBattleLog playerStats={playerStats} accentColor={accentColor} />}
-                        {activeTab === 'club' && <BSClub playerStats={playerStats} accentColor={accentColor} />}
-                    </motion.div>
-                </AnimatePresence>
-            </div>
-        </div>
-    );
-}
