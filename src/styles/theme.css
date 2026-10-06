@@ -1,181 +1,164 @@
-@custom-variant dark (&:is(.dark *));
-
+/*
+ * Design tokens (restyle spec, "Design system"). Components use the Tailwind
+ * names declared in @theme below (bg-surface-1, text-fg-muted, border-line,
+ * bg-accent, rounded-card...), never raw hex.
+ *
+ * Per-game accent: an ancestor with data-game="<game id>" switches --accent
+ * and --accent-soft. Keep the hex values in sync with `accent` in
+ * src/app/data/games.ts (a unit test checks it).
+ */
 :root {
-  --font-size: 16px;
-  --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
-  --card: #ffffff;
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #030213;
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.0058 264.53);
-  --secondary-foreground: #030213;
-  --muted: #ececf0;
-  --muted-foreground: #717182;
-  --accent: #e9ebef;
-  --accent-foreground: #030213;
-  --destructive: #d4183d;
-  --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.1);
-  --input: transparent;
-  --input-background: #f3f3f5;
-  --switch-background: #cbced4;
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #030213;
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  color-scheme: dark;
+
+  /* surfaces */
+  --bg: #0B0F1A;
+  --surface-1: #11172A;
+  --surface-2: #172038;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  /* text: --text-subtle (white/60) is the floor, nothing dimmer for text */
+  --text: #F2F5FF;
+  --text-muted: rgba(255, 255, 255, 0.70);
+  --text-subtle: rgba(255, 255, 255, 0.60);
+
+  /* accent: neutral until a page sets data-game */
+  --accent: #F2F5FF;
+  --accent-soft: rgba(242, 245, 255, 0.10);
+  /* text placed on a solid accent fill (all three accents are light) */
+  --accent-contrast: #0B0F1A;
+
+  /* semantic */
+  --win: #34D399;
+  --loss: #F87171;
+  --draw: #94A3B8;
+  /* tinted fills for the semantic colours (pre-mixed: no color-mix() fallbacks in the CSS) */
+  --win-soft: rgba(52, 211, 153, 0.15);
+  --loss-soft: rgba(248, 113, 113, 0.12);
+  --loss-line: rgba(248, 113, 113, 0.30);
+  --draw-soft: rgba(148, 163, 184, 0.15);
+
+  --focus-ring: #F2F5FF;
+  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 12px 32px -16px rgba(2, 4, 12, 0.8);
+
+  /* sticky chrome heights, shared by AppHeader, SectionTabs and scroll offsets */
+  --header-h: 3.5rem;
+  --tabs-h: 3rem;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+[data-game='clash-royale'] {
+  --accent: #4C8DFF;
+  --accent-soft: rgba(76, 141, 255, 0.14);
+}
+[data-game='brawl-stars'] {
+  --accent: #FFC21A;
+  --accent-soft: rgba(255, 194, 26, 0.14);
+}
+[data-game='clash-of-clans'] {
+  --accent: #5BD65B;
+  --accent-soft: rgba(91, 214, 91, 0.14);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
+  --color-canvas: var(--bg);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-fg: var(--text);
+  --color-fg-muted: var(--text-muted);
+  --color-fg-subtle: var(--text-subtle);
   --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-input-background: var(--input-background);
-  --color-switch-background: var(--switch-background);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-win: var(--win);
+  --color-loss: var(--loss);
+  --color-draw: var(--draw);
+  --color-win-soft: var(--win-soft);
+  --color-loss-soft: var(--loss-soft);
+  --color-loss-line: var(--loss-line);
+  --color-draw-soft: var(--draw-soft);
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Clash', 'Inter', sans-serif;
+
+  /* type scale 12 / 14 / 16 / 20 / 28 / 40: xs, sm, base, xl are Tailwind's own */
+  --text-title: 1.75rem;
+  --text-title--line-height: 1.2;
+  --text-display: 2.5rem;
+  --text-display--line-height: 1.1;
+  /* big numbers: 20px on a 320px phone, 28px from ~900px up, never clipped */
+  --text-stat: clamp(1.25rem, 0.95rem + 1.5vw, 1.75rem);
+  --text-stat--line-height: 1.1;
+
+  --radius-card: 12px;
+  --radius-pill: 999px;
+
+  --shadow-card: var(--shadow-1);
+
+  --ease-out-quick: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Hide a scrollbar but keep the element scrollable (tab strips on phones). */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+  }
+
+  html {
+    background-color: var(--bg);
+    color: var(--text);
+    -webkit-text-size-adjust: 100%;
+    /* keeps in-page targets clear of the sticky header + tab strip */
+    scroll-padding-top: calc(var(--header-h) + var(--tabs-h));
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--bg);
+    color: var(--text);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /**
-  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
-  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
-  */
-
-  html {
-    font-size: var(--font-size);
+  /* One focus ring for everything that has no ring of its own. */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
   }
 
-  h1 {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+  ::selection {
+    background-color: var(--accent-soft);
   }
 
-  h2 {
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
+  /*
+   * Element defaults kept from the previous theme so the per-game data
+   * components (restyled in phases 2-4) keep their current heading sizes.
+   * Tailwind text-* utilities still override these.
+   */
+  h1 { font-size: var(--text-2xl); font-weight: 500; line-height: 1.5; }
+  h2 { font-size: var(--text-xl); font-weight: 500; line-height: 1.5; }
+  h3 { font-size: var(--text-lg); font-weight: 500; line-height: 1.5; }
+  h4,
+  label,
+  button { font-size: var(--text-base); font-weight: 500; line-height: 1.5; }
+  input { font-size: var(--text-base); font-weight: 400; line-height: 1.5; }
+}
 
-  h3 {
-    font-size: var(--text-lg);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  h4 {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  label {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  button {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  input {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-normal);
-    line-height: 1.5;
+/* Motion is 150-200ms opacity/transform only, and none at all when asked. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
