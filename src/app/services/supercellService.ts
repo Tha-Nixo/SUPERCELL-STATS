@@ -84,6 +84,16 @@ function buildTrophyTrend(
     return points.reverse();
 }
 
+/**
+ * Clash Royale battles that moved the Trophy Road count (`player.trophies`).
+ * Path of Legend battles also report a `trophyChange`, but that is a separate
+ * ranked counter (a flat +-30 per battle), so mixing it into the Trophy Road
+ * count draws a climb that never happened.
+ */
+export function crTrophyRoadBattles(battles: any[]): any[] {
+    return battles.filter((b: any) => b?.type !== 'pathOfLegend' && typeof b?.team?.[0]?.trophyChange === 'number');
+}
+
 const FETCH_TIMEOUT_MS = 10_000;
 
 // Map raw Supercell API "reason" codes to messages a visitor can understand.
@@ -352,9 +362,9 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
     });
 
     // Real trophy progression, reconstructed backwards from the current count.
-    // Only battles that actually moved trophies belong on the trend.
+    // Only battles that moved the Trophy Road count belong on the trend.
     const performanceData = buildTrophyTrend(
-        battles.filter((b: any) => typeof b.team?.[0]?.trophyChange === 'number'),
+        crTrophyRoadBattles(battles),
         trophies,
         (b: any) => b.team[0].trophyChange,
         (b: any) => parseSCDate(b.battleTime),

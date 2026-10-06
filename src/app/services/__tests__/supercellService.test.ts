@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  normalizeTag, isValidTag, toBattleLog, displayCardLevel, bsOutcome, bsWinStats,
+  normalizeTag, isValidTag, toBattleLog, displayCardLevel, bsOutcome, bsWinStats, crTrophyRoadBattles,
 } from '../supercellService';
 
 describe('tags', () => {
@@ -78,5 +78,24 @@ describe('bsWinStats', () => {
   it('returns 0 for an all-draw or empty log', () => {
     expect(bsWinStats([b('draw')]).winRate).toBe(0);
     expect(bsWinStats([])).toEqual({ battleWins: 0, battleLosses: 0, winRate: 0 });
+  });
+});
+
+describe('crTrophyRoadBattles', () => {
+  // Shaped like the live battle log: Path of Legend battles carry a trophyChange of their own
+  // that is not part of the Trophy Road count (player.trophies).
+  const pol = { type: 'pathOfLegend', gameMode: { name: 'Ranked1v1_NewArena' }, team: [{ crowns: 1, trophyChange: 30 }] };
+  const ladder = { type: 'PvP', gameMode: { name: 'Ladder' }, team: [{ crowns: 2, trophyChange: 29 }] };
+  const noChange = { type: 'challenge', team: [{ crowns: 1 }] };
+
+  it('drops Path of Legend battles', () => {
+    expect(crTrophyRoadBattles([pol, pol])).toEqual([]);
+  });
+  it('keeps ladder battles that moved trophies and drops the rest, in order', () => {
+    const loss = { type: 'PvP', team: [{ crowns: 0, trophyChange: -27 }] };
+    expect(crTrophyRoadBattles([pol, ladder, noChange, loss])).toEqual([ladder, loss]);
+  });
+  it('copes with malformed entries', () => {
+    expect(crTrophyRoadBattles([{}, { team: [] }, null as never])).toEqual([]);
   });
 });
