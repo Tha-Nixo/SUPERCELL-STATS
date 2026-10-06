@@ -83,7 +83,9 @@ function TownHallMark({ level, className }: { level: number; className: string }
 const SITE_TITLE = 'Supercell Stats — Player stats for Clash Royale, Brawl Stars & Clash of Clans';
 
 export default function GamePage() {
-  const { gameId, tag: urlTag } = useParams<{ gameId: string; tag?: string }>();
+  const { gameId, tag: rawUrlTag } = useParams<{ gameId: string; tag?: string }>();
+  // A percent-encoded '#' (%23) is decoded by the router into a leading '#'; strip one so we never build '##TAG'.
+  const urlTag = rawUrlTag?.replace(/^#/, '');
   const navigate = useNavigate();
   const game = gameId ? getGameById(gameId) : null;
 

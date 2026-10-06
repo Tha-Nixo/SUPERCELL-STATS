@@ -35,6 +35,14 @@ test('an invalid tag shows a friendly error, not a crash', async ({ page }) => {
   expect(problems).toEqual([]);
 });
 
+test('a percent-encoded # in the player URL is treated like the bare tag', async ({ page }) => {
+  const problems = watch(page);
+  await page.goto('/game/clash-royale/player/%23ABC', { waitUntil: 'networkidle' });
+  await expect(page.getByText(/^invalid tag/i)).toBeVisible();
+  await expect(page.getByLabel('Player tag')).toHaveValue('#ABC');
+  expect(problems).toEqual([]);
+});
+
 test('an unknown URL renders the not-found page', async ({ page }) => {
   await page.goto('/definitely-not-a-page');
   await expect(page.getByText(/not found|404/i).first()).toBeVisible();
@@ -51,6 +59,16 @@ for (const [game, tag] of real) {
     const problems = watch(page);
     await page.goto(`/game/${game}/player/${encodeURIComponent(tag!.replace(/^#/, ''))}`, { waitUntil: 'networkidle' });
     await expect(page.getByText(/trophies/i).first()).toBeVisible({ timeout: 15000 });
+    expect(problems).toEqual([]);
+  });
+
+  test(`${game}: a real player renders from a percent-encoded # URL`, async ({ page }) => {
+    test.skip(!tag, `set E2E_${game === 'clash-royale' ? 'CR' : game === 'brawl-stars' ? 'BS' : 'COC'}_TAG`);
+    const problems = watch(page);
+    const bare = tag!.replace(/^#/, '');
+    await page.goto(`/game/${game}/player/%23${encodeURIComponent(bare)}`, { waitUntil: 'networkidle' });
+    await expect(page.getByText(/trophies/i).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByLabel('Player tag')).toHaveValue(`#${bare.toUpperCase()}`);
     expect(problems).toEqual([]);
   });
 }
