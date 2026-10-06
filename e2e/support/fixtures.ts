@@ -27,6 +27,10 @@ const crBattle = (minutesAgo: number, my: number, opp: number, trophyChange: num
   opponent: [{ tag: '#2Y0Y', name: 'Opponent', crowns: opp }],
 });
 
+const towerTroop = (id: number, name: string, rarity: string, level: number) => ({
+  id, name, rarity, level, maxLevel: 16, iconUrls: { medium: `https://api-assets.clashroyale.com/cards/300/${id}.png` },
+});
+const towerTroops = [towerTroop(159000000, 'Tower Princess', 'common', 16), towerTroop(159000001, 'Cannoneer', 'epic', 11), towerTroop(159000002, 'Dagger Duchess', 'legendary', 8)];
 export const crPlayer = {
   tag: `#${FIXTURE_TAG}`,
   name: 'Vela Storm',
@@ -41,6 +45,8 @@ export const crPlayer = {
   role: 'elder',
   cards: deck,
   currentDeck: deck,
+  supportCards: towerTroops,
+  currentDeckSupportCards: [towerTroops[1]],
 };
 export const crBattlelog = [crBattle(5, 3, 1, 31), crBattle(30, 0, 1, -28), crBattle(60, 1, 1, 0), crBattle(90, 2, 0, 30)];
 

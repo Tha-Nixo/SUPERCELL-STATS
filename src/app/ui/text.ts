@@ -15,3 +15,9 @@ export function stripEmoji(text: string): string {
     .replace(/\s{2,}/g, ' ')
     .trim();
 }
+
+/** API enum-ish words for display: 'legendary' -> 'Legendary', 'coLeader' -> 'Co leader'. */
+export function sentenceCase(text: string): string {
+  const words = text.trim().replace(/([a-z\d])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}

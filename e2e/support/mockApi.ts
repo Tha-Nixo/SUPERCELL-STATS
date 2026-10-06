@@ -4,15 +4,21 @@ import { bsBattlelog, bsPlayer, cocPlayer, crBattlelog, crPlayer } from './fixtu
 export { FIXTURE_TAG } from './fixtures.ts';
 
 export interface MockApiOptions {
+  /** Game-art URLs matching this answer 404, as a CDN does for content it does not have yet. */
+  brokenArt?: RegExp;
+  /** Fields merged over a game's player fixture (e.g. `{ 'clash-royale': { supportCards: [] } }`). */
+  patch?: Partial<Record<'clash-royale' | 'brawl-stars' | 'clash-of-clans', Record<string, unknown>>>;
   /** Player requests wait for this promise: lets a test look at the loading state. */
   hold?: Promise<void>;
   /** Answer the first `times` player requests with this error instead of the fixture. */
   fail?: { status: number; reason: string; times: number };
 }
 
-// 1x1 transparent PNG: game art CDNs are answered locally so tests never depend on them.
-const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
-const ART_HOSTS = /^https:\/\/(cdn\.brawlify\.com|cdn-old\.brawlify\.com|api-assets\.clashroyale\.com|api-assets\.clashofclans\.com|royaleapi\.github\.io)\//;
+// 1x1 opaque slate PNG: game art CDNs are answered locally so tests never depend
+// on them, and review screenshots still show where each image sits.
+const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR42mOwcisAAAGuAPF1kfDaAAAAAElFTkSuQmCC', 'base64');
+/** Third-party hosts of game art (all listed in the production CSP img-src). */
+export const ART_HOSTS = /^https:\/\/(cdn\.brawlify\.com|cdn-old\.brawlify\.com|api-assets\.clashroyale\.com|api-assets\.clashofclans\.com|royaleapi\.github\.io)\//;
 
 const PLAYER = /^\/api\/(clash-royale|brawl-stars|clash-of-clans)\/players\/[^/]+$/;
 
@@ -24,7 +30,11 @@ export async function mockApi(page: Page, options: MockApiOptions = {}): Promise
   const calls: string[] = [];
   let failuresLeft = options.fail?.times ?? 0;
 
-  await page.route(ART_HOSTS, (route) => route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL }));
+  await page.route(ART_HOSTS, (route) =>
+    options.brokenArt?.test(route.request().url())
+      ? route.fulfill({ status: 404, contentType: 'text/plain', body: 'Not Found' })
+      : route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL }),
+  );
 
   await page.route('**/api/**', async (route) => {
     const path = decodeURIComponent(new URL(route.request().url()).pathname);
@@ -37,9 +47,9 @@ export async function mockApi(page: Page, options: MockApiOptions = {}): Promise
         failuresLeft--;
         return json({ reason: options.fail!.reason, message: options.fail!.reason }, options.fail!.status);
       }
-      if (path.startsWith('/api/clash-royale/')) return json(crPlayer);
-      if (path.startsWith('/api/brawl-stars/')) return json(bsPlayer);
-      return json(cocPlayer);
+      if (path.startsWith('/api/clash-royale/')) return json({ ...crPlayer, ...options.patch?.['clash-royale'] });
+      if (path.startsWith('/api/brawl-stars/')) return json({ ...bsPlayer, ...options.patch?.['brawl-stars'] });
+      return json({ ...cocPlayer, ...options.patch?.['clash-of-clans'] });
     }
     if (path.endsWith('/battlelog')) {
       return json(path.startsWith('/api/clash-royale/') ? crBattlelog : bsBattlelog);

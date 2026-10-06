@@ -25,7 +25,7 @@ export default function ClashRoyale({ game, playerStats, tab, onTabChange }: Gam
     case 'deck':
       return <CRDeck playerStats={playerStats} accent={game.accent} />;
     case 'towers':
-      return <CRTowerTroops playerStats={playerStats} accent={game.accent} />;
+      return <CRTowerTroops playerStats={playerStats} />;
     case 'battles':
       return playerStats.recentMatches.length > 0 ? (
         <MatchHistory matches={playerStats.recentMatches} accentColor={game.accent} />

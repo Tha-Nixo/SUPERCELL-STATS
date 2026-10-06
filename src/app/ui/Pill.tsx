@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 import { cx } from './cx';
 
-export type PillTone = 'neutral' | 'accent' | 'win' | 'loss' | 'draw';
+export type PillTone = 'neutral' | 'accent' | 'solid' | 'win' | 'loss' | 'draw';
 
 const TONES: Record<PillTone, string> = {
   neutral: 'bg-surface-2 text-fg-muted',
+  // accent text on its tint is AA on surface-1 only (4.56:1); on surface-2 use 'solid'.
   accent: 'bg-accent-soft text-accent',
+  solid: 'bg-accent text-accent-contrast',
   win: 'bg-win-soft text-win',
   loss: 'bg-loss-soft text-loss',
   draw: 'bg-draw-soft text-draw',
