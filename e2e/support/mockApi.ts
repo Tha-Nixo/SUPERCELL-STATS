@@ -54,7 +54,9 @@ export async function mockApi(page: Page, options: MockApiOptions = {}): Promise
     if (path.endsWith('/battlelog')) {
       return json(path.startsWith('/api/clash-royale/') ? crBattlelog : bsBattlelog);
     }
-    if (path === '/api/clash-royale/cards' || path === '/api/brawl-stars/brawlers') return json({ items: [] });
+    // Catalogue sizes: 121 cards exist in the (fixture) game, so the Cards tab reads "8/121".
+    if (path === '/api/clash-royale/cards') return json({ items: Array.from({ length: 121 }, (_, id) => ({ id })) });
+    if (path === '/api/brawl-stars/brawlers') return json({ items: [] });
     return json({ reason: 'notFound', message: 'notFound' }, 404);
   });
 

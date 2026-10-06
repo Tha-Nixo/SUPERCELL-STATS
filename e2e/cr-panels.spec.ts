@@ -27,6 +27,7 @@ test.describe('Tower troops tab', () => {
 });
 // Every CR tab that shows game art, with the number of art slots the fixture fills.
 const ART_TABS: Array<[string, number]> = [
+  ['cards', 8],
   ['towers', 3],
   ['deck', 10],
 ];
@@ -61,5 +62,33 @@ test.describe('Deck tab', () => {
     await mockApi(page, { patch: { 'clash-royale': { currentDeck: [] } } });
     await page.goto(cr('?tab=deck'));
     await expect(panel(page).getByTestId('empty-state').getByText('No battle deck to show')).toBeVisible();
+  });
+});
+
+test.describe('Cards tab', () => {
+  test('the tab shows found / in game, and search, rarity filter and the empty result work', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(cr('?tab=cards'));
+    await expect(page.getByRole('tab', { name: 'Cards 8/121' })).toHaveAttribute('aria-selected', 'true');
+    const cards = panel(page).getByTestId('collection-card');
+    await expect(cards).toHaveCount(8);
+    await expect(panel(page).getByRole('heading', { name: 'Collection (8)' })).toBeVisible();
+
+    await panel(page).getByLabel('Search cards').fill('hog');
+    await expect(cards).toHaveCount(1);
+    await expect(cards).toContainText('Hog Rider');
+
+    await panel(page).getByLabel('Search cards').fill('');
+    await panel(page).getByLabel('Filter cards by rarity').selectOption('epic');
+    await expect(cards).toHaveCount(1);
+    await expect(cards).toContainText('Skeleton Army');
+
+    await panel(page).getByLabel('Search cards').fill('zzz');
+    await expect(panel(page).getByTestId('empty-state').getByText('No cards match')).toBeVisible();
+    await panel(page).getByRole('button', { name: 'Clear search and filter' }).click();
+    await expect(cards).toHaveCount(8);
+    await expectNoEmoji(panel(page));
+    expect(problems).toEqual([]);
   });
 });

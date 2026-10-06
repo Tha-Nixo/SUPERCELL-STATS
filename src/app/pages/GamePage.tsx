@@ -12,7 +12,7 @@ import { ErrorState } from '../ui/ErrorState';
 import { Pill } from '../ui/Pill';
 import { PlayerSummaryBar, PlayerSummaryCompact } from '../ui/PlayerSummaryBar';
 import { PanelSkeleton, PlayerPageSkeleton } from '../ui/Skeleton';
-import { SectionTabs } from '../ui/SectionTabs';
+import { SectionTabs, type TabDef } from '../ui/SectionTabs';
 import { SiteFooter } from '../ui/SiteFooter';
 import { parseTab, withTab } from '../ui/tabs';
 import { tagSlug } from '../ui/tag';
@@ -20,7 +20,7 @@ import { GameLanding } from './game/GameLanding';
 import { GAME_MODULES, isGameId, preloadGameModule } from './game/modules';
 import { ModuleBoundary } from './game/ModuleBoundary';
 import { buildSummary } from './game/summary';
-import { GAME_TABS } from './game/tabs';
+import { GAME_TABS, tabCounts } from './game/tabs';
 import NotFound from './NotFound';
 
 const SITE_TITLE = 'Supercell Stats — Player stats for Clash Royale, Brawl Stars & Clash of Clans';
@@ -140,7 +140,7 @@ export default function GamePage() {
     if (urlTag) void performSearch(`#${urlTag}`);
   };
 
-  const tabs = GAME_TABS[game.id as keyof typeof GAME_TABS];
+  const tabs: readonly TabDef[] = GAME_TABS[game.id as keyof typeof GAME_TABS];
   const defaultTab = tabs[0].id;
   const activeTab = parseTab(location.search, tabs.map((t) => t.id), defaultTab);
   // Clicks push a history entry (back returns to the previous section); arrow keys replace it.
@@ -174,6 +174,8 @@ export default function GamePage() {
   const error = urlTag && !isLoading ? result?.error ?? null : null;
   const GameModule = GAME_MODULES[game.id as keyof typeof GAME_MODULES];
   const summary = playerStats && urlTag ? buildSummary(game, playerStats, urlTag) : null;
+  const counts = playerStats ? tabCounts(game.id as keyof typeof GAME_TABS, playerStats) : {};
+  const labelledTabs = tabs.map((t) => (counts[t.id] ? { ...t, count: counts[t.id] } : t));
 
   return (
     <div data-game={game.id} className="flex min-h-dvh flex-col">
@@ -244,7 +246,7 @@ export default function GamePage() {
 
                 <div className="sticky top-(--header-h) z-20 mt-6 border-b border-line bg-canvas">
                   <SectionTabs
-                    tabs={tabs}
+                    tabs={labelledTabs}
                     active={activeTab}
                     onSelect={selectTab}
                     label={`${game.name} player sections`}

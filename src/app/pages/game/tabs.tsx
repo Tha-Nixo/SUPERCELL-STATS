@@ -1,4 +1,5 @@
 import { Activity, Award, BarChart2, Castle, Flame, Hammer, Layers, Shield, Swords, Users } from 'lucide-react';
+import type { PlayerStats } from '../../data/mockStats';
 import type { TabDef } from '../../ui/SectionTabs';
 import type { GameId } from './modules';
 
@@ -6,7 +7,7 @@ import type { GameId } from './modules';
  * Player-page sections per game. The ids are public: they appear in links as
  * ?tab=<id>, so never rename one. The first tab is the default.
  */
-export const GAME_TABS: Record<GameId, readonly TabDef[]> = {
+export const GAME_TABS = {
   'clash-royale': [
     { id: 'overview', label: 'Overview', icon: <Activity /> },
     { id: 'cards', label: 'Cards', icon: <Layers /> },
@@ -27,4 +28,18 @@ export const GAME_TABS: Record<GameId, readonly TabDef[]> = {
     { id: 'heroes', label: 'Heroes and equipment', icon: <Castle /> },
     { id: 'achievements', label: 'Achievements', icon: <Award /> },
   ],
-};
+} as const satisfies Record<GameId, readonly TabDef[]>;
+
+/** The section ids of one game, as a union ('overview' | 'cards' | ...). */
+export type TabId<G extends GameId> = (typeof GAME_TABS)[G][number]['id'];
+
+/**
+ * Small counts shown next to a tab label, computed from the loaded player.
+ * Clash Royale Cards: "found / in game" from the API mapper ("12 / 123", or
+ * just "12" when the card catalogue could not be fetched).
+ */
+export function tabCounts(game: GameId, stats: PlayerStats): Partial<Record<string, string>> {
+  if (game !== 'clash-royale') return {};
+  const found = stats.extraStats?.find((s) => s.label === 'Cards Found')?.value;
+  return found === undefined || found === '' ? {} : { cards: String(found).replace(/\s+/g, '') };
+}

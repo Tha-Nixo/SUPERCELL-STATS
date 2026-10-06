@@ -6,7 +6,10 @@ import { CRTowerTroops } from '../../components/CRTowerTroops';
 import { MatchHistory } from '../../components/MatchHistory';
 import { EmptyState } from '../../ui/EmptyState';
 import { OverviewExtras } from './OverviewExtras';
+import type { TabId } from './tabs';
 import type { GameModuleProps } from './types';
+
+type CRTab = TabId<'clash-royale'>;
 
 /** Clash Royale sections: overview | cards | deck | battles | towers. The data components are restyled in phase 2. */
 export default function ClashRoyale({ game, playerStats, tab, onTabChange }: GameModuleProps) {
@@ -19,9 +22,10 @@ export default function ClashRoyale({ game, playerStats, tab, onTabChange }: Gam
     );
   }
 
-  switch (tab) {
+  // `tab` was validated against GAME_TABS by the shell; the union makes a misspelt id a type error.
+  switch (tab as CRTab) {
     case 'cards':
-      return <CRCardsList cards={cr.cards} accent={game.accent} />;
+      return <CRCardsList cards={cr.cards} />;
     case 'deck':
       return <CRDeck playerStats={playerStats} />;
     case 'towers':
