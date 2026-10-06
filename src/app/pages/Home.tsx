@@ -30,15 +30,16 @@ export default function Home() {
       <main>
       {/* ─── Hero ─── */}
       <section className="relative py-28 px-6 overflow-hidden">
-        {/* Background blobs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-[#4D7FFF]/10 rounded-full blur-[120px]" />
-          <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] bg-[#FFC800]/10 rounded-full blur-[120px]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-[#8BC34A]/5 rounded-full blur-[140px]" />
+        {/* Background glows — radial gradients instead of large CSS blur() filters, which are
+            very expensive to rasterise on mobile CPUs (long main-thread tasks during the intro). */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className="absolute -top-20 -left-20 w-[500px] h-[500px] rounded-full bg-[radial-gradient(closest-side,rgba(77,127,255,0.14),transparent)]" />
+          <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] rounded-full bg-[radial-gradient(closest-side,rgba(255,200,0,0.14),transparent)]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-[radial-gradient(closest-side,rgba(139,195,74,0.07),transparent)]" />
         </div>
 
         <div className="relative max-w-4xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+          <motion.div initial={{ y: 16 }} animate={{ y: 0 }} transition={{ duration: 0.5 }}>
 
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/60 text-sm font-medium mb-8">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
