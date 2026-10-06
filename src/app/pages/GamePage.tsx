@@ -159,12 +159,12 @@ export default function GamePage() {
 
   if (!game) {
     return (
-      <div className="min-h-screen bg-[#0B0F1A] flex items-center justify-center">
+      <main className="min-h-screen bg-[#0B0F1A] flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-white mb-4">Game Not Found</h1>
           <Link to="/" className="text-blue-400 hover:text-blue-300">Return to Home</Link>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -207,6 +207,7 @@ export default function GamePage() {
   return (
     <div className="min-h-screen bg-[#0B0F1A]">
 
+      <main>
       {/* ─── Hero / Search header ─── */}
       <section
         className="relative py-24 px-6 overflow-hidden"
@@ -648,9 +649,9 @@ export default function GamePage() {
               ) : (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-center mt-10">
                   <div className="text-[100px] leading-none mb-6 opacity-10">{game.logo}</div>
-                  <h3 className="text-2xl font-bold text-white/40 mb-3">Search for a Player</h3>
-                  <p className="text-white/25 max-w-xs mx-auto text-sm">Enter a player tag above to view live stats, heroes, deck, brawlers and battle history.</p>
-                  <div className="mt-8 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/30 text-sm font-mono">
+                  <h2 className="text-2xl font-bold text-white/60 mb-3">Search for a Player</h2>
+                  <p className="text-white/60 max-w-xs mx-auto text-sm">Enter a player tag above to view live stats, heroes, deck, brawlers and battle history.</p>
+                  <div className="mt-8 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm font-mono">
                     <span style={{ color: game.accent }}>#</span>PLAYERTAG
                   </div>
                 </motion.div>
@@ -660,11 +661,13 @@ export default function GamePage() {
         )
       }
 
+      </main>
+
       {/* ─── Footer ─── */}
       <footer className="border-t border-white/5 py-8 mt-8">
-        <div className="max-w-7xl mx-auto px-6 text-center text-white/30 text-xs leading-relaxed">
+        <div className="max-w-7xl mx-auto px-6 text-center text-white/60 text-xs leading-relaxed">
           <p className="mb-2">
-            This material is unofficial and is not endorsed by Supercell. For more information see Supercell's Fan Content Policy: <a href="https://www.supercell.com/fan-content-policy" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white transition-colors underline">www.supercell.com/fan-content-policy</a>.
+            This material is unofficial and is not endorsed by Supercell. For more information see Supercell's Fan Content Policy: <a href="https://www.supercell.com/fan-content-policy" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition-colors underline">www.supercell.com/fan-content-policy</a>.
           </p>
           <p>
             {game.name} Stats — All game data is provided by the official Supercell Developer API.
