@@ -124,10 +124,10 @@ export default function GamePage() {
   // Reads window.location, not the rendered `location`: two quick key presses
   // can arrive before the first URL change has re-rendered this component.
   const selectTab = (id: string, via: 'pointer' | 'keyboard' = 'pointer') => {
-    const { pathname, search } = window.location;
+    const { pathname, search, hash } = window.location;
     const next = withTab(search, id, defaultTab);
     if (next === search) return;
-    navigate(pathname + next, { replace: via === 'keyboard' });
+    navigate(pathname + next + hash, { replace: via === 'keyboard' });
   };
 
   const removeRecent = (tag: string) => {

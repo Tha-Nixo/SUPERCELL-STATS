@@ -27,8 +27,15 @@ export function SectionTabs({ tabs, active, onSelect, label, idPrefix }: Section
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]');
-    el?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const list = listRef.current;
+    const el = list?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!list || !el) return;
+    // Move only the strip sideways; scrollIntoView could also scroll the page.
+    const gap = 16;
+    if (el.offsetLeft - gap < list.scrollLeft) list.scrollLeft = el.offsetLeft - gap;
+    else if (el.offsetLeft + el.offsetWidth + gap > list.scrollLeft + list.clientWidth) {
+      list.scrollLeft = el.offsetLeft + el.offsetWidth + gap - list.clientWidth;
+    }
   }, [active]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -56,7 +63,7 @@ export function SectionTabs({ tabs, active, onSelect, label, idPrefix }: Section
       role="tablist"
       aria-label={label}
       onKeyDown={onKeyDown}
-      className="no-scrollbar -mx-4 flex h-12 items-stretch gap-1 overflow-x-auto px-4 sm:mx-0 sm:px-0"
+      className="no-scrollbar relative -mx-4 flex h-12 items-stretch gap-1 overflow-x-auto px-4 sm:mx-0 sm:px-0"
     >
       {tabs.map((tab) => {
         const selected = tab.id === active;
@@ -71,7 +78,7 @@ export function SectionTabs({ tabs, active, onSelect, label, idPrefix }: Section
             tabIndex={selected ? 0 : -1}
             onClick={() => onSelect(tab.id, 'pointer')}
             className={cx(
-              'relative inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors duration-150 [&_svg]:size-4',
+              'relative inline-flex min-h-11 focus-visible:outline-offset-[-2px] shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors duration-150 [&_svg]:size-4',
               'after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-pill',
               selected ? 'text-fg after:bg-accent' : 'text-fg-muted hover:bg-surface-2 hover:text-fg',
             )}

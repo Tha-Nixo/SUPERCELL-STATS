@@ -103,3 +103,51 @@ test.describe('on a phone', () => {
     await expectNoHorizontalScroll(page);
   });
 });
+
+for (const width of [390, 1440]) {
+  test(`focus ring of the first, a middle and the last tab stays inside the strip at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto(player('clash-royale'));
+    const list = page.getByRole('tablist');
+    await expect(selected(page)).toHaveText('Overview');
+    await selected(page).focus();
+    const probe = () =>
+      page.evaluate(() => {
+        const tab = document.activeElement as HTMLElement;
+        const cs = getComputedStyle(tab);
+        const width = parseFloat(cs.outlineWidth);
+        const reach = width + parseFloat(cs.outlineOffset);
+        const t = tab.getBoundingClientRect();
+        const s = tab.parentElement!.getBoundingClientRect();
+        const el = tab.parentElement!;
+        const inner = { l: s.left + el.clientLeft, r: s.left + el.clientLeft + el.clientWidth, t: s.top + el.clientTop, b: s.top + el.clientTop + el.clientHeight };
+        return {
+          role: tab.getAttribute('role'),
+          width,
+          reach,
+          top: t.top - reach - inner.t,
+          bottom: inner.b - (t.bottom + reach),
+          left: t.left - reach - inner.l,
+          right: inner.r - (t.right + reach),
+        };
+      });
+    const steps = ['Home', 'ArrowRight', 'ArrowRight', 'End'];
+    for (const key of steps) {
+      await page.keyboard.press(key);
+      await page.waitForTimeout(150);
+      const r = await probe();
+      expect(r.role).toBe('tab');
+      expect(r.width).toBeGreaterThan(0);
+      for (const side of ['top', 'bottom', 'left', 'right'] as const) {
+        expect(r[side], `${key}: ${side}`).toBeGreaterThanOrEqual(-0.5);
+      }
+      if (process.env.SHOTS) await list.screenshot({ path: `${process.env.SHOTS}/tabs-${width}-${key}-${Date.now()}.png` });
+    }
+  });
+}
+
+test('changing tab keeps the URL hash', async ({ page }) => {
+  await page.goto(player('clash-royale', '?tab=battles#x'));
+  await page.getByRole('tab', { name: 'Deck' }).click();
+  await expect(page).toHaveURL(player('clash-royale', '?tab=deck#x'));
+});
