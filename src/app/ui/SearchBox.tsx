@@ -4,7 +4,7 @@ import { Search } from 'lucide-react';
 import { getRecentSearches } from '../services/recentSearches';
 import { buttonClasses } from './Button';
 import { cx } from './cx';
-import { isPlausibleTag, tagSlug, TAG_HINT } from './tag';
+import { tagProblem, tagSlug } from './tag';
 
 export interface SearchBoxProps {
   gameId: string;
@@ -73,7 +73,8 @@ export function SearchBox({
     e.preventDefault();
     if (busy) return;
     if (!value.trim()) return setError('Enter a player tag, for example #2PP.');
-    if (!isPlausibleTag(value)) return setError(TAG_HINT);
+    const problem = tagProblem(value);
+    if (problem) return setError(problem);
     setError(null);
     const slug = tagSlug(value);
     if (onSubmitTag) onSubmitTag(slug);

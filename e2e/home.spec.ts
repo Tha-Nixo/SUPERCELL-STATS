@@ -31,6 +31,15 @@ test('an invalid tag is explained inline and does not navigate', async ({ page }
   await expect(page).toHaveURL('/');
 });
 
+test('a tag with valid characters but the wrong length gets a length message', async ({ page }) => {
+  await page.goto('/');
+  const input = page.getByLabel('Brawl Stars player tag');
+  await input.fill('#2P');
+  await input.press('Enter');
+  await expect(page.getByText('Player tags are 3 to 14 characters.')).toBeVisible();
+  await expect(page).toHaveURL('/');
+});
+
 test('a valid tag opens that game\'s player page', async ({ page }) => {
   const problems = watch(page);
   await mockApi(page);
@@ -52,7 +61,25 @@ test('recent searches from every game appear as a row of links', async ({ page }
   await page.goto('/');
   const row = page.getByRole('region', { name: 'Recent searches' });
   await expect(row.getByRole('link')).toHaveCount(2);
-  await expect(row.getByRole('link').first()).toHaveAttribute('href', '/game/brawl-stars/player/PYLQGRJC');
+  const first = row.getByRole('link').first();
+  await expect(first).toHaveAttribute('href', '/game/brawl-stars/player/PYLQGRJC');
+  await expect(first).toHaveAttribute('aria-label', 'Brawl Stars: Kitebreaker, 41,234 trophies');
+  await expect(first).toHaveAttribute('title', 'Kitebreaker');
+});
+
+test('corrupt recent-search storage does not break the home page', async ({ page }) => {
+  const problems = watch(page);
+  const key = 'supercell_recent_searches';
+  for (const raw of ['null', '{}', '"x"', 'not json {', '[null,{"gameId":"brawl-stars","username":"x","trophies":1,"timestamp":1}]']) {
+    await page.addInitScript(([k, v]) => localStorage.setItem(k, v), [key, raw]);
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    for (const name of ['Clash Royale', 'Brawl Stars', 'Clash of Clans']) {
+      await expect(page.getByRole('link', { name })).toBeVisible();
+    }
+    await expect(page.getByRole('region', { name: 'Recent searches' })).toHaveCount(0);
+  }
+  expect(problems).toEqual([]);
 });
 
 test.describe('on a 320px phone', () => {

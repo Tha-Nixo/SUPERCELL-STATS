@@ -14,15 +14,26 @@ export interface RecentSearch {
 const STORAGE_KEY = 'supercell_recent_searches';
 const MAX_HISTORY = 10;
 
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const isStr = (v: unknown): v is string => typeof v === 'string';
+const optional = (v: unknown, ok: (x: unknown) => boolean) => v === undefined || v === null || ok(v);
+
+function isRecentSearch(v: unknown): v is RecentSearch {
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return false;
+    const e = v as Record<string, unknown>;
+    return isStr(e.gameId) && isStr(e.tag) && isStr(e.username) && isNum(e.trophies) && isNum(e.timestamp)
+        && optional(e.thLevel, isNum) && optional(e.leagueUrl, isStr) && optional(e.clanName, isStr);
+}
+
+/** Stored data is untrusted: anything that is not a well-formed entry is dropped, and this never throws. */
 export function getRecentSearches(gameId?: string): RecentSearch[] {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return [];
-        const parsed: RecentSearch[] = JSON.parse(raw);
-        if (gameId) {
-            return parsed.filter(p => p.gameId === gameId);
-        }
-        return parsed;
+        const parsed: unknown = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        const valid = parsed.filter(isRecentSearch);
+        return gameId ? valid.filter(p => p.gameId === gameId) : valid;
     } catch {
         return [];
     }

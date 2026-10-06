@@ -81,6 +81,8 @@ function RecentSearchesRow() {
           <li key={`${r.gameId}-${r.tag}`} data-game={r.gameId} className="shrink-0">
             <Link
               to={`/game/${r.gameId}/player/${r.tag.replace(/^#/, '')}`}
+              title={r.username}
+              aria-label={`${getGameById(r.gameId)!.name}: ${r.username}${r.trophies > 0 ? `, ${r.trophies.toLocaleString()} trophies` : ''}`}
               className="inline-flex min-h-11 items-center gap-2 rounded-pill border border-line bg-surface-1 py-1 pr-4 pl-1.5 text-sm text-fg transition-colors duration-150 hover:border-line-strong"
             >
               <span className="rounded-pill bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent">
