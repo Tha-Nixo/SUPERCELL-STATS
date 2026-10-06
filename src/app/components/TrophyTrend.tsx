@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { PerformancePoint } from '../data/mockStats';
 
 interface TrophyTrendProps {
@@ -28,7 +28,9 @@ export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTren
 
   // Render at real pixel size: scaling an SVG by viewBox alone would stretch
   // the 2px strokes and the axis text along with the geometry.
-  useEffect(() => {
+  // Layout effect: measure before the first paint, or the 720px default
+  // overflows a phone screen for a frame.
+  useLayoutEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));

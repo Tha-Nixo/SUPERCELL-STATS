@@ -1,23 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
-
-// Any of these during a page visit is a bug: uncaught exception, console error
-// (this includes CSP violations), or a failed network request.
-function watch(page: Page) {
-  const problems: string[] = [];
-  page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
-  page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
-  // Third-party game-asset images (arena/card art) can legitimately 404 for new
-  // content; the app has onError fallbacks for them, so they are not app bugs.
-  // Every other failed request (scripts, styles, fetch/XHR, documents) still counts.
-  page.on('requestfailed', (r) => {
-    if (r.resourceType() === 'image') return;
-    problems.push(`requestfailed: ${r.url()} ${r.failure()?.errorText}`);
-  });
-  page.on('response', (r) => {
-    if (r.status() >= 500) problems.push(`http ${r.status()}: ${r.url()}`);
-  });
-  return problems;
-}
+import { test, expect } from '@playwright/test';
+import { watch } from './support/helpers';
 
 for (const path of ['/', '/game/clash-royale', '/game/brawl-stars', '/game/clash-of-clans']) {
   test(`${path} loads with no runtime errors`, async ({ page }) => {

@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { buttonClasses } from '../ui/Button';
 
 interface Props {
   children: ReactNode;
@@ -27,30 +28,23 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!this.state.error) return this.props.children;
 
     return (
-      <div className="min-h-screen bg-[#0B0F1A] flex items-center justify-center px-6">
-        <div className="max-w-md text-center">
-          <h1 className="text-3xl font-bold text-white mb-3">Something broke on this page</h1>
-          <p className="text-white/60 text-sm mb-6">
+      <main className="mx-auto flex min-h-dvh w-full max-w-lg items-center px-4 py-16">
+        <div className="w-full rounded-card border border-line bg-surface-1 p-6 shadow-card">
+          <h1 className="text-xl font-semibold text-fg">Something broke on this page</h1>
+          <p className="mt-2 text-sm text-fg-muted">
             The stats failed to render. Reloading usually fixes it; if it keeps happening the
             player's data may contain something we don't handle yet.
           </p>
-          <div className="flex items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors"
-            >
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button type="button" onClick={() => window.location.reload()} className={buttonClasses('primary')}>
               Reload
             </button>
-            <a
-              href="/"
-              className="px-5 py-2.5 rounded-xl border border-white/15 text-white/80 hover:text-white hover:bg-white/5 font-semibold transition-colors"
-            >
+            <a href="/" className={buttonClasses('secondary')}>
               Back to home
             </a>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 }

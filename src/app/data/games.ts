@@ -1,6 +1,8 @@
 export interface GameTheme {
   id: string;
   name: string;
+  /** Two or three letters for tight spots (header switcher, recent-search chips). */
+  shortName: string;
   tagline: string;
   background: string;
   surface: string;
@@ -19,15 +21,16 @@ export const games: GameTheme[] = [
   {
     id: 'clash-royale',
     name: 'Clash Royale',
+    shortName: 'CR',
     tagline: 'Real-time card battle arena',
     background: '#0B0F1A',
     surface: '#111827',
-    accent: '#4D7FFF',
+    accent: '#4C8DFF',
     gradientFrom: '#0A1832',
     gradientTo: '#1E3A72',
-    chartPrimary: '#4D7FFF',
+    chartPrimary: '#4C8DFF',
     chartSecondary: '#F4C430',
-    badgeColor: '#4D7FFF',
+    badgeColor: '#4C8DFF',
     inputType: 'tag',
     logo: '👑',
     fontClass: 'font-cr',
@@ -35,15 +38,16 @@ export const games: GameTheme[] = [
   {
     id: 'brawl-stars',
     name: 'Brawl Stars',
+    shortName: 'BS',
     tagline: 'Fast-paced multiplayer brawls',
     background: '#0B0F1A',
     surface: '#111827',
-    accent: '#FFC800',
+    accent: '#FFC21A',
     gradientFrom: '#1A0F0B',
     gradientTo: '#4C3200',
-    chartPrimary: '#FFC800',
+    chartPrimary: '#FFC21A',
     chartSecondary: '#FF3B3B',
-    badgeColor: '#FFC800',
+    badgeColor: '#FFC21A',
     inputType: 'tag',
     logo: '⭐',
     fontClass: 'font-bs',
@@ -51,15 +55,16 @@ export const games: GameTheme[] = [
   {
     id: 'clash-of-clans',
     name: 'Clash of Clans',
+    shortName: 'CoC',
     tagline: 'Build, raid, conquer',
     background: '#0B0F1A',
     surface: '#111827',
-    accent: '#8BC34A',
+    accent: '#5BD65B',
     gradientFrom: '#0F1A0D',
     gradientTo: '#243D1A',
-    chartPrimary: '#8BC34A',
+    chartPrimary: '#5BD65B',
     chartSecondary: '#FFD700',
-    badgeColor: '#8BC34A',
+    badgeColor: '#5BD65B',
     inputType: 'tag',
     logo: '🏰',
     fontClass: 'font-coc',

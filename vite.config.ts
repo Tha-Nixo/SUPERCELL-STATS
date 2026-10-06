@@ -8,7 +8,7 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     test: {
         environment: 'node',
-        include: ['src/**/*.test.ts'],
+        include: ['src/**/*.test.ts', 'scripts/**/*.test.mjs'],
     },
     server: {
         // Dev-only proxy: keeps the Supercell API keys usable from localhost.
@@ -45,6 +45,9 @@ export default defineConfig({
         },
     },
     build: {
+        // scripts/check-bundle.mjs reads dist/.vite/manifest.json to know which
+        // chunks each route needs (performance budget).
+        manifest: true,
         rollupOptions: {
             output: {
                 // Match on the resolved module path, not on the bare specifier:
