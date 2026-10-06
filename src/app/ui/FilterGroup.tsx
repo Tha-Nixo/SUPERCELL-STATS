@@ -36,7 +36,7 @@ export function FilterGroup({ legend, options, value, onChange }: FilterGroupPro
               onChange={() => onChange(option.value)}
               className="peer sr-only"
             />
-            <span className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-pill border border-line bg-surface-1 px-4 text-sm font-medium text-fg-muted transition-colors duration-150 select-none peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-contrast peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-fg hover:border-line-strong">
+            <span className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-pill border border-line bg-surface-1 px-4 text-sm font-medium text-fg-muted transition-colors duration-150 select-none peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-contrast peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-fg hover:border-line-strong peer-checked:hover:border-accent">
               {option.label}
               <span className="tabular-nums">{option.count}</span>
             </span>

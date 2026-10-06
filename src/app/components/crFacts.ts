@@ -17,10 +17,24 @@ export interface CRFacts {
   clan?: { name: string; tag: string; role: string };
 }
 
-/** Digits of a formatted integer, whatever the locale's separators ("4.210", "4,210", "4 210"). */
+const DECIMAL_DIGIT = /^\p{Nd}$/u;
+
+/** Value 0-9 of a Unicode decimal digit: its distance from the start of its run of ten. */
+function digitValue(char: string): number {
+  let run = 0;
+  for (let cp = (char.codePointAt(0) ?? 0) - 1; cp >= 0 && DECIMAL_DIGIT.test(String.fromCodePoint(cp)); cp--) run++;
+  return run % 10;
+}
+
+/**
+ * Digits of a formatted integer. The data layer formats with the browser
+ * locale, so besides any separator ("4.210", "4,210", "4 210", narrow no-break
+ * space, Arabic thousands mark) the digits themselves may be Arabic-Indic,
+ * Persian, Devanagari or fullwidth.
+ */
 export function parseCount(text: string | number | undefined): number | undefined {
   if (typeof text === 'number') return Number.isFinite(text) ? text : undefined;
-  const digits = text?.replace(/\D/g, '');
+  const digits = Array.from(text ?? '', (char) => (DECIMAL_DIGIT.test(char) ? digitValue(char) : '')).join('');
   return digits ? Number(digits) : undefined;
 }
 

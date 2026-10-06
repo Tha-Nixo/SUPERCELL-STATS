@@ -84,3 +84,27 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     expect((await cls()) - clsBefore).toBeLessThanOrEqual(BUDGET);
   });
 }
+
+// An empty battle log swaps a tall skeleton for a short empty state: the footer
+// must not jump when that happens.
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 320, height: 640 }]) {
+  test(`an empty battle log shifts no more than the budget at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await mockApi(page, { battlelog: { 'clash-royale': [] } });
+    await page.addInitScript(() => {
+      const w = window as unknown as { __cls: number };
+      w.__cls = 0;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) {
+          if (!entry.hadRecentInput) w.__cls += entry.value;
+        }
+      }).observe({ type: 'layout-shift', buffered: true });
+    });
+    await page.goto(`/game/clash-royale/player/${FIXTURE_TAG}?tab=battles`);
+    await expect(page.getByTestId('empty-state').getByText(/No recent battles/)).toBeVisible();
+    await expect(page.getByTestId('panel-skeleton')).toHaveCount(0);
+    await page.waitForTimeout(1000);
+    const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
+    expect(cls, `CLS ${cls.toFixed(4)}`).toBeLessThanOrEqual(BUDGET);
+  });
+}

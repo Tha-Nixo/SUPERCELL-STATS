@@ -4,7 +4,7 @@ import { SearchX, Swords } from 'lucide-react';
 import { MatchHistory } from '../../components/MatchHistory';
 import type { Match } from '../../data/mockStats';
 import {
-  battleModes, filterBattles, NO_FILTERS, parseBattleFilters, resultCounts, withBattleFilters,
+  battleModes, filterBattles, NO_FILTERS, parseBattleFilters, RESULT_FILTERS, resultCounts, withBattleFilters,
   type BattleFilters, type ResultFilter,
 } from '../../ui/battleFilters';
 import { Button } from '../../ui/Button';
@@ -37,10 +37,13 @@ export function BattlesPanel({ matches }: { matches: Match[] }) {
   });
 
   if (matches.length === 0) {
+    // Screen-tall like PanelSkeleton, so the footer stays off screen when this replaces it.
     return (
-      <EmptyState icon={<Swords />} title="No recent battles">
-        Battles from the last few days appear here once this player has played.
-      </EmptyState>
+      <div className="min-h-dvh">
+        <EmptyState icon={<Swords />} title="No recent battles">
+          Battles from the last few days appear here once this player has played.
+        </EmptyState>
+      </div>
     );
   }
 
@@ -64,7 +67,7 @@ export function BattlesPanel({ matches }: { matches: Match[] }) {
           legend="Result"
           value={filters.result}
           onChange={(result) => apply({ result: result as ResultFilter })}
-          options={(Object.keys(RESULT_LABELS) as ResultFilter[]).map((r) => ({ value: r, label: RESULT_LABELS[r], count: results[r] }))}
+          options={RESULT_FILTERS.map((r) => ({ value: r, label: RESULT_LABELS[r], count: results[r] }))}
         />
         {allModes.length > 1 && (
           <FilterGroup

@@ -14,6 +14,20 @@ test.beforeEach(async ({ page }) => {
   await mockApi(page);
 });
 
+test('hovering keeps the selected pill outlined in the accent colour', async ({ page }) => {
+  await page.goto(url('?tab=battles'));
+  await expect(rows(page)).toHaveCount(9);
+  const pill = (name: string) => result(page).locator('label').filter({ hasText: name }).locator('span').first();
+  const border = (name: string) => pill(name).evaluate((el) => getComputedStyle(el).borderTopColor);
+  const selectedBefore = await border('All');
+  const otherBefore = await border('Wins');
+  await pill('All').hover();
+  await page.waitForTimeout(400); // past the 150 ms colour transition
+  expect(await border('All')).toBe(selectedBefore);
+  await pill('Wins').hover();
+  await expect.poll(() => border('Wins')).not.toBe(otherBefore);
+});
+
 test('every option shows its count, and the list starts unfiltered', async ({ page }) => {
   const problems = watch(page);
   await page.goto(url('?tab=battles'));

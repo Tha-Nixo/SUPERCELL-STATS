@@ -46,7 +46,7 @@ export function CRDeck({ playerStats }: CRDeckProps) {
                             <GameImage
                                 sources={isEvolved(card) ? [card.evolutionIconUrl, card.iconUrl] : [card.iconUrl]}
                                 alt=""
-                                width={93}
+                                width={76}
                                 height={112}
                                 fallback={<Layers />}
                                 className="h-28 w-auto object-contain"

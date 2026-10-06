@@ -120,6 +120,19 @@ test.describe('Overview tab', () => {
     expect(problems).toEqual([]);
   });
 
+  test.describe('in an Arabic locale', () => {
+    test.use({ locale: 'ar-EG' });
+
+    test('still reads the counts the data layer formatted with local digits', async ({ page }) => {
+      await mockApi(page);
+      await page.goto(cr());
+      const p = panel(page);
+      await expect(p.getByText('Three-crown wins')).toBeVisible();
+      await expect(p.getByText('1,530', { exact: true })).toBeVisible();
+      await expect(p.getByText('9,301', { exact: true })).toBeVisible();
+    });
+  });
+
   test('shows XP and marks a finished achievement as done', async ({ page }) => {
     await mockApi(page, { patch: { 'clash-royale': { expPoints: 12345 } } });
     await page.goto(cr());

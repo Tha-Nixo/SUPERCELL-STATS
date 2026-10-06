@@ -35,7 +35,7 @@ export function CRTowerTroops({ playerStats }: CRTowerTroopsProps) {
               data-testid="tower-troop"
               className={cx('flex min-w-0 flex-col items-center gap-3 rounded-card border p-4 text-center', equipped ? 'border-accent' : 'border-line')}
             >
-              <GameImage sources={[troop.iconUrl]} alt="" width={93} height={112} fallback={<Flame />} className="h-28 w-auto object-contain" />
+              <GameImage sources={[troop.iconUrl]} alt="" width={76} height={112} fallback={<Flame />} className="h-28 w-auto object-contain" />
               <div className="w-full min-w-0">
                 <h4 className="truncate text-sm font-semibold text-fg">{troop.name}</h4>
                 <p className="mt-1 text-xs text-fg-subtle">

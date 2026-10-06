@@ -94,7 +94,7 @@ function CardGrid({ title, cards, owned }: { title: string; cards: CRCardData[];
                             <GameImage
                                 sources={evolved ? [card.evolutionIconUrl, card.iconUrl] : [card.iconUrl]}
                                 alt=""
-                                width={80}
+                                width={65}
                                 height={96}
                                 fallback={<Layers />}
                                 className={owned ? 'h-24 w-auto object-contain' : 'h-24 w-auto object-contain opacity-60 grayscale'}
