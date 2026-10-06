@@ -11,12 +11,12 @@
   "phaseGrowthExempt": [
     "entryJs"
   ],
-  "phase": "restyle phase 1 (foundation)",
+  "phase": "restyle phase 2 (clash royale)",
   "phaseStart": {
-    "initialJs": 122.75,
-    "playerPageJs": 163.58,
-    "entryJs": 4.49,
-    "css": 12.81,
+    "initialJs": 123.64,
+    "playerPageJs": 155.07,
+    "entryJs": 6.92,
+    "css": 12.54,
     "fonts": 48.26
   },
   "playerPageEntries": [

@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 /**
- * Review screenshots (restyle spec, "Acceptance"): Home and one player page
- * per game at 390, 768 and 1440 px, written to docs/screenshots/<phase>/.
+ * Review screenshots (restyle spec, "Acceptance"): Home, one player page per
+ * game and every Clash Royale tab at 390, 768 and 1440 px, written to
+ * docs/screenshots/<phase>/.
  *
  *   npm run build && npm run screenshots              # fixtures, local preview
+ *   SCREENSHOT_ONLY=clash-royale npm run screenshots  # only pages whose name starts with it
  *   E2E_CR_TAG=... E2E_BS_TAG=... E2E_COC_TAG=... npm run screenshots
  *                                                     # real players via the preview's API proxy
  *   BASE_URL=https://supercellstats.com npm run screenshots   # production
+ *   SCREENSHOT_DIR=/some/tmp/dir ...                  # write elsewhere (live-data shots show the
+ *                                                     # real tag: never commit them)
  *
  * Player pages use the e2e fixtures (e2e/support/) unless the game's E2E_*_TAG
  * is set. Real tags are read from the environment only, never written to disk.
@@ -19,17 +23,26 @@ import { chromium } from '@playwright/test';
 import { FIXTURE_TAG, mockApi } from '../e2e/support/mockApi.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PHASE = process.env.SCREENSHOT_PHASE ?? 'phase1';
-const OUT = path.join(ROOT, 'docs/screenshots', PHASE);
+const PHASE = process.env.SCREENSHOT_PHASE ?? 'phase2';
+const OUT = process.env.SCREENSHOT_DIR ? path.resolve(process.env.SCREENSHOT_DIR) : path.join(ROOT, 'docs/screenshots', PHASE);
 const WIDTHS = [390, 768, 1440];
 const PORT = 4173;
 
-const PAGES = [
+const CR = { game: 'clash-royale', env: 'E2E_CR_TAG' };
+const ALL_PAGES = [
   { name: 'home', path: () => '/' },
-  { name: 'clash-royale', game: 'clash-royale', env: 'E2E_CR_TAG' },
-  { name: 'brawl-stars', game: 'brawl-stars', env: 'E2E_BS_TAG' },
-  { name: 'clash-of-clans', game: 'clash-of-clans', env: 'E2E_COC_TAG' },
+  { name: 'clash-royale', ...CR, search: '' },
+  { name: 'clash-royale-cards', ...CR, search: '?tab=cards' },
+  { name: 'clash-royale-deck', ...CR, search: '?tab=deck' },
+  { name: 'clash-royale-battles', ...CR, search: '?tab=battles' },
+  { name: 'clash-royale-battles-losses', ...CR, search: '?tab=battles&result=loss' },
+  { name: 'clash-royale-towers', ...CR, search: '?tab=towers' },
+  { name: 'brawl-stars', game: 'brawl-stars', env: 'E2E_BS_TAG', search: '' },
+  { name: 'clash-of-clans', game: 'clash-of-clans', env: 'E2E_COC_TAG', search: '' },
 ];
+const ONLY = process.env.SCREENSHOT_ONLY;
+const PAGES = ONLY ? ALL_PAGES.filter((p) => p.name.startsWith(ONLY)) : ALL_PAGES;
+if (PAGES.length === 0) throw new Error(`SCREENSHOT_ONLY=${ONLY} matches no page`);
 
 /** `vite preview` on the built dist/, run with node directly so kill() really stops it. */
 async function startPreview() {
@@ -62,9 +75,12 @@ try {
     for (const width of WIDTHS) {
       const page = await browser.newPage({ viewport: { width, height: width < 768 ? 844 : 900 }, reducedMotion: 'reduce' });
       if (entry.game && !realTag) await mockApi(page);
-      const url = entry.game ? `/game/${entry.game}/player/${encodeURIComponent(realTag ?? FIXTURE_TAG)}` : entry.path();
+      const url = entry.game ? `/game/${entry.game}/player/${encodeURIComponent(realTag ?? FIXTURE_TAG)}${entry.search}` : entry.path();
       await page.goto(base + url, { waitUntil: 'networkidle' });
-      if (entry.game) await page.getByTestId('player-summary').waitFor({ timeout: 15000 });
+      if (entry.game) {
+        await page.getByTestId('player-summary').waitFor({ timeout: 15000 });
+        await page.getByTestId('panel-skeleton').waitFor({ state: 'detached', timeout: 15000 });
+      }
       await page.evaluate(() => document.fonts.ready);
       const file = path.join(OUT, `${entry.name}-${width}.png`);
       await page.screenshot({ path: file, fullPage: true });
