@@ -8,7 +8,8 @@ interface TrophyTrendProps {
   unit?: string;
 }
 
-const SURFACE = '#111827';
+// Ring around the markers: the card surface, so they read as cut out of the line.
+const SURFACE = 'var(--surface-1)';
 const PAD = { top: 18, right: 60, bottom: 28, left: 52 };
 const HEIGHT = 260;
 
@@ -105,18 +106,18 @@ export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTren
   const tooltipLeft = pointPos ? Math.min(Math.max(pointPos.x, 90), Math.max(width - 90, 90)) : 0;
 
   return (
-    <div className="bg-[#111827] rounded-2xl p-6 border border-white/5">
+    <div className="rounded-card border border-line bg-surface-1 p-4 shadow-card sm:p-5">
       <div className="flex items-baseline justify-between gap-4 mb-1">
-        <h3 className="text-base font-bold text-white">{unit} trend</h3>
-        <span className="text-sm text-white/60 tabular-nums">
+        <h3 className="text-sm font-semibold text-fg">{unit} trend</h3>
+        <span className="text-sm text-fg-muted tabular-nums">
           {net >= 0 ? '+' : ''}{net.toLocaleString()} over {data.length} battles
         </span>
       </div>
-      <p className="text-xs text-white/50 mb-4">Most recent battles, oldest on the left.</p>
+      <p className="mb-4 text-xs text-fg-subtle">Most recent battles, oldest on the left.</p>
 
       <div
         ref={wrapRef}
-        className="relative w-full outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-white/50"
+        className="relative w-full rounded-lg"
         tabIndex={0}
         role="img"
         aria-label={`${unit} trend across the last ${data.length} battles: ${first.trophies.toLocaleString()} to ${last.trophies.toLocaleString()}. Use arrow keys to read each battle.`}
@@ -138,11 +139,11 @@ export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTren
             <g key={t}>
               <line
                 x1={PAD.left} x2={width - PAD.right} y1={geom.y(t)} y2={geom.y(t)}
-                stroke="rgba(255,255,255,0.07)" strokeWidth={1} shapeRendering="crispEdges"
+                stroke="var(--border)" strokeWidth={1} shapeRendering="crispEdges"
               />
               <text
                 x={PAD.left - 10} y={geom.y(t)} textAnchor="end" dominantBaseline="middle"
-                className="fill-white/45 tabular-nums" style={{ fontSize: 11 }}
+                className="fill-fg-subtle tabular-nums" style={{ fontSize: 11 }}
               >
                 {t.toLocaleString()}
               </text>
@@ -156,7 +157,7 @@ export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTren
               <text
                 key={i} x={geom.points[i].x} y={HEIGHT - 8}
                 textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}
-                className="fill-white/40" style={{ fontSize: 11 }}
+                className="fill-fg-subtle" style={{ fontSize: 11 }}
               >
                 {data[i].date}
               </text>
@@ -173,7 +174,7 @@ export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTren
             <>
               <line
                 x1={pointPos.x} x2={pointPos.x} y1={PAD.top} y2={geom.areaBase}
-                stroke="rgba(255,255,255,0.25)" strokeWidth={1} shapeRendering="crispEdges"
+                stroke="var(--border-strong)" strokeWidth={1} shapeRendering="crispEdges"
               />
               <circle cx={pointPos.x} cy={pointPos.y} r={5} fill={accentColor} stroke={SURFACE} strokeWidth={2} />
             </>
@@ -189,7 +190,7 @@ export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTren
             x={geom.points[geom.points.length - 1].x + 10}
             y={geom.points[geom.points.length - 1].y}
             dominantBaseline="middle"
-            className="fill-white font-semibold tabular-nums" style={{ fontSize: 12 }}
+            className="fill-fg font-semibold tabular-nums" style={{ fontSize: 12 }}
           >
             {last.trophies.toLocaleString()}
           </text>
@@ -197,18 +198,18 @@ export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTren
 
         {point && (
           <div
-            className="pointer-events-none absolute -translate-x-1/2 z-10 px-3 py-2 rounded-xl bg-[#1F2937] border border-white/10 shadow-xl whitespace-nowrap"
+            className="pointer-events-none absolute z-10 -translate-x-1/2 whitespace-nowrap rounded-lg border border-line-strong bg-surface-2 px-3 py-2 shadow-card"
             style={{ left: tooltipLeft, top: 0 }}
             role="status"
           >
             <div className="flex items-center gap-2">
               <span className="w-3 h-[2px] rounded-full shrink-0" style={{ backgroundColor: accentColor }} />
-              <span className="text-white font-bold text-sm tabular-nums">{point.trophies.toLocaleString()}</span>
-              <span className="text-xs tabular-nums text-white/70">
+              <span className="text-sm font-semibold text-fg tabular-nums">{point.trophies.toLocaleString()}</span>
+              <span className="text-xs tabular-nums text-fg-muted">
                 {point.delta > 0 ? '+' : ''}{point.delta}
               </span>
             </div>
-            <div className="text-[11px] text-white/55 mt-0.5">
+            <div className="mt-0.5 text-xs text-fg-subtle">
               {point.date}{point.mode ? ` · ${point.mode}` : ''}
             </div>
           </div>
@@ -216,15 +217,15 @@ export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTren
       </div>
 
       {/* Tooltips enhance, they never gate: every value stays reachable here. */}
-      <details className="mt-4 group">
-        <summary className="cursor-pointer text-xs text-white/60 hover:text-white/85 transition-colors select-none">
+      <details className="mt-4">
+        <summary className="cursor-pointer py-3 text-sm text-fg-muted transition-colors duration-150 select-none hover:text-fg">
           Show as table
         </summary>
-        <div className="mt-3 max-h-56 overflow-y-auto rounded-xl border border-white/8">
+        <div className="mt-2 max-h-56 overflow-y-auto rounded-lg border border-line">
           <table className="w-full text-sm">
             <caption className="sr-only">{unit} after each of the last {data.length} battles</caption>
-            <thead className="sticky top-0 bg-[#1F2937]">
-              <tr className="text-white/60 text-xs">
+            <thead className="sticky top-0 bg-surface-2">
+              <tr className="text-xs text-fg-subtle">
                 <th scope="col" className="text-left font-medium px-3 py-2">Date</th>
                 <th scope="col" className="text-left font-medium px-3 py-2">Mode</th>
                 <th scope="col" className="text-right font-medium px-3 py-2">Change</th>
@@ -233,13 +234,13 @@ export function TrophyTrend({ data, accentColor, unit = 'Trophies' }: TrophyTren
             </thead>
             <tbody>
               {data.map((d, i) => (
-                <tr key={i} className="border-t border-white/5">
-                  <td className="px-3 py-1.5 text-white/70">{d.date}</td>
-                  <td className="px-3 py-1.5 text-white/70">{d.mode ?? '—'}</td>
-                  <td className="px-3 py-1.5 text-right text-white/70 tabular-nums">
+                <tr key={i} className="border-t border-line">
+                  <td className="px-3 py-1.5 text-fg-muted">{d.date}</td>
+                  <td className="px-3 py-1.5 text-fg-muted">{d.mode ?? '–'}</td>
+                  <td className="px-3 py-1.5 text-right text-fg-muted tabular-nums">
                     {d.delta > 0 ? '+' : ''}{d.delta}
                   </td>
-                  <td className="px-3 py-1.5 text-right text-white tabular-nums">{d.trophies.toLocaleString()}</td>
+                  <td className="px-3 py-1.5 text-right text-fg tabular-nums">{d.trophies.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>

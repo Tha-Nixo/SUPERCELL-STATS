@@ -8,13 +8,12 @@ import { EmptyState } from '../../ui/EmptyState';
 
 interface OverviewExtrasProps {
   playerStats: PlayerStats;
-  accent: string;
   chartColor: string;
   onShowBattles: () => void;
 }
 
 /** Bottom of the Clash Royale and Brawl Stars overview: trend left, latest battles right (stacked on phones). */
-export function OverviewExtras({ playerStats, accent, chartColor, onShowBattles }: OverviewExtrasProps) {
+export function OverviewExtras({ playerStats, chartColor, onShowBattles }: OverviewExtrasProps) {
   const latest = playerStats.recentMatches.slice(0, 5);
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
@@ -38,7 +37,7 @@ export function OverviewExtras({ playerStats, accent, chartColor, onShowBattles 
         )}
       >
         {latest.length > 0 ? (
-          <MatchHistory matches={latest} accentColor={accent} />
+          <MatchHistory matches={latest} />
         ) : (
           <p className="text-sm text-fg-muted">No battles in the last few days.</p>
         )}
