@@ -36,13 +36,16 @@ export async function expectNoHorizontalScroll(page: Page) {
 export async function expectTouchTargets(locator: Locator, min = 44) {
   const count = await locator.count();
   expect(count, 'no elements matched the touch-target locator').toBeGreaterThan(0);
+  let visible = 0;
   for (let i = 0; i < count; i++) {
     const el = locator.nth(i);
     if (!(await el.isVisible())) continue;
+    visible++;
     const box = await el.boundingBox();
     const name = (await el.getAttribute('aria-label')) ?? (await el.innerText()).trim().slice(0, 40);
     expect(box!.height, `"${name}" is ${box!.height}px tall`).toBeGreaterThanOrEqual(min);
   }
+  expect(visible, 'every element matched by the touch-target locator is hidden').toBeGreaterThan(0);
 }
 
 /** No emoji anywhere in the rendered chrome (the spec replaces them with SVG icons). */
