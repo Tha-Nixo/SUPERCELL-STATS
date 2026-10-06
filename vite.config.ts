@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from "path";
@@ -6,6 +6,10 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [react(), tailwindcss()],
+    test: {
+        environment: 'node',
+        include: ['src/**/*.test.ts'],
+    },
     server: {
         // Dev-only proxy: keeps the Supercell API keys usable from localhost.
         // Targets RoyaleAPI's fixed-IP relay (see DEPLOY.md) instead of the

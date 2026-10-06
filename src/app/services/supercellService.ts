@@ -148,7 +148,7 @@ interface BattleLog {
     failed: boolean;
 }
 
-function toBattleLog(raw: any): BattleLog {
+export function toBattleLog(raw: any): BattleLog {
     // Clash Royale returns a bare JSON array; Brawl Stars wraps it in { items }.
     if (Array.isArray(raw)) return { battles: raw, failed: false };
     if (Array.isArray(raw?.items)) return { battles: raw.items, failed: false };
@@ -161,7 +161,7 @@ function toBattleLog(raw: any): BattleLog {
 // unified scale the game itself shows, which currently tops out at 16.
 const CR_MAX_LEVEL = 16;
 
-function displayCardLevel(c: any): number {
+export function displayCardLevel(c: any): number {
     const rarityMax = c?.maxLevel ?? 14;
     return Math.min((c?.level ?? 1) + (CR_MAX_LEVEL - rarityMax), CR_MAX_LEVEL);
 }
@@ -483,7 +483,7 @@ function mapBrawler(b: any): BSBrawlerData {
  * Returns undefined when the outcome genuinely cannot be determined, so those
  * battles can be excluded from the denominator instead of counted as losses.
  */
-function bsOutcome(b: any): 'win' | 'loss' | 'draw' | undefined {
+export function bsOutcome(b: any): 'win' | 'loss' | 'draw' | undefined {
     const battle = b?.battle;
     if (!battle) return undefined;
     if (battle.result === 'victory') return 'win';
