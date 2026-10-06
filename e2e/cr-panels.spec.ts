@@ -28,6 +28,7 @@ test.describe('Tower troops tab', () => {
 // Every CR tab that shows game art, with the number of art slots the fixture fills.
 const ART_TABS: Array<[string, number]> = [
   ['towers', 3],
+  ['deck', 10],
 ];
 for (const [tab, slots] of ART_TABS) {
   test(`${tab}: missing game art falls back in place without errors`, async ({ page }) => {
@@ -39,3 +40,26 @@ for (const [tab, slots] of ART_TABS) {
     expect(problems).toEqual([]);
   });
 }
+
+test.describe('Deck tab', () => {
+  test('shows the eight cards, the deck numbers, the tower troop and the favourite card', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(cr('?tab=deck'));
+    await expect(panel(page).getByTestId('deck-card')).toHaveCount(8);
+    await expect(panel(page).getByText('Average elixir')).toBeVisible();
+    await expect(panel(page).getByText('3.1', { exact: true })).toBeVisible();
+    await expect(panel(page).getByTestId('deck-card').filter({ hasText: 'Knight' }).getByText('Evolved')).toBeVisible();
+    await expect(panel(page).getByRole('heading', { name: 'Tower troop' })).toBeVisible();
+    await expect(panel(page).getByText('Cannoneer')).toBeVisible();
+    await expect(panel(page).getByRole('heading', { name: 'Favourite card' })).toBeVisible();
+    await expectNoEmoji(panel(page));
+    expect(problems).toEqual([]);
+  });
+
+  test('explains a player without a current deck', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-royale': { currentDeck: [] } } });
+    await page.goto(cr('?tab=deck'));
+    await expect(panel(page).getByTestId('empty-state').getByText('No battle deck to show')).toBeVisible();
+  });
+});

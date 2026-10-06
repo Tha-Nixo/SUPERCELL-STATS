@@ -9,7 +9,7 @@ const card = (id: number, name: string, rarity: string, level: number, maxLevel:
   id, name, rarity, level, maxLevel, elixirCost, count: 120, iconUrls: { medium: `https://api-assets.clashroyale.com/cards/300/${id}.png` },
 });
 const deck = [
-  card(26000000, 'Knight', 'common', 14, 16, 3),
+  { ...card(26000000, 'Knight', 'common', 14, 16, 3), evolutionLevel: 1, starLevel: 2, iconUrls: { medium: 'https://api-assets.clashroyale.com/cards/300/26000000.png', evolutionMedium: 'https://api-assets.clashroyale.com/cardevolutions/300/26000000.png' } },
   card(26000001, 'Archers', 'common', 14, 16, 3),
   card(26000010, 'Skeleton Army', 'epic', 10, 11, 3),
   card(26000021, 'Hog Rider', 'rare', 12, 14, 4),
@@ -47,6 +47,7 @@ export const crPlayer = {
   currentDeck: deck,
   supportCards: towerTroops,
   currentDeckSupportCards: [towerTroops[1]],
+  currentFavouriteCard: { id: 26000021, name: 'Hog Rider', rarity: 'rare', maxLevel: 14, elixirCost: 4, iconUrls: { medium: 'https://api-assets.clashroyale.com/cards/300/26000021.png' } },
 };
 export const crBattlelog = [crBattle(5, 3, 1, 31), crBattle(30, 0, 1, -28), crBattle(60, 1, 1, 0), crBattle(90, 2, 0, 30)];
 

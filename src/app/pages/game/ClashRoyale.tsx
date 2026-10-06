@@ -23,7 +23,7 @@ export default function ClashRoyale({ game, playerStats, tab, onTabChange }: Gam
     case 'cards':
       return <CRCardsList cards={cr.cards} accent={game.accent} />;
     case 'deck':
-      return <CRDeck playerStats={playerStats} accent={game.accent} />;
+      return <CRDeck playerStats={playerStats} />;
     case 'towers':
       return <CRTowerTroops playerStats={playerStats} />;
     case 'battles':
