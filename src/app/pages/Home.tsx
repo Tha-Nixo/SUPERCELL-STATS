@@ -9,9 +9,9 @@ import { SiteFooter } from '../ui/SiteFooter';
 // Official Supercell Fan Kit art. width/height are the intrinsic asset sizes,
 // so the browser reserves the box before the image streams in.
 const GAME_ART: Record<string, { src: string; width: number; height: number }> = {
-  'clash-royale': { src: '/images/characters/cr_character.webp', width: 512, height: 512 },
+  'clash-royale': { src: '/images/characters/cr_character.webp', width: 256, height: 256 },
   'brawl-stars': { src: '/images/bs/shelly_model.webp', width: 160, height: 322 },
-  'clash-of-clans': { src: '/images/characters/coc_character.webp', width: 512, height: 512 },
+  'clash-of-clans': { src: '/images/characters/coc_character.webp', width: 256, height: 256 },
 };
 
 // Game logos: width/height are the h-12 rendered box.
@@ -33,7 +33,7 @@ function GameCard({ game, first }: { game: GameTheme; first: boolean }) {
           alt=""
           width={art.width}
           height={art.height}
-          loading="lazy"
+          fetchPriority="low"
           decoding="async"
           className="pointer-events-none absolute -right-4 -bottom-6 h-44 w-auto opacity-15 select-none"
         />
