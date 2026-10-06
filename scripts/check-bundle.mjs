@@ -8,10 +8,16 @@
  *     in is how 16 MB of art returned last time.
  *  3. Report the entry-chunk weight, so a regression in chunking is visible in
  *     the build log instead of in someone's data plan.
+ *  4. Enforce the performance budget in scripts/bundle-budget.json (restyle
+ *     spec, "Performance budget"): gzip size of the JS reachable from
+ *     dist/index.html, of the JS needed to render a player page, of the entry
+ *     chunk and of the CSS, plus the preloaded fonts. Any line over its limit
+ *     fails the build and prints the delta.
  */
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { closure, closureOf, evaluate, gzipBytes, preloadedFonts, toKB } from './bundle-budget-lib.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -51,6 +57,59 @@ for (const c of chunks.slice(0, 5)) console.log(`  ${kb(c.size).padStart(8)}  ${
 
 const entry = chunks.find((c) => /assets\/index-[^/]+\.js$/.test(c.rel));
 if (entry) console.log(`entry chunk: ${kb(entry.size)}`);
+
+// ── performance budget ──────────────────────────────────────────────────────
+const budget = JSON.parse(await readFile(path.join(ROOT, 'scripts/bundle-budget.json'), 'utf8'));
+let manifest = null;
+try {
+  manifest = JSON.parse(await readFile(path.join(DIST, '.vite/manifest.json'), 'utf8'));
+} catch {
+  failures.push('dist/.vite/manifest.json missing: build.manifest must stay enabled in vite.config.ts');
+}
+
+if (manifest) {
+  const gzipOf = async (files) => {
+    let total = 0;
+    for (const file of files) total += gzipBytes(await readFile(path.join(DIST, file)));
+    return toKB(total);
+  };
+  const measured = {};
+  // Each line is measured on its own: one stale reference must not hide the others.
+  const measure = async (line, fn) => {
+    try {
+      measured[line] = await fn();
+    } catch (e) {
+      failures.push(e.message);
+    }
+  };
+  await measure('initialJs', () => gzipOf(closure(manifest, 'index.html')));
+  await measure('entryJs', () => gzipOf([manifest['index.html'].file]));
+  // A player page needs the initial JS, the route chunk(s) and the heaviest
+  // per-game module (each game page loads only its own).
+  await measure('playerPageJs', async () => {
+    const routeRefs = ['index.html', ...budget.playerPageEntries];
+    const variants = budget.gameModules.length ? budget.gameModules.map((mod) => [...routeRefs, mod]) : [routeRefs];
+    let max = 0;
+    for (const refs of variants) max = Math.max(max, await gzipOf(closureOf(manifest, refs)));
+    return max;
+  });
+  await measure('css', () => gzipOf(new Set(Object.values(manifest).flatMap((chunk) => chunk.css ?? []))));
+
+  const html = await readFile(path.join(DIST, 'index.html'), 'utf8');
+  let fontBytes = 0;
+  for (const href of preloadedFonts(html)) {
+    if (!budget.allowedPreloadFonts.includes(href)) failures.push(`unexpected font on the critical path: ${href}`);
+    fontBytes += (await stat(path.join(DIST, href))).size;
+  }
+  measured.fonts = toKB(fontBytes);
+
+  console.log('\nperformance budget (kB, gzip; fonts raw):');
+  for (const row of evaluate(measured, budget)) {
+    const delta = Number.isNaN(row.delta) ? '' : `${row.delta > 0 ? '+' : ''}${row.delta.toFixed(2)}`;
+    console.log(`  ${row.ok ? '✓' : '✗'} ${row.line.padEnd(13)} ${String(row.value).padStart(7)} / ${String(row.limit).padStart(7)}  ${delta}`);
+    if (!row.ok) failures.push(`${row.line} ${row.reason}: ${row.value} kB > ${row.limit} kB (${delta} kB)`);
+  }
+}
 
 if (failures.length) {
   console.error('\nbuild check FAILED:');

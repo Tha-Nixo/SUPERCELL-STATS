@@ -1,0 +1,29 @@
+{
+  "$comment": "Performance budget, docs/superpowers/specs/2026-10-06-restyle-design.md#performance-budget. Sizes in kB (1000 bytes); JS and CSS are gzip level 9, fonts are raw woff2 bytes. Raising a number needs the justification the spec asks for, in the same PR.",
+  "budgets": {
+    "initialJs": 135,
+    "playerPageJs": 180,
+    "entryJs": 8,
+    "css": 16,
+    "fonts": 50
+  },
+  "maxPhaseGrowth": 0.05,
+  "phaseGrowthExempt": [
+    "entryJs"
+  ],
+  "phase": "restyle phase 1 (foundation)",
+  "phaseStart": {
+    "initialJs": 122.75,
+    "playerPageJs": 163.58,
+    "entryJs": 4.49,
+    "css": 12.81,
+    "fonts": 48.26
+  },
+  "playerPageEntries": [
+    "GamePage"
+  ],
+  "gameModules": [],
+  "allowedPreloadFonts": [
+    "/fonts/Inter-latin.woff2"
+  ]
+}
