@@ -6,7 +6,7 @@ doesn't care that the origin server sits behind a residential dynamic IP):
 ```
 visitor ──HTTPS──> Cloudflare (proxied DNS, CNAME -> ip.nixospace.it)
                     └─> Caddy on the home server
-                         ├─ /            → static files from dist/
+                         ├─ /            → static files from dist/ (unknown path = real 404)
                          └─ /api/<game>/* → *.royaleapi.dev
                                             (fixed-IP relay, whitelisted once)
                                             + Authorization header
@@ -89,14 +89,11 @@ supercellstats.com {
         }
     }
 
-    handle {
-        root * /home/nixo/apps/supercellstats/dist
-        # The middle term serves the per-route shells the build emits under
-        # dist/game/<id>/index.html; without it every route falls through to the
-        # generic root document and the per-page <head> never reaches a crawler.
-        try_files {path} {path}/index.html /index.html
-        file_server
-    }
+    # Everything below the three /api/* handlers (security headers, asset cache,
+    # prerendered shells, real 404) is the content of docs/caddy-tail.caddy,
+    # applied by ~/crowdsec/10-supercellstats-caddy.sh. See "HTTP behaviour".
+    # Do NOT use a catch-all `try_files {path} /index.html`: it answers 200 for
+    # unknown URLs and for missing hashed chunks.
 }
 
 www.supercellstats.com {
@@ -160,8 +157,10 @@ The `/api/*` handlers hold the injected Authorization headers and are never touc
 | any other existing file (`/VERSION`, `/robots.txt`, ...) | the file itself |
 | anything else | **HTTP 404** with the SPA shell as body, so React Router still renders its `NotFound` page |
 
-Every response carries `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options: DENY`,
-`Strict-Transport-Security`, `Permissions-Policy` and a Content-Security-Policy. The build has no
+Every response, 404s included, carries `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options: DENY`,
+`Strict-Transport-Security`, `Permissions-Policy` and a Content-Security-Policy (`handle_errors` repeats the same `header {}` block, because the vhost-level one
+does not apply to error responses; keep the two identical). 404 responses are `Cache-Control: no-store`, so a
+missing asset is never cached (even under `/assets/*`, whose `immutable` header is overridden). The build has no
 inline scripts, hence `script-src 'self'`. Allowed external origins:
 
 - styles: `fonts.googleapis.com`; fonts: `fonts.gstatic.com`
