@@ -63,7 +63,7 @@ test('recent searches from every game appear as a row of links', async ({ page }
   await expect(row.getByRole('link')).toHaveCount(2);
   const first = row.getByRole('link').first();
   await expect(first).toHaveAttribute('href', '/game/brawl-stars/player/PYLQGRJC');
-  await expect(first).toHaveAttribute('aria-label', 'Brawl Stars: Kitebreaker, 41,234 trophies');
+  await expect(first).toHaveAttribute('aria-label', 'BS Kitebreaker, Brawl Stars, 41,234 trophies');
   await expect(first).toHaveAttribute('title', 'Kitebreaker');
 });
 

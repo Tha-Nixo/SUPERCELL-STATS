@@ -21,6 +21,12 @@ const TH_IMAGES: Record<number, string> = {
   16: '/images/coc/townhall/th_16.webp',
 };
 
+/** The rank text when it names a league; a bare number is only the trophy count again, so it is dropped. */
+export function leagueLabel(rank: string | undefined): string | undefined {
+  const text = stripEmoji(rank ?? '');
+  return !text || /^[\d.,\s]+$/.test(text) ? undefined : text;
+}
+
 /** The shell's view of a player: identity, avatar chain and headline numbers. */
 export function buildSummary(game: GameTheme, stats: PlayerStats, urlTag: string): PlayerSummary {
   const visuals = stats.gameVisuals;
@@ -29,7 +35,7 @@ export function buildSummary(game: GameTheme, stats: PlayerStats, urlTag: string
     tag: `#${tagSlug(urlTag)}`,
     trophies: stats.trophies,
     level: stats.level,
-    league: stripEmoji(stats.rank) || undefined,
+    league: leagueLabel(stats.rank),
   };
 
   if (game.id === 'clash-royale' && visuals?.cr) {

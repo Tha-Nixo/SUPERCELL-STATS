@@ -3,7 +3,7 @@
 #
 # Safe to re-run. Builds into a scratch directory and swaps it in with a mv, so
 # no visitor can ever hit a half-written dist/. Keeps the previous dist for
-# rollback and writes the deployed commit to dist/VERSION.
+# rollback (and its assets are copied into the new dist for open tabs) and writes the deployed commit to dist/VERSION.
 #
 #   ./scripts/deploy.sh              # deploy origin/main
 #   ./scripts/deploy.sh <ref>        # deploy a specific branch/tag/sha
@@ -13,6 +13,7 @@
 # change. Nothing here needs root.
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="${APP_DIR:-$HOME/apps/supercellstats}"
 REF="${1:-origin/main}"
 
@@ -55,6 +56,11 @@ echo "==> swapping in"
 rm -rf dist.previous
 [[ -d dist ]] && mv dist dist.previous
 mv dist.new dist
+# Tabs opened before this deploy still lazy-load the old hashed chunks: keep the
+# previous build's assets alongside (one generation only, see carry-assets.sh).
+if [[ -d dist.previous ]]; then
+    "$SCRIPT_DIR/carry-assets.sh" dist.previous dist
+fi
 
 echo "==> verifying"
 for path in / /game/clash-royale /VERSION; do

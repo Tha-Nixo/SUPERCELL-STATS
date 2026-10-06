@@ -89,7 +89,7 @@ export function SearchBox({
       <div
         className={cx(
           'flex h-12 items-center gap-2 rounded-card border bg-canvas pl-3 pr-0.5 transition-colors duration-150',
-          error ? 'border-loss' : 'border-line-strong focus-within:border-accent',
+          error ? 'border-loss' : 'border-line-input focus-within:border-accent',
         )}
       >
         <Search aria-hidden="true" className="size-4 shrink-0 text-fg-subtle" />

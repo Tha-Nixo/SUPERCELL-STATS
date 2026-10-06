@@ -184,3 +184,13 @@ test.describe('on a 320px phone', () => {
     });
   }
 });
+
+test('Copy link puts the canonical player URL on the clipboard', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await mockApi(page);
+  await page.goto('/game/clash-royale/player/%23pylqgrjc?tab=deck');
+  await page.getByRole('button', { name: 'Copy link' }).click();
+  await expect(page.getByRole('button', { name: 'Link copied' })).toBeVisible();
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toBe(`${new URL(page.url()).origin}/game/clash-royale/player/PYLQGRJC?tab=deck`);
+});

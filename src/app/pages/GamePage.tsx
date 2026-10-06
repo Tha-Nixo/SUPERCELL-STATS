@@ -15,6 +15,7 @@ import { PanelSkeleton, PlayerPageSkeleton } from '../ui/Skeleton';
 import { SectionTabs } from '../ui/SectionTabs';
 import { SiteFooter } from '../ui/SiteFooter';
 import { parseTab, withTab } from '../ui/tabs';
+import { tagSlug } from '../ui/tag';
 import { GameLanding } from './game/GameLanding';
 import { GAME_MODULES, isGameId, preloadGameModule } from './game/modules';
 import { ModuleBoundary } from './game/ModuleBoundary';
@@ -40,6 +41,8 @@ export default function GamePage() {
   const [copied, setCopied] = useState(false);
   // The hero has scrolled under the header: the header shows the condensed player instead.
   const [condensed, setCondensed] = useState(false);
+  const copiedTimer = useRef<number>(undefined);
+  useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
   const heroRef = useRef<HTMLDivElement>(null);
   // Only the most recent search may write its result (a slow older one must not overwrite it).
   const requestId = useRef(0);
@@ -157,9 +160,11 @@ export default function GamePage() {
 
   const copyPlayerLink = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      const url = `${window.location.origin}/game/${gameId}/player/${tagSlug(urlTag ?? '')}${withTab('', activeTab, defaultTab)}`;
+      await navigator.clipboard.writeText(url);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      window.clearTimeout(copiedTimer.current);
+      copiedTimer.current = window.setTimeout(() => setCopied(false), 2000);
     } catch {
       /* clipboard blocked (insecure context or denied): the URL bar still has it */
     }

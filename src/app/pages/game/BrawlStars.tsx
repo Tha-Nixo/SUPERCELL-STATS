@@ -1,4 +1,4 @@
-import { Award, Clock, Shield, Target, Trophy } from 'lucide-react';
+import { Award, Percent, Shield, Target, Trophy } from 'lucide-react';
 import { BSBattleLog, BSBrawlers, BSClub, BSHome, BSProgression } from '../../components/BSProfile';
 import type { PlayerStats } from '../../data/mockStats';
 import { EmptyState } from '../../ui/EmptyState';
@@ -13,10 +13,10 @@ function headlineStats(stats: PlayerStats) {
   const wins = Math.round(stats.totalMatches * stats.winRate / 100);
   const kd = Number.isInteger(stats.kd) ? String(stats.kd) : stats.kd.toFixed(2);
   return [
-    { label: L.stat1Title ?? 'Win rate', value: `${stats.winRate}%`, sub: L.stat1Sub ?? `${wins} wins`, icon: <Trophy /> },
+    { label: L.stat1Title ?? 'Win rate', value: `${stats.winRate}%`, sub: L.stat1Sub ?? `${wins} wins`, icon: <Percent /> },
     { label: L.stat2Title ?? 'K/D ratio', value: L.stat2Value ?? kd, sub: L.stat2Sub ?? 'Average per game', icon: <Target /> },
     { label: L.stat3Title ?? 'Total matches', value: L.stat3Value ?? stats.totalMatches.toLocaleString('en-US'), sub: L.stat3Sub ?? `${stats.hoursPlayed} hours`, icon: <Award /> },
-    { label: L.stat4Title ?? 'Trophies', value: L.stat4Value ?? String(stats.hoursPlayed), sub: L.stat4Sub ?? '', icon: <Clock /> },
+    { label: L.stat4Title ?? 'Trophies', value: L.stat4Value ?? String(stats.hoursPlayed), sub: L.stat4Sub ?? '', icon: <Trophy /> },
   ].map((s) => ({ ...s, value: stripEmoji(s.value), sub: stripEmoji(s.sub) }));
 }
 

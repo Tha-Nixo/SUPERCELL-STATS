@@ -133,6 +133,12 @@ visitor can be served a half-written `dist/`. It keeps the previous build as
 `dist.previous` and writes the deployed commit to `dist/VERSION`, so
 `curl https://supercellstats.com/VERSION` answers "what is live".
 
+Right after the swap the script copies the previous build's `assets/` files into
+the new `dist/assets/` without overwriting anything, so a tab opened before the
+deploy can still lazy-load its old chunks instead of hitting a 404. Only one older
+generation is kept (the carried names are listed in `dist/assets/.carried`).
+`scripts/carry-assets.test.sh` checks this on a temporary directory.
+
 No Caddy reload is needed for frontend-only changes. **Apply the Cache-Control
 rules in `docs/SERVER-HARDENING.md` before the first rebuild** — asset hashes
 change on rebuild, and a client holding a stale `index.html` would request chunks
