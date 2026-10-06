@@ -48,7 +48,7 @@ export function CoCOverview({ playerStats, accent }: CoCOverviewProps) {
                                 <span className="text-white font-bold">{cocData.legendStatistics.bestSeason.trophies.toLocaleString()} 🏆</span>
                                 <span className="text-purple-400 font-bold bg-purple-500/10 px-2 py-0.5 rounded text-sm">Rank #{cocData.legendStatistics.bestSeason.rank.toLocaleString()}</span>
                             </div>
-                            <p className="text-[10px] text-white/30 text-right mt-1">{cocData.legendStatistics.bestSeason.id}</p>
+                            <p className="text-[10px] text-white/55 text-right mt-1">{cocData.legendStatistics.bestSeason.id}</p>
                         </div>
                     )}
                 </div>
@@ -66,14 +66,14 @@ export function CoCOverview({ playerStats, accent }: CoCOverviewProps) {
                             <span className="text-white/60 text-sm">Home Village</span>
                             <div className="text-right">
                                 <div className="text-white font-bold">{playerStats.statLabels?.stat4Value || '0 🏆'}</div>
-                                <div className="text-white/40 text-[10px]">Best: {playerStats.statLabels?.stat4Sub}</div>
+                                <div className="text-white/55 text-[10px]">Best: {playerStats.statLabels?.stat4Sub}</div>
                             </div>
                         </div>
                         <div className="flex justify-between items-center pb-3 border-b border-white/5">
                             <span className="text-white/60 text-sm">Builder Base</span>
                             <div className="text-right">
                                 <div className="text-white font-bold">{cocData.builderBaseTrophies?.toLocaleString() ?? 0} 🏆</div>
-                                <div className="text-white/40 text-[10px]">Best: {cocData.bestBuilderBaseTrophies?.toLocaleString() ?? 0}</div>
+                                <div className="text-white/55 text-[10px]">Best: {cocData.bestBuilderBaseTrophies?.toLocaleString() ?? 0}</div>
                             </div>
                         </div>
                         <div className="flex justify-between items-center">
@@ -92,9 +92,9 @@ export function CoCOverview({ playerStats, accent }: CoCOverviewProps) {
 
                     <div className="flex items-center gap-4 mb-5 p-3 rounded-xl bg-black/40 border border-white/5">
                         {cocData.clanBadgeUrl ? (
-                            <img src={cocData.clanBadgeUrl} alt="Clan Badge" className="w-12 h-12" />
+                            <img src={cocData.clanBadgeUrl} alt="Clan Badge" width={48} height={48} loading="lazy" decoding="async" className="w-12 h-12" />
                         ) : (
-                            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white/30 text-xs">None</div>
+                            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white/55 text-xs">None</div>
                         )}
                         <div>
                             <h4 className="text-white font-bold text-lg">{cocData.clanName || 'No Clan'}</h4>

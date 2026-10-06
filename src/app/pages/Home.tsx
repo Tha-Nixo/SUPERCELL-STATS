@@ -8,18 +8,19 @@ const SUPERCELL_FEATURES = [
   { icon: '📊', label: 'Deep Analytics', desc: 'Trophies, heroes, decks & battle history' },
 ];
 
-// Official Supercell Fan Kit character images for each game card
-const GAME_CHARACTERS: Record<string, string> = {
-  'clash-royale': '/images/characters/cr_character.png',
-  'brawl-stars': '/images/bs/shelly_model.png',
-  'clash-of-clans': '/images/characters/coc_character.png',
+// Official Supercell Fan Kit character images for each game card — width/height are the
+// intrinsic asset sizes, so the browser knows the aspect ratio before the art streams in
+const GAME_CHARACTERS: Record<string, { src: string; width: number; height: number }> = {
+  'clash-royale': { src: '/images/characters/cr_character.webp', width: 512, height: 512 },
+  'brawl-stars': { src: '/images/bs/shelly_model.webp', width: 160, height: 322 },
+  'clash-of-clans': { src: '/images/characters/coc_character.webp', width: 512, height: 512 },
 };
 
-// Official game logo images from Supercell Fan Kit
-const GAME_LOGOS: Record<string, string> = {
-  'clash-royale': '/images/logos/cr_logo.png',
-  'brawl-stars': '/images/logos/bs_logo.png',
-  'clash-of-clans': '/images/logos/coc_logo.png',
+// Official game logo images from Supercell Fan Kit — width/height are the h-14 rendered box
+const GAME_LOGOS: Record<string, { src: string; width: number; height: number }> = {
+  'clash-royale': { src: '/images/logos/cr_logo.webp', width: 112, height: 56 },
+  'brawl-stars': { src: '/images/logos/bs_logo.webp', width: 69, height: 56 },
+  'clash-of-clans': { src: '/images/logos/coc_logo.webp', width: 122, height: 56 },
 };
 
 export default function Home() {
@@ -44,7 +45,14 @@ export default function Home() {
             </div>
 
             <h1 className="flex flex-wrap items-center justify-center gap-4 text-6xl md:text-8xl font-bold text-white mb-6 leading-tight">
-              <img src="/images/logos/supercell_logo.png" alt="Supercell" className="h-[60px] md:h-[80px] object-contain" />
+              <img
+                src="/images/logos/supercell_logo.webp"
+                alt="Supercell"
+                width={74}
+                height={60}
+                decoding="async"
+                className="h-[60px] md:h-[80px] w-auto max-w-full object-contain"
+              />
               <span className="bg-gradient-to-r from-[#4D7FFF] via-[#FFC800] to-[#8BC34A] bg-clip-text text-transparent">
                 Stats
               </span>
@@ -59,10 +67,10 @@ export default function Home() {
             <div className="flex flex-wrap justify-center gap-4">
               {SUPERCELL_FEATURES.map((f) => (
                 <div key={f.label} className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-left">
-                  <span className="text-2xl">{f.icon}</span>
+                  <span className="text-2xl" aria-hidden="true">{f.icon}</span>
                   <div>
                     <div className="text-white text-sm font-semibold">{f.label}</div>
-                    <div className="text-white/40 text-xs">{f.desc}</div>
+                    <div className="text-white/70 text-xs">{f.desc}</div>
                   </div>
                 </div>
               ))}
@@ -76,7 +84,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xs font-semibold text-white/30 uppercase tracking-widest text-center mb-8"
+            className="text-xs font-semibold text-white/55 uppercase tracking-widest text-center mb-8"
           >
             Select a Game
           </motion.p>
@@ -90,9 +98,12 @@ export default function Home() {
                   key={game.id}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 + index * 0.09 }}
+                  transition={{ duration: 0.5, delay: 0.1 + Math.min(index, 10) * 0.09 }}
                 >
-                  <Link to={`/game/${game.id}`} className="block group">
+                  <Link
+                    to={`/game/${game.id}`}
+                    className="block group rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                  >
                     <div
                       className="relative overflow-hidden rounded-3xl border border-white/8 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl min-h-[200px]"
                       style={{
@@ -104,8 +115,12 @@ export default function Home() {
                       {characterImg && (
                         <div className="absolute bottom-0 right-0 w-1/2 h-full pointer-events-none overflow-hidden rounded-br-3xl">
                           <img
-                            src={characterImg}
-                            alt={game.name}
+                            src={characterImg.src}
+                            alt=""
+                            width={characterImg.width}
+                            height={characterImg.height}
+                            loading="lazy"
+                            decoding="async"
                             className="absolute -bottom-4 right-0 h-[120%] w-auto object-contain object-bottom opacity-30 group-hover:opacity-45 group-hover:scale-105 transition-all duration-500 select-none origin-bottom-right"
                             style={{ filter: `drop-shadow(0 0 30px ${game.accent}60)` }}
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -126,8 +141,12 @@ export default function Home() {
                           <div className="shrink-0">
                             {logoImg ? (
                               <img
-                                src={logoImg}
+                                src={logoImg.src}
                                 alt={`${game.name} logo`}
+                                width={logoImg.width}
+                                height={logoImg.height}
+                                loading="lazy"
+                                decoding="async"
                                 className="h-14 w-auto object-contain drop-shadow-lg"
                                 onError={(e) => {
                                   const img = e.target as HTMLImageElement;
@@ -137,7 +156,7 @@ export default function Home() {
                                 }}
                               />
                             ) : null}
-                            <span className="text-5xl" style={{ display: logoImg ? 'none' : 'block' }}>{game.logo}</span>
+                            <span className="text-5xl" aria-hidden="true" style={{ display: logoImg ? 'none' : 'block' }}>{game.logo}</span>
                           </div>
                           <div className="pt-1">
                             <h3 className={`text-2xl font-bold text-white ${game.fontClass}`}>{game.name}</h3>
@@ -148,7 +167,7 @@ export default function Home() {
                         {/* Tag hint + CTA */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/30 border border-white/10">
-                            <span className="text-white/40 text-xs font-mono">Search by</span>
+                            <span className="text-white/55 text-xs font-mono">Search by</span>
                             <span className="text-white/80 text-xs font-bold font-mono">#PLAYER TAG</span>
                           </div>
                           <div
@@ -170,9 +189,9 @@ export default function Home() {
 
       {/* ─── Footer ─── */}
       <footer className="border-t border-white/5 py-8">
-        <div className="max-w-7xl mx-auto px-6 text-center text-white/30 text-xs leading-relaxed">
+        <div className="max-w-7xl mx-auto px-6 text-center text-white/70 text-xs leading-relaxed">
           <p className="mb-2">
-            This material is unofficial and is not endorsed by Supercell. For more information see Supercell's Fan Content Policy: <a href="https://www.supercell.com/fan-content-policy" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white transition-colors underline">www.supercell.com/fan-content-policy</a>.
+            This material is unofficial and is not endorsed by Supercell. For more information see Supercell's Fan Content Policy: <a href="https://www.supercell.com/fan-content-policy" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white/80 transition-colors underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-sm">www.supercell.com/fan-content-policy</a>.
           </p>
           <p>
             All game data is provided by the official Supercell Developer API.

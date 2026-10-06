@@ -42,14 +42,20 @@ export function CRProfile({ playerStats, accentUrl, accentColor }: CRProfileProp
 
             {/* Custom Tab Navigation */}
             <div className="flex justify-center mb-8 px-4">
-                <div className="inline-flex flex-wrap justify-center gap-2 p-1.5 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10">
+                <div role="tablist" aria-label="Clash Royale profile sections" className="inline-flex flex-wrap justify-center gap-2 p-1.5 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
+                            type="button"
+                            role="tab"
+                            id={`cr-tab-${tab.id}`}
+                            aria-selected={activeTab === tab.id}
+                            // only the active panel is mounted, so inactive tabs must not point at a missing id
+                            aria-controls={activeTab === tab.id ? `cr-tabpanel-${tab.id}` : undefined}
                             onClick={() => setActiveTab(tab.id as TabType)}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all relative ${activeTab === tab.id
+                            className={`flex items-center gap-2 px-6 py-3 min-h-11 rounded-xl font-bold text-sm transition-all relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${activeTab === tab.id
                                     ? 'text-white'
-                                    : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                                    : 'text-white/70 hover:text-white hover:bg-white/5'
                                 }`}
                         >
                             {activeTab === tab.id && (
@@ -72,11 +78,15 @@ export function CRProfile({ playerStats, accentUrl, accentColor }: CRProfileProp
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeTab}
+                        role="tabpanel"
+                        id={`cr-tabpanel-${activeTab}`}
+                        aria-labelledby={`cr-tab-${activeTab}`}
+                        tabIndex={0}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}
-                        className="w-full"
+                        className="w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-2xl"
                     >
                         {activeTab === 'overview' && <CROverview playerStats={playerStats} accent={accentColor} onTabChange={(tab) => setActiveTab(tab as TabType)} />}
                         {activeTab === 'cards' && <CRCardsList cards={cr.cards} accent={accentColor} />}

@@ -25,7 +25,7 @@ export function StatCard({ title, value, subtitle, icon, accentColor }: StatCard
       {/* Content */}
       <div className="relative">
         {icon && (
-          <div className="mb-3 text-white/40">
+          <div className="mb-3 text-white/40" aria-hidden="true">
             {icon}
           </div>
         )}
@@ -42,7 +42,7 @@ export function StatCard({ title, value, subtitle, icon, accentColor }: StatCard
         </div>
         
         {subtitle && (
-          <div className="text-sm text-white/40">
+          <div className="text-sm text-white/70">
             {subtitle}
           </div>
         )}

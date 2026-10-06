@@ -7,16 +7,16 @@ export interface BSTierInfo {
 
 export function getBSTierInfo(trophies: number): BSTierInfo {
     if (trophies < 250) {
-        return { name: 'Wood', iconPath: '/images/bs/icon_trophy_brawler_wood.png', currentTierMin: 0, nextThreshold: 250 };
+        return { name: 'Wood', iconPath: '/images/bs/icon_trophy_brawler_wood.webp', currentTierMin: 0, nextThreshold: 250 };
     }
     if (trophies < 500) {
-        return { name: 'Bronze', iconPath: '/images/bs/icon_trophy_brawler_bronze.png', currentTierMin: 250, nextThreshold: 500 };
+        return { name: 'Bronze', iconPath: '/images/bs/icon_trophy_brawler_bronze.webp', currentTierMin: 250, nextThreshold: 500 };
     }
     if (trophies < 750) {
-        return { name: 'Silver', iconPath: '/images/bs/icon_trophy_brawler_silver.png', currentTierMin: 500, nextThreshold: 750 };
+        return { name: 'Silver', iconPath: '/images/bs/icon_trophy_brawler_silver.webp', currentTierMin: 500, nextThreshold: 750 };
     }
     if (trophies < 1000) {
-        return { name: 'Gold', iconPath: '/images/bs/icon_trophy_brawler_gold.png', currentTierMin: 750, nextThreshold: 1000 };
+        return { name: 'Gold', iconPath: '/images/bs/icon_trophy_brawler_gold.webp', currentTierMin: 750, nextThreshold: 1000 };
     }
 
     // Prestige 1, 2, 3+

@@ -63,12 +63,16 @@ export function saveRecentSearch(gameId: string, tag: string, stats: PlayerStats
 
         filteredList.unshift(newEntry);
 
-        // Trim to max
-        if (filteredList.length > MAX_HISTORY) {
-            filteredList.length = MAX_HISTORY;
-        }
+        // Trim per game, not globally: with one shared cap, ten Clash Royale
+        // searches used to evict every Brawl Stars and Clash of Clans entry.
+        const perGame = new Map<string, number>();
+        const trimmed = filteredList.filter((item) => {
+            const seen = (perGame.get(item.gameId) ?? 0) + 1;
+            perGame.set(item.gameId, seen);
+            return seen <= MAX_HISTORY;
+        });
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredList));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
     } catch (e) {
         console.warn("Failed to save recent search", e);
     }
@@ -79,5 +83,7 @@ export function removeRecentSearch(gameId: string, tag: string) {
         const list = getRecentSearches();
         const filteredList = list.filter(item => !(item.gameId === gameId && item.tag === tag));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredList));
-    } catch { }
+    } catch {
+        /* storage unavailable (private mode / quota): nothing to remove */
+    }
 }

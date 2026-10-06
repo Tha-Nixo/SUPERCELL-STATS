@@ -46,7 +46,7 @@ export function CRCardsList({ cards, accent }: CRCardsListProps) {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             {gridCards.map((card) => {
                 const pct = card.maxCount > 0 ? Math.min(100, (card.count / card.maxCount) * 100) : 0;
-                const isMax = card.level >= 16;
+                const isMax = card.level >= card.maxLevel;
                 const hasEvolution = card.evolutionLevel && card.evolutionLevel > 0;
 
                 return (
@@ -68,9 +68,9 @@ export function CRCardsList({ cards, accent }: CRCardsListProps) {
 
                         <div className="flex justify-center mb-3 min-h-[100px] relative">
                             {card.evolutionIconUrl && hasEvolution ? (
-                                <img src={card.evolutionIconUrl} alt={card.name} className="h-24 w-auto object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]" />
+                                <img src={card.evolutionIconUrl} alt={card.name} width={80} height={96} loading="lazy" decoding="async" className="h-24 w-auto object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]" />
                             ) : (
-                                <img src={card.iconUrl} alt={card.name} className="h-24 w-auto object-contain drop-shadow-xl" />
+                                <img src={card.iconUrl} alt={card.name} width={80} height={96} loading="lazy" decoding="async" className="h-24 w-auto object-contain drop-shadow-xl" />
                             )}
 
                             {card.elixirCost !== undefined && (
@@ -91,7 +91,7 @@ export function CRCardsList({ cards, accent }: CRCardsListProps) {
                             {/* Progress bar (only for owned) */}
                             {isOwned && !isMax && (
                                 <div className="w-full">
-                                    <div className="flex justify-between text-[10px] text-white/40 mb-1 font-mono">
+                                    <div className="flex justify-between text-[10px] text-white/55 mb-1 font-mono">
                                         <span>{card.count}</span>
                                         <span>{card.maxCount}</span>
                                     </div>
@@ -114,7 +114,7 @@ export function CRCardsList({ cards, accent }: CRCardsListProps) {
                                 </div>
                             )}
                             {!isOwned && (
-                                <div className="text-[10px] text-white/30 uppercase font-bold mt-2">Not Unlocked</div>
+                                <div className="text-[10px] text-white/55 uppercase font-bold mt-2">Not Unlocked</div>
                             )}
                         </div>
                     </div>
@@ -133,9 +133,10 @@ export function CRCardsList({ cards, accent }: CRCardsListProps) {
                     <input
                         type="text"
                         placeholder="Search cards..."
+                        aria-label="Search cards"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-white/30"
+                        className="w-full pl-10 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                     />
                 </div>
 
@@ -145,7 +146,8 @@ export function CRCardsList({ cards, accent }: CRCardsListProps) {
                         <select
                             value={filterRarity}
                             onChange={(e) => setFilterRarity(e.target.value)}
-                            className="appearance-none pl-9 pr-8 py-2 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-white/30 capitalize"
+                            aria-label="Filter cards by rarity"
+                            className="appearance-none pl-9 pr-8 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 capitalize"
                         >
                             {rarities.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
@@ -156,7 +158,8 @@ export function CRCardsList({ cards, accent }: CRCardsListProps) {
                         <select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value as any)}
-                            className="appearance-none pl-9 pr-8 py-2 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-white/30"
+                            aria-label="Sort cards"
+                            className="appearance-none pl-9 pr-8 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                         >
                             <option value="level">Sort by Level</option>
                             <option value="count">Sort by Copies</option>
@@ -180,7 +183,7 @@ export function CRCardsList({ cards, accent }: CRCardsListProps) {
             {/* Unowned Grid */}
             {unownedCards.length > 0 && (
                 <div className="pt-6 border-t border-white/10">
-                    <h3 className="text-white/40 font-semibold mb-4 flex items-center gap-2">
+                    <h3 className="text-white/60 font-semibold mb-4 flex items-center gap-2">
                         <Battery className="w-5 h-5" />
                         Not Found ({unownedCards.length})
                     </h3>

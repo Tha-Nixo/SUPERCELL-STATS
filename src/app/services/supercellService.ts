@@ -1,13 +1,13 @@
 import { apiKeys } from './apiKeys';
 import { PlayerStats, Match, BSBrawlerData } from '../data/mockStats';
-import { BRAWLER_PATCHES, BRAWLER_RENAMES } from '../data/brawlerPatches';
+import { BRAWLER_RENAMES } from '../data/brawlerPatches';
 type SupercellGame = 'clash-royale' | 'brawl-stars' | 'clash-of-clans';
 
 // Player tags only ever contain these characters; O is a common typo for 0.
 const TAG_CHARSET = /^[0289PYLQGRJCUV]+$/;
 
 export function normalizeTag(tag: string): string {
-    let t = tag.trim().toUpperCase().replace(/^#/, '').replace(/O/g, '0');
+    const t = tag.trim().toUpperCase().replace(/^#/, '').replace(/O/g, '0');
     return '#' + t;
 }
 
@@ -39,6 +39,51 @@ function fmtTime(seconds: number): string {
     return parts.length > 0 ? parts.join(' ') : '< 1h';
 }
 
+// "pathOfLegend" → "Path of Legend", "PvP" → "Ladder".
+const MODE_ALIASES: Record<string, string> = {
+    PvP: 'Ladder',
+    pathOfLegend: 'Path of Legend',
+    riverRacePvP: 'River Race',
+    riverRaceDuel: 'River Race Duel',
+    boatBattle: 'Boat Battle',
+    unknown: 'Brawl Hockey',
+};
+
+function prettyMode(raw: string | undefined): string {
+    if (!raw) return 'Battle';
+    if (MODE_ALIASES[raw]) return MODE_ALIASES[raw];
+    const spaced = raw.replace(/([a-z\d])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').trim();
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+/**
+ * Turn a newest-first battlelog into a chronological trophy trend.
+ * The API never sends a running total, but it does send each battle's delta,
+ * so the curve is reconstructed backwards from the player's current count.
+ */
+function buildTrophyTrend(
+    battles: any[],
+    currentTrophies: number,
+    delta: (b: any) => number,
+    date: (b: any) => string,
+    mode: (b: any) => string
+) {
+    let running = currentTrophies;
+    const points = battles.map((b) => {
+        const d = delta(b);
+        const point = {
+            date: date(b),
+            trophies: running,
+            delta: d,
+            mode: mode(b),
+            result: (d > 0 ? 'win' : d < 0 ? 'loss' : 'draw') as 'win' | 'loss' | 'draw',
+        };
+        running -= d;
+        return point;
+    });
+    return points.reverse();
+}
+
 const FETCH_TIMEOUT_MS = 10_000;
 
 // Map raw Supercell API "reason" codes to messages a visitor can understand.
@@ -65,7 +110,8 @@ async function fetchSupercell<T>(url: string, apiKey: string): Promise<T> {
         throw new Error(
             e instanceof DOMException && e.name === 'AbortError'
                 ? 'The request timed out. Please try again.'
-                : 'Network error while contacting the API.'
+                : 'Network error while contacting the API.',
+            { cause: e },
         );
     } finally {
         clearTimeout(timer);
@@ -77,6 +123,49 @@ async function fetchSupercell<T>(url: string, apiKey: string): Promise<T> {
     return res.json() as Promise<T>;
 }
 
+// ─────────────────────────────────────────
+// Game catalogs (how many cards / brawlers exist right now)
+// ─────────────────────────────────────────
+// Supercell keeps shipping new cards and brawlers, so any hardcoded
+// denominator ("x / 121 cards") goes wrong within weeks. Ask the API instead
+// and cache the promise for the lifetime of the tab — one request per session.
+const catalogCounts = new Map<string, Promise<number>>();
+
+function catalogCount(url: string, key: string, fallback: number): Promise<number> {
+    let cached = catalogCounts.get(url);
+    if (!cached) {
+        cached = fetchSupercell<any>(url, key)
+            .then((r) => (Array.isArray(r?.items) ? r.items.length : fallback))
+            .catch(() => fallback);
+        catalogCounts.set(url, cached);
+    }
+    return cached;
+}
+
+// The battlelog is optional data: when it fails we must say so rather than
+// render a confident "0% win rate" built on zero battles.
+interface BattleLog {
+    battles: any[];
+    failed: boolean;
+}
+
+export function toBattleLog(raw: any): BattleLog {
+    // Clash Royale returns a bare JSON array; Brawl Stars wraps it in { items }.
+    if (Array.isArray(raw)) return { battles: raw, failed: false };
+    if (Array.isArray(raw?.items)) return { battles: raw.items, failed: false };
+    return { battles: [], failed: true };
+}
+
+
+// Clash Royale reports card levels relative to each rarity (a level-8
+// legendary and a level-14 rare are both "max"). The UI wants the single
+// unified scale the game itself shows, which currently tops out at 16.
+const CR_MAX_LEVEL = 16;
+
+export function displayCardLevel(c: any): number {
+    const rarityMax = c?.maxLevel ?? 14;
+    return Math.min((c?.level ?? 1) + (CR_MAX_LEVEL - rarityMax), CR_MAX_LEVEL);
+}
 
 // Helper to determine exact cards needed for next CR level
 function getCRCardsTarget(level: number, rarity: string): number {
@@ -84,7 +173,7 @@ function getCRCardsTarget(level: number, rarity: string): number {
     const r = (rarity || 'common').toLowerCase();
 
     // As of Level 16 update:
-    let targets: number[] = [];
+    let targets: number[];
     if (r === 'champion') targets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 5, 8, 11, 15];
     else if (r === 'legendary') targets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 6, 9, 12, 14, 20];
     else if (r === 'epic') targets = [0, 0, 0, 0, 0, 0, 2, 4, 10, 20, 30, 50, 70, 100, 130, 180];
@@ -101,13 +190,14 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
     const key = apiKeys.get('clashRoyale');
     const encodedTag = encodeURIComponent(normalizeTag(tag));
 
-    const [player, battleLog] = await Promise.all([
+    const [player, rawBattleLog, cardsInGame] = await Promise.all([
         fetchSupercell<any>(`/api/clash-royale/players/${encodedTag}`, key),
         fetchSupercell<any>(`/api/clash-royale/players/${encodedTag}/battlelog`, key)
-            .catch(() => ({ items: [] })),
+            .catch(() => null),
+        catalogCount('/api/clash-royale/cards', key, 0),
     ]);
 
-    const battles: any[] = battleLog.items ?? [];
+    const { battles, failed: battleLogFailed } = toBattleLog(rawBattleLog);
     const wins: number = player.wins ?? 0;
     const losses: number = player.losses ?? 0;
     const total: number = wins + losses;
@@ -194,41 +284,26 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
     }));
 
     // Tower Troops
-    const supportCards = (player.supportCards ?? []).map((t: any) => {
-        const baseLevel = 15 - (t.maxLevel ?? 14);
-        const actualLevel = baseLevel + (t.level ?? 1) + 1;
-        return {
-            id: t.id,
-            name: t.name,
-            level: actualLevel,
-            maxLevel: 14,
-            rarity: t.rarity ?? 'common',
-            iconUrl: t.iconUrls?.medium ?? ''
-        };
+    const mapSupportCard = (t: any) => ({
+        id: t.id,
+        name: t.name,
+        level: displayCardLevel(t),
+        maxLevel: CR_MAX_LEVEL,
+        rarity: t.rarity ?? 'common',
+        iconUrl: t.iconUrls?.medium ?? ''
     });
 
-    const currentDeckSupportCards = (player.currentDeckSupportCards ?? []).map((t: any) => {
-        const baseLevel = 15 - (t.maxLevel ?? 14);
-        const actualLevel = baseLevel + (t.level ?? 1) + 1;
-        return {
-            id: t.id,
-            name: t.name,
-            level: actualLevel,
-            maxLevel: 14,
-            rarity: t.rarity ?? 'common',
-            iconUrl: t.iconUrls?.medium ?? ''
-        };
-    });
+    const supportCards = (player.supportCards ?? []).map(mapSupportCard);
+    const currentDeckSupportCards = (player.currentDeckSupportCards ?? []).map(mapSupportCard);
 
     // Helper map for cards
     const mapCardInfo = (c: any) => {
-        const baseLevel = 15 - (c.maxLevel ?? 14);
-        const actualLevel = baseLevel + (c.level ?? 1) + 1;
+        const actualLevel = displayCardLevel(c);
         return {
             id: c.id ?? 0,
             name: c.name ?? 'Unknown',
             level: actualLevel,
-            maxLevel: 14,
+            maxLevel: CR_MAX_LEVEL,
             count: c.count ?? 0,
             maxCount: getCRCardsTarget(actualLevel, c.rarity),
             iconUrl: c.iconUrls?.medium ?? '',
@@ -262,18 +337,29 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
     const recentMatches: Match[] = battles.slice(0, 10).map((b: any, i: number) => {
         const myCrowns = b.team?.[0]?.crowns ?? 0;
         const oppCrowns = b.opponent?.[0]?.crowns ?? 0;
+        const change = b.team?.[0]?.trophyChange;
         return {
             id: `match-${i}`,
-            mode: b.type ?? 'Ladder',
+            mode: prettyMode(b.type),
             result: myCrowns > oppCrowns ? 'win' : myCrowns < oppCrowns ? 'loss' : 'draw',
             kills: myCrowns,
             deaths: oppCrowns,
             assists: 0,
-            score: 0,
+            score: typeof change === 'number' ? change : undefined,
             date: parseSCDate(b.battleTime),
-            duration: '3m',
+            duration: '',
         };
     });
+
+    // Real trophy progression, reconstructed backwards from the current count.
+    // Only battles that actually moved trophies belong on the trend.
+    const performanceData = buildTrophyTrend(
+        battles.filter((b: any) => typeof b.team?.[0]?.trophyChange === 'number'),
+        trophies,
+        (b: any) => b.team[0].trophyChange,
+        (b: any) => parseSCDate(b.battleTime),
+        (b: any) => prettyMode(b.type)
+    );
 
     return {
         username: player.name,
@@ -285,12 +371,9 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
         totalMatches: total,
         hoursPlayed: trophies,
         level: player.expLevel ?? 1,
+        dataNotice: battleLogFailed ? 'Battle log unavailable right now — recent-battle stats are hidden.' : undefined,
         recentMatches,
-        performanceData: recentMatches.map(m => ({
-            date: m.date,
-            winRate: m.result === 'win' ? 100 : 0,
-            kd: m.kills ?? 0,
-        })).reverse(),
+        performanceData,
         statLabels: {
             stat1Title: 'Win Rate',
             stat1Sub: `${wins.toLocaleString()} wins · ${losses.toLocaleString()} losses`,
@@ -310,7 +393,12 @@ async function searchClashRoyale(tag: string): Promise<PlayerStats> {
             { label: 'Clan Cards Collected', value: clanCardsCollected.toLocaleString() },
             { label: 'Total Donations', value: totalDonations.toLocaleString() },
             { label: 'Star Points', value: starPoints.toLocaleString() },
-            { label: 'Cards Found', value: `${player.cards?.length ?? 0} / 121` },
+            {
+                label: 'Cards Found',
+                value: cardsInGame > 0
+                    ? `${player.cards?.length ?? 0} / ${cardsInGame}`
+                    : `${player.cards?.length ?? 0}`,
+            },
             { label: 'Est. Time Played (≈3 min/battle)', value: fmtTime(estimatedSeconds) },
             { label: 'Clan', value: `${clanName} · ${clanRole}` },
         ],
@@ -351,12 +439,12 @@ function brawlerImageUrl(id: number): string {
 // Single mapper for API brawler → BSBrawlerData (used for both top and full grids).
 function mapBrawler(b: any): BSBrawlerData {
     const name: string = BRAWLER_RENAMES[b.name] ?? b.name ?? '?';
-    const patch = BRAWLER_PATCHES[name];
 
-    let gadgetsList = (b.gadgets ?? []).map((g: any) => ({ id: g.id, name: g.name }));
-    let starPowersList = (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name }));
-    if (gadgetsList.length === 0 && patch?.gadgets) gadgetsList = patch.gadgets;
-    if (starPowersList.length === 0 && patch?.starPowers) starPowersList = patch.starPowers;
+    // These lists are what the player OWNS, not what exists in the game. An
+    // empty list means "not unlocked yet" and must stay empty — backfilling it
+    // from a static table invented gadgets and star powers for real accounts.
+    const gadgetsList = (b.gadgets ?? []).map((g: any) => ({ id: g.id, name: g.name }));
+    const starPowersList = (b.starPowers ?? []).map((sp: any) => ({ id: sp.id, name: sp.name }));
 
     return {
         id: b.id ?? 0,
@@ -386,15 +474,57 @@ function mapBrawler(b: any): BSBrawlerData {
     };
 }
 
+/**
+ * Did this Brawl Stars battle go well?
+ *
+ * Only team modes report `result`. Showdown reports a placement, so the site
+ * used to score every Showdown battle as a non-win — a showdown-only player saw
+ * a flat 0% win rate. The trophy delta is the game's own verdict and is checked
+ * first; the placement is the fallback when a battle moved no trophies.
+ * Returns undefined when the outcome genuinely cannot be determined, so those
+ * battles can be excluded from the denominator instead of counted as losses.
+ */
+export function bsOutcome(b: any): 'win' | 'loss' | 'draw' | undefined {
+    const battle = b?.battle;
+    if (!battle) return undefined;
+    if (battle.result === 'victory') return 'win';
+    if (battle.result === 'defeat') return 'loss';
+    if (battle.result === 'draw') return 'draw';
+
+    if (typeof battle.trophyChange === 'number' && battle.trophyChange !== 0) {
+        return battle.trophyChange > 0 ? 'win' : 'loss';
+    }
+    if (typeof battle.rank === 'number') {
+        const entrants = Array.isArray(battle.teams) ? battle.teams.length
+            : Array.isArray(battle.players) ? battle.players.length
+                : 10;
+        return battle.rank <= Math.floor(entrants / 2) ? 'win' : 'loss';
+    }
+    return undefined;
+}
+
+/**
+ * Win/loss tally for a Brawl Stars battle log. Only decisive battles count: a
+ * draw or an unparsable mode is neither a win nor a loss and stays out of the
+ * win-rate denominator.
+ */
+export function bsWinStats(battles: any[]): { battleWins: number; battleLosses: number; winRate: number } {
+    const outcomes = battles.map(bsOutcome);
+    const battleWins = outcomes.filter((o) => o === 'win').length;
+    const battleLosses = outcomes.filter((o) => o === 'loss').length;
+    const decided = battleWins + battleLosses;
+    return { battleWins, battleLosses, winRate: decided > 0 ? Math.round((battleWins / decided) * 100) : 0 };
+}
+
 async function searchBrawlStars(tag: string): Promise<PlayerStats> {
     const key = apiKeys.get('brawlStars');
     const encodedTag = encodeURIComponent(normalizeTag(tag));
 
-    // Setup sequential fetching: Player & Battlelog parallel -> Club dependent on Player
-    const playerPromise = fetchSupercell<any>(`/api/brawl-stars/players/${encodedTag}`, key);
-    const battleLogPromise = fetchSupercell<any>(`/api/brawl-stars/players/${encodedTag}/battlelog`, key).catch(() => ({ items: [] }));
-
-    const [player, battleLog] = await Promise.all([playerPromise, battleLogPromise]);
+    const [player, rawBattleLog, brawlersInGame] = await Promise.all([
+        fetchSupercell<any>(`/api/brawl-stars/players/${encodedTag}`, key),
+        fetchSupercell<any>(`/api/brawl-stars/players/${encodedTag}/battlelog`, key).catch(() => null),
+        catalogCount('/api/brawl-stars/brawlers', key, 0),
+    ]);
 
     let clubInfo: any = undefined;
     if (player.club?.tag) {
@@ -402,9 +532,8 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
         clubInfo = await fetchSupercell<any>(`/api/brawl-stars/clubs/${clubTagEncoded}`, key).catch(() => undefined);
     }
 
-    const battles: any[] = battleLog.items ?? [];
-    const battleWins = battles.filter((b: any) => b.battle?.result === 'victory').length;
-    const winRate = battles.length > 0 ? Math.round((battleWins / battles.length) * 100) : 0;
+    const { battles, failed: battleLogFailed } = toBattleLog(rawBattleLog);
+    const { battleWins, battleLosses, winRate } = bsWinStats(battles);
 
     const trophies: number = player.trophies ?? 0;
     const highestTrophies: number = player.highestTrophies ?? trophies;
@@ -424,22 +553,22 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
     // Top brawlers visual data (top 9 + all for grid)
     const topBrawlers: BSBrawlerData[] = sortedBrawlers.slice(0, 9).map(mapBrawler);
 
-    const recentMatches: Match[] = battles.slice(0, 10).map((b: any, i: number) => {
-        let mode = b.event?.mode ?? b.battle?.mode ?? 'Brawl';
-        // Format mode e.g. "brawlBall" -> "Brawl Ball"
-        mode = mode.replace(/([A-Z])/g, ' $1').trim();
-        mode = mode.charAt(0).toUpperCase() + mode.slice(1);
-        if (mode.toLowerCase() === 'unknown') mode = 'Brawl Hockey';
+    const recentMatches: Match[] = battles.slice(0, 10).map((b: any, i: number) => ({
+        id: `match-${i}`,
+        mode: prettyMode(b.event?.mode ?? b.battle?.mode),
+        result: bsOutcome(b) ?? 'draw',
+        score: b.battle?.trophyChange ?? undefined,
+        date: parseSCDate(b.battleTime),
+        duration: b.battle?.duration ? `${Math.floor(b.battle.duration / 60)}m ${b.battle.duration % 60}s` : '',
+    }));
 
-        return {
-            id: `match-${i}`,
-            mode: mode,
-            result: b.battle?.result === 'victory' ? 'win' : b.battle?.result === 'defeat' ? 'loss' : 'draw',
-            score: b.battle?.trophyChange ?? undefined,
-            date: parseSCDate(b.battleTime),
-            duration: b.battle?.duration ? `${Math.floor(b.battle.duration / 60)}m ${b.battle.duration % 60}s` : 'Unknown',
-        };
-    });
+    const performanceData = buildTrophyTrend(
+        battles.filter((b: any) => typeof b.battle?.trophyChange === 'number'),
+        trophies,
+        (b: any) => b.battle.trophyChange,
+        (b: any) => parseSCDate(b.battleTime),
+        (b: any) => prettyMode(b.event?.mode ?? b.battle?.mode)
+    );
 
     const allBrawlers: BSBrawlerData[] = sortedBrawlers.map(mapBrawler);
 
@@ -449,19 +578,24 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
         rank: `${trophies.toLocaleString()} 🏆`,
         rankIcon: '⭐',
         winRate,
-        kd: Math.round((battleWins / Math.max(battles.length - battleWins, 1)) * 100) / 100,
+        kd: Math.round((battleWins / Math.max(battleLosses, 1)) * 100) / 100,
         totalMatches: totalVictories || battles.length,
         hoursPlayed: trophies,
         level: player.expLevel ?? 1,
+        dataNotice: battleLogFailed ? 'Battle log unavailable right now — recent-battle stats are hidden.' : undefined,
         recentMatches,
-        performanceData: [],
+        performanceData,
         statLabels: {
             stat1Title: 'Win Rate',
-            stat1Sub: `${battleWins} wins (recent battles)`,
+            stat1Sub: battleWins + battleLosses > 0
+                ? `${battleWins} of last ${battleWins + battleLosses} battles`
+                : 'No recent battles',
             stat2Title: 'W/L Ratio',
             stat2Sub: 'Recent battles',
             stat3Title: 'Total Victories',
-            stat3Sub: `${brawlerCount}/99 brawlers unlocked`,
+            stat3Sub: brawlersInGame > 0
+                ? `${brawlerCount}/${brawlersInGame} brawlers unlocked`
+                : `${brawlerCount} brawlers unlocked`,
             stat4Title: 'Trophies',
             stat4Value: `${trophies.toLocaleString()} 🏆`,
             stat4Sub: `Best: ${highestTrophies.toLocaleString()}`,
@@ -470,6 +604,8 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
             { label: '3v3 Victories', value: `${v3v3.toLocaleString()} 🤝` },
             { label: 'Solo Victories', value: `${soloWins.toLocaleString()} 🎯` },
             { label: 'Duo Victories', value: `${duoWins.toLocaleString()} 👥` },
+            ...(player.rankedRankName ? [{ label: 'Ranked', value: `${player.rankedRankName}${typeof player.rankedElo === 'number' ? ` · ${player.rankedElo.toLocaleString()} Elo` : ''}` }] : []),
+            ...(player.highestAllTimeRankedRankName ? [{ label: 'Best Ranked (all time)', value: String(player.highestAllTimeRankedRankName) }] : []),
             { label: 'Brawlers at 1000+ 🏆', value: brawlersAt1000 },
             { label: 'Brawlers at 750+ 🏆', value: brawlersAt750 },
             { label: 'Maxed Brawlers (P11)', value: maxedBrawlers },
@@ -503,7 +639,13 @@ async function searchBrawlStars(tag: string): Promise<PlayerStats> {
                     battle: {
                         mode: b.battle?.mode ?? '',
                         type: b.battle?.type ?? '',
-                        result: b.battle?.result,
+                        rank: b.battle?.rank,
+                        // Normalised so the battle log and the dashboard can never
+                        // disagree about whether a Showdown run was a win.
+                        result: b.battle?.result ?? (() => {
+                            const o = bsOutcome(b);
+                            return o === 'win' ? 'victory' : o === 'loss' ? 'defeat' : o;
+                        })(),
                         duration: b.battle?.duration,
                         trophyChange: b.battle?.trophyChange,
                         starPlayer: b.battle?.starPlayer ? {

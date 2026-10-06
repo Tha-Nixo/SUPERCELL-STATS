@@ -1,0 +1,57 @@
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		-Server
+		Strict-Transport-Security "max-age=31536000"
+		Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://cdn.brawlify.com https://cdn-old.brawlify.com https://api-assets.clashroyale.com https://api-assets.clashofclans.com https://royaleapi.github.io; connect-src 'self'; manifest-src 'self'; worker-src 'self'; form-action 'none'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+	}
+
+	handle /assets/* {
+		header Cache-Control "public, max-age=31536000, immutable"
+		root * /home/nixo/apps/supercellstats/dist
+		file_server
+	}
+
+	@spa path / /game/clash-royale /game/brawl-stars /game/clash-of-clans
+	handle @spa {
+		header Cache-Control "public, max-age=0, s-maxage=300, must-revalidate"
+		root * /home/nixo/apps/supercellstats/dist
+		try_files {path} {path}/index.html /index.html
+		file_server
+	}
+
+	handle /game/*/player/* {
+		header Cache-Control "public, max-age=0, must-revalidate"
+		root * /home/nixo/apps/supercellstats/dist
+		rewrite * /index.html
+		file_server
+	}
+
+	handle {
+		root * /home/nixo/apps/supercellstats/dist
+		try_files {path}
+		file_server
+	}
+
+	handle_errors {
+		# header{} at vhost level does not apply inside handle_errors: this block
+		# MUST stay byte-identical (modulo one extra tab) to the one at the top.
+		header {
+			X-Content-Type-Options nosniff
+			Referrer-Policy strict-origin-when-cross-origin
+			X-Frame-Options DENY
+			-Server
+			Strict-Transport-Security "max-age=31536000"
+			Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
+			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://cdn.brawlify.com https://cdn-old.brawlify.com https://api-assets.clashroyale.com https://api-assets.clashofclans.com https://royaleapi.github.io; connect-src 'self'; manifest-src 'self'; worker-src 'self'; form-action 'none'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+		}
+		# replaces any Cache-Control set before file_server (e.g. immutable on /assets/*)
+		header Cache-Control "no-store"
+		root * /home/nixo/apps/supercellstats/dist
+		rewrite * /index.html
+		file_server {
+			status {err.status_code}
+		}
+	}

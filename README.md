@@ -11,12 +11,17 @@ Player statistics website for Supercell games — search any player by tag and g
 - 👑 Clash Royale: current deck, card collection with levels/progress, badges, achievements, Path of Legend
 - ⭐ Brawl Stars: brawler grid (power, gadgets, star powers, gears, hypercharges), club info, battle log
 - 🏰 Clash of Clans: heroes & equipment, army (troops/spells/sieges/pets), achievements, legend statistics
-- 🕐 Recent searches saved locally
+- 🔗 Every player has a URL (`/game/<game>/player/<tag>`) — shareable, bookmarkable, back-button safe
+- 📈 Trophy trend rebuilt from the battle log, with crosshair tooltip and a table view
+- 🕐 Recent searches saved locally, per game
 - 🟡 Clear "Demo data" badge when running without API keys
 
 ## Tech stack
 
-React 18 · TypeScript · Vite 7 · Tailwind CSS 4 · React Router 7 · Motion · Recharts
+React 18 · TypeScript · Vite 7 · Tailwind CSS 4 · React Router 7 · Motion
+
+Charts are hand-rolled SVG: the one trend chart on the site did not justify the
+528 KB that Recharts and its d3 dependencies were adding to every page load.
 
 ## Getting started
 
@@ -40,20 +45,47 @@ For a step-by-step guide in Italian, see [SETUP_GUIDE.md](./SETUP_GUIDE.md).
 
 ## How API calls work (important)
 
-The browser cannot call the Supercell APIs directly (CORS + IP-bound keys). In development, the Vite dev server proxies `/api/<game>/*` to the real APIs and injects nothing — the key travels from the client. This works locally but:
+The browser cannot call the Supercell APIs directly: CORS blocks it, and the keys
+are bound to a single IP. So `/api/<game>/*` is always a proxy — what changes is
+who holds the key.
 
-- ⚠️ keys prefixed with `VITE_` end up in the JS bundle (see issue [#2](https://github.com/Tha-Nixo/SUPERCELL-STATS/issues/2))
-- ⚠️ a production build has no proxy at all (see issue [#3](https://github.com/Tha-Nixo/SUPERCELL-STATS/issues/3))
+| | Proxy | Key lives |
+|---|---|---|
+| **Development** | Vite dev server → RoyaleAPI relay | `.env`, sent from the browser (`VITE_*`, so it *is* in the dev bundle — never deploy this way) |
+| **Production** | Caddy → RoyaleAPI relay | server-side only; the client sends no `Authorization` header at all |
 
-**A small backend proxy is required for any real deployment.** Until then, treat this project as local-only.
+`npm run preview` serves the production build, which by design carries no key, so
+its `/api` requests are proxied to the deployed origin. That makes a release
+testable against real data before it goes out.
+
+See [DEPLOY.md](./DEPLOY.md) for the production topology and
+[docs/SERVER-HARDENING.md](./docs/SERVER-HARDENING.md) for key handling, rate
+limiting and response headers on the server.
 
 ## Scripts
 
 | Command | Description |
 |---|---|
 | `npm run dev` | Dev server with API proxy on http://localhost:5173 |
-| `npm run build` | Type-check + production build to `dist/` |
-| `npm run preview` | Serve the production build locally (no API proxy) |
+| `npm run build` | Type-check, build to `dist/`, emit per-route HTML shells, then run the bundle checks |
+| `npm run preview` | Serve the production build locally, proxying `/api` to the deployed origin |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run images` | Re-run the WebP pipeline over `public/images` (needs `ffmpeg`) |
+
+`npm run build` fails the build if an API token or an unoptimised PNG ends up in
+`dist/`, and prints the largest JS chunks so a chunking regression shows up in the
+build log.
+
+### Assets
+
+Game art is stored as WebP, capped at the size it is actually drawn at (160px for
+tiles, 640px for hero art) — 15.5 MB of source PNGs compile to 1.1 MB. Add new PNGs
+to `public/images`, then:
+
+```bash
+npm run images                    # convert and replace
+node scripts/gen-icon-index.mjs   # refresh the Clash of Clans icon index
+```
 
 ## Legal
 

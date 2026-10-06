@@ -6,7 +6,7 @@ doesn't care that the origin server sits behind a residential dynamic IP):
 ```
 visitor ──HTTPS──> Cloudflare (proxied DNS, CNAME -> ip.nixospace.it)
                     └─> Caddy on the home server
-                         ├─ /            → static files from dist/
+                         ├─ /            → static files from dist/ (unknown path = real 404)
                          └─ /api/<game>/* → *.royaleapi.dev
                                             (fixed-IP relay, whitelisted once)
                                             + Authorization header
@@ -89,11 +89,11 @@ supercellstats.com {
         }
     }
 
-    handle {
-        root * /opt/projects/supercellstats/dist
-        try_files {path} /index.html   # SPA fallback
-        file_server
-    }
+    # Everything below the three /api/* handlers (security headers, asset cache,
+    # prerendered shells, real 404) is the content of docs/caddy-tail.caddy,
+    # applied by ~/crowdsec/10-supercellstats-caddy.sh. See "HTTP behaviour".
+    # Do NOT use a catch-all `try_files {path} /index.html`: it answers 200 for
+    # unknown URLs and for missing hashed chunks.
 }
 
 www.supercellstats.com {
@@ -124,10 +124,58 @@ running on the server — nothing game-specific to maintain here.
 ## 5. Update procedure
 
 ```bash
-cd ~/apps/supercellstats && git pull && npm ci && npm run build
+~/apps/supercellstats/scripts/deploy.sh              # deploy origin/main
+~/apps/supercellstats/scripts/deploy.sh --rollback   # restore the previous build
 ```
 
-No Caddy reload needed for frontend-only changes.
+The script builds into a scratch directory and swaps it in with a `mv`, so no
+visitor can be served a half-written `dist/`. It keeps the previous build as
+`dist.previous` and writes the deployed commit to `dist/VERSION`, so
+`curl https://supercellstats.com/VERSION` answers "what is live".
+
+No Caddy reload is needed for frontend-only changes. **Apply the Cache-Control
+rules in `docs/SERVER-HARDENING.md` before the first rebuild** — asset hashes
+change on rebuild, and a client holding a stale `index.html` would request chunks
+that no longer exist and get the SPA fallback (`200 text/html`) instead of a 404,
+which renders as a blank page with nothing in the console.
+
+Do not use a bare `git pull` here: that clone is checked out on a feature branch,
+so it would pull the wrong ref.
+
+## HTTP behaviour (production)
+
+The part of the vhost below the three `/api/*` handlers is kept in
+`docs/caddy-tail.caddy` and applied by `~/crowdsec/10-supercellstats-caddy.sh`
+(run as root; it validates, reloads, smoke-tests and rolls back by itself).
+The `/api/*` handlers hold the injected Authorization headers and are never touched.
+
+| Route | Served as |
+|---|---|
+| `/assets/*` | hashed build output, `Cache-Control: public, max-age=31536000, immutable` |
+| `/`, `/game/clash-royale`, `/game/brawl-stars`, `/game/clash-of-clans` | prerendered shell (`<path>/index.html`), revalidated on every load |
+| `/game/<id>/player/<tag>` | SPA shell (`/index.html`), client-side routed |
+| any other existing file (`/VERSION`, `/robots.txt`, ...) | the file itself |
+| anything else | **HTTP 404** with the SPA shell as body, so React Router still renders its `NotFound` page |
+
+Every response, 404s included, carries `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options: DENY`,
+`Strict-Transport-Security`, `Permissions-Policy` and a Content-Security-Policy (`handle_errors` repeats the same `header {}` block, because the vhost-level one
+does not apply to error responses; keep the two identical). 404 responses are `Cache-Control: no-store`, so a
+missing asset is never cached (even under `/assets/*`, whose `immutable` header is overridden). The build has no
+inline scripts, hence `script-src 'self'`. Allowed external origins:
+
+- styles: `fonts.googleapis.com`; fonts: `fonts.gstatic.com`
+- images: `cdn.brawlify.com`, `cdn-old.brawlify.com`, `api-assets.clashroyale.com`, `api-assets.clashofclans.com`, `royaleapi.github.io` (plus `data:`)
+- `connect-src 'self'` only: all API calls go through the same-origin `/api/*` proxy
+
+To add a new CDN, add its origin to the right directive (`img-src`, `font-src`, ...) in
+`docs/caddy-tail.caddy`, then re-run the apply script. A blocked resource shows up as a
+`console:` failure in the e2e suite (`E2E_BASE_URL=https://supercellstats.com npm run e2e`).
+
+Rollback to the Caddyfile saved before the change:
+
+```bash
+sudo cp "$(ls -t /etc/caddy/Caddyfile.bak-presupercell-* | head -1)" /etc/caddy/Caddyfile && sudo systemctl reload caddy
+```
 
 ## Notes
 
