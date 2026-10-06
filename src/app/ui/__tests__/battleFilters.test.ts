@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  battleModes, filterBattles, modeSlug, NO_FILTERS, parseBattleFilters, resultCounts, shareableFilters, withBattleFilters,
+  battleModes, filterBattles, modeSlug, NO_FILTERS, parseBattleFilters, resultCounts, shareableFilters, trophyLabel, withBattleFilters,
   type BattleLike,
 } from '../battleFilters';
 
@@ -101,5 +101,12 @@ describe('shareableFilters', () => {
     expect(shareableFilters('?mode=brawl-ball&result=victory', modes)).toEqual({});
     expect(shareableFilters('?mode=all&result=all', modes)).toEqual({});
     expect(shareableFilters('?mode=LADDER', modes)).toEqual({ mode: 'ladder' });
+  });
+});
+
+describe('trophyLabel', () => {
+  it('names the separate Path of Legend counter, plain Trophies elsewhere', () => {
+    expect(trophyLabel('Path of Legend')).toBe('Path of Legend trophies');
+    expect(trophyLabel('Ladder')).toBe('Trophies');
   });
 });

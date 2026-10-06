@@ -35,6 +35,14 @@ export interface ModeOption {
   count: number;
 }
 
+/**
+ * Which counter a battle's trophy change belongs to. Path of Legend trophies
+ * are a separate counter from the Trophy Road total shown in the header.
+ */
+export function trophyLabel(mode: string): string {
+  return mode === 'Path of Legend' ? 'Path of Legend trophies' : 'Trophies';
+}
+
 /** URL-safe id of a mode label: 'Path of Legend' -> 'path-of-legend'. Never 'all'. */
 export function modeSlug(mode: string): string {
   const slug = mode

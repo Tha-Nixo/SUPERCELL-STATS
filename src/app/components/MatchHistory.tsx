@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Crown, Minus, Trophy, X } from 'lucide-react';
 import type { Match } from '../data/mockStats';
+import { trophyLabel } from '../ui/battleFilters';
 import { cx } from '../ui/cx';
 import { Pill, type PillTone } from '../ui/Pill';
 
@@ -49,6 +50,7 @@ export function MatchHistory({ matches }: MatchHistoryProps) {
               )}
               {trophyColumn && (
                 <span
+                  title={match.score !== undefined ? trophyLabel(match.mode) : undefined}
                   className={cx(
                     'inline-flex w-12 items-center justify-end gap-1 font-semibold',
                     (match.score ?? 0) > 0 ? 'text-win' : (match.score ?? 0) < 0 ? 'text-loss' : 'text-fg-muted',
@@ -56,7 +58,7 @@ export function MatchHistory({ matches }: MatchHistoryProps) {
                 >
                   {match.score !== undefined && (
                     <>
-                      <span className="sr-only">Trophies </span>
+                      <span className="sr-only">{trophyLabel(match.mode)} </span>
                       {match.score > 0 ? `+${match.score}` : match.score}
                     </>
                   )}
