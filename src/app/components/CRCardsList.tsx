@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpDown, Droplet, Layers, ListFilter, Search, SearchX } from 'lucide-react';
+import { ArrowUpDown, Droplet, Layers, ListFilter, Search, SearchX, Star } from 'lucide-react';
 import type { CRCardData } from '../data/mockStats';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -105,12 +105,16 @@ function CardGrid({ title, cards, owned }: { title: string; cards: CRCardData[];
                                     {card.rarity ? `${sentenceCase(card.rarity)} · ` : ''}Level {card.level}
                                 </p>
                             </div>
-                            {card.elixirCost !== undefined && (
-                                <Pill icon={<Droplet />}>
-                                    <span className="sr-only">Elixir </span>
-                                    {card.elixirCost}
-                                </Pill>
-                            )}
+                            <div className="flex flex-wrap justify-center gap-1.5">
+                                {card.elixirCost !== undefined && (
+                                    <Pill icon={<Droplet />}>
+                                        <span className="sr-only">Elixir </span>
+                                        {card.elixirCost}
+                                    </Pill>
+                                )}
+                                {evolved && <Pill tone="accent">Evolved</Pill>}
+                                {(card.starLevel ?? 0) > 0 && <Pill icon={<Star />}>Star {card.starLevel}</Pill>}
+                            </div>
                             {owned && !maxed && (
                                 <div className="w-full">
                                     <div aria-hidden="true" className="h-1.5 w-full overflow-hidden rounded-pill bg-surface-2">

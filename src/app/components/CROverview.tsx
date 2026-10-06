@@ -1,10 +1,11 @@
 import { useId, useState } from 'react';
-import { ArrowRight, Award, ChevronDown, Crown, Layers, Percent, Shield, Star, Swords, Trophy } from 'lucide-react';
+import { ArrowRight, Award, Check, ChevronDown, Crown, Layers, Percent, Shield, Sparkles, Star, Swords, Trophy } from 'lucide-react';
 import type { PlayerStats } from '../data/mockStats';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { cx } from '../ui/cx';
 import { GameImage } from '../ui/GameImage';
+import { Pill } from '../ui/Pill';
 import { Row } from '../ui/Row';
 import { StatTile } from '../ui/StatTile';
 import { sentenceCase } from '../ui/text';
@@ -37,10 +38,11 @@ export function CROverview({ playerStats, onOpenDeck }: CROverviewProps) {
     const hasLeague = Boolean(league?.currentSeason || league?.bestSeason) || legacyBest > 0;
     const achievements = (cr.achievements ?? []).filter((a) => a.value > 0);
     const badges = cr.badges ?? [];
+    const xp = cr.expPoints ?? 0;
 
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className={cx('grid grid-cols-2 gap-3', xp > 0 ? 'lg:grid-cols-5' : 'lg:grid-cols-4')}>
                 <StatTile
                     label="Win rate"
                     value={`${playerStats.winRate}%`}
@@ -50,6 +52,11 @@ export function CROverview({ playerStats, onOpenDeck }: CROverviewProps) {
                 <StatTile label="Battles" value={n(playerStats.totalMatches)} icon={<Swords />} />
                 <StatTile label="Three-crown wins" value={n(facts.threeCrownWins)} icon={<Crown />} />
                 <StatTile label="Best trophies" value={n(facts.bestTrophies)} sub={cr.arenaName} icon={<Trophy />} />
+                {xp > 0 && (
+                    <div className="col-span-2 lg:col-span-1">
+                        <StatTile label="Experience" value={n(xp)} sub="XP" icon={<Sparkles />} />
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
@@ -171,6 +178,7 @@ export function CROverview({ playerStats, onOpenDeck }: CROverviewProps) {
                     <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                         {achievements.map((a) => {
                             const pct = a.target ? Math.min(100, (a.value / a.target) * 100) : 100;
+                            const done = a.target > 0 && a.value >= a.target;
                             return (
                                 <li key={a.name} className="rounded-card border border-line p-3">
                                     <div className="flex items-start justify-between gap-3">
@@ -186,9 +194,13 @@ export function CROverview({ playerStats, onOpenDeck }: CROverviewProps) {
                                         <div aria-hidden="true" className="h-1.5 flex-1 overflow-hidden rounded-pill bg-surface-2">
                                             <div className="h-full rounded-pill bg-accent" style={{ width: `${pct}%` }} />
                                         </div>
-                                        <span className="text-xs whitespace-nowrap text-fg-subtle tabular-nums">
-                                            {n(a.value)} / {n(a.target)}
-                                        </span>
+                                        {done ? (
+                                            <Pill tone="solid" icon={<Check />}>Done</Pill>
+                                        ) : (
+                                            <span className="text-xs whitespace-nowrap text-fg-subtle tabular-nums">
+                                                {n(a.value)} / {n(a.target)}
+                                            </span>
+                                        )}
                                     </div>
                                 </li>
                             );

@@ -71,10 +71,15 @@ test.describe('Cards tab', () => {
     const problems = watch(page);
     await mockApi(page);
     await page.goto(cr('?tab=cards'));
-    await expect(page.getByRole('tab', { name: 'Cards 8/121' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tab', { name: 'Cards 8 of 121' })).toHaveAttribute('aria-selected', 'true');
     const cards = panel(page).getByTestId('collection-card');
     await expect(cards).toHaveCount(8);
     await expect(panel(page).getByRole('heading', { name: 'Collection (8)' })).toBeVisible();
+
+    const knight = cards.filter({ hasText: 'Knight' });
+    await expect(knight.getByText('Star 2')).toBeVisible();
+    await expect(knight.getByText('Evolved')).toBeVisible();
+    await expect(cards.filter({ hasText: 'Hog Rider' }).getByText(/Star \d|Evolved/)).toHaveCount(0);
 
     await panel(page).getByLabel('Search cards').fill('hog');
     await expect(cards).toHaveCount(1);
@@ -113,6 +118,16 @@ test.describe('Overview tab', () => {
     await expect(p.getByText('Best season (2026-08)')).toBeVisible();
     await expectNoEmoji(p);
     expect(problems).toEqual([]);
+  });
+
+  test('shows XP and marks a finished achievement as done', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-royale': { expPoints: 12345 } } });
+    await page.goto(cr());
+    const p = panel(page);
+    await expect(p.getByText('12,345', { exact: true })).toBeVisible();
+    const done = p.getByRole('listitem').filter({ hasText: 'Team Player' });
+    await expect(done.getByText('Done')).toBeVisible();
+    await expect(p.getByRole('listitem').filter({ hasText: 'Gatherer' }).getByText('Done')).toHaveCount(0);
   });
 
   test('"View deck" opens the Deck tab', async ({ page }) => {

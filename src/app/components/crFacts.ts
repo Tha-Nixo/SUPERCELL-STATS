@@ -29,7 +29,10 @@ const extra = (stats: PlayerStats, label: string) => stats.extraStats?.find((s) 
 export function crFacts(stats: PlayerStats): CRFacts {
   const [wins, losses] = (stats.statLabels?.stat1Sub ?? '').split(' · ');
   const clanTag = stats.gameVisuals?.cr?.clanTag;
-  const [clanName, role] = String(extra(stats, 'Clan') ?? '').split(' · ');
+  const clanLine = String(extra(stats, 'Clan') ?? '');
+  const cut = clanLine.lastIndexOf(' · ');
+  const clanName = cut < 0 ? clanLine : clanLine.slice(0, cut);
+  const role = cut < 0 ? '' : clanLine.slice(cut + 3);
   return {
     wins: parseCount(wins),
     losses: parseCount(losses),
@@ -37,6 +40,6 @@ export function crFacts(stats: PlayerStats): CRFacts {
     bestTrophies: parseCount(stats.statLabels?.stat4Sub),
     donations: parseCount(extra(stats, 'Total Donations')),
     warDayWins: parseCount(extra(stats, 'War Day Wins')),
-    clan: clanTag && clanName ? { name: clanName, tag: clanTag, role: role ?? '' } : undefined,
+    clan: clanTag && clanName ? { name: clanName, tag: clanTag, role } : undefined,
   };
 }

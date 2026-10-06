@@ -52,4 +52,12 @@ describe('crFacts', () => {
       donations: undefined, warDayWins: undefined, clan: undefined,
     });
   });
+
+  it('splits the clan line on the last separator, so a clan name may contain one', () => {
+    const named = (value: string) =>
+      crFacts({ ...base, extraStats: [{ label: 'Clan', value }] } as unknown as PlayerStats).clan;
+    expect(named('Foo · Bar · coLeader')).toEqual({ name: 'Foo · Bar', tag: '#2Y0Y', role: 'coLeader' });
+    expect(named('Lonely clan')).toEqual({ name: 'Lonely clan', tag: '#2Y0Y', role: '' });
+    expect(named('')).toBeUndefined();
+  });
 });
