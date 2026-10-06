@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { closure, closureOf, evaluate, preloadedFonts, resolveKey, toKB } from './bundle-budget-lib.mjs';
+import { closure, closureOf, compareFontSets, evaluate, maxOfVariants, nonEmptyFiles, preloadedFonts, resolveKey, toKB, validateConfig } from './bundle-budget-lib.mjs';
 
 const manifest = {
   'index.html': { file: 'assets/index-a.js', isEntry: true, imports: ['_react-b.js', '_motion-c.js'], dynamicImports: ['src/app/pages/GamePage.tsx'] },
@@ -83,5 +83,81 @@ describe('toKB', () => {
   it('uses 1000-byte kB with two decimals', () => {
     expect(toKB(48256)).toBe(48.26);
     expect(toKB(4490)).toBe(4.49);
+  });
+});
+
+describe('compareFontSets (fonts must be measured, not assumed)', () => {
+  it('passes only when the preloaded set equals the allowed set', () => {
+    expect(compareFontSets(['/fonts/a.woff2'], ['/fonts/a.woff2']).ok).toBe(true);
+  });
+  it('fails when no font is preloaded (regex stopped matching)', () => {
+    const r = compareFontSets([], ['/fonts/a.woff2']);
+    expect(r.ok).toBe(false);
+    expect(r.missing).toEqual(['/fonts/a.woff2']);
+  });
+  it('fails on a missing or an extra font and names it', () => {
+    const r = compareFontSets(['/fonts/b.woff2'], ['/fonts/a.woff2']);
+    expect(r).toMatchObject({ ok: false, missing: ['/fonts/a.woff2'], extra: ['/fonts/b.woff2'] });
+  });
+  it('fails when nothing is allowed and nothing is found', () => {
+    expect(compareFontSets([], []).ok).toBe(false);
+  });
+});
+
+describe('nonEmptyFiles (empty set means not measured)', () => {
+  it('throws "no css measured" for an empty set', () => {
+    expect(() => nonEmptyFiles(new Set(), 'css')).toThrow(/no css measured/);
+  });
+  it('returns a non-empty set unchanged', () => {
+    const s = new Set(['a.css']);
+    expect(nonEmptyFiles(s, 'css')).toBe(s);
+  });
+});
+
+describe('validateConfig', () => {
+  const good = {
+    budgets: { initialJs: 135, playerPageJs: 180, entryJs: 8, css: 16, fonts: 50 },
+    maxPhaseGrowth: 0.05,
+    phaseGrowthExempt: ['entryJs'],
+    phaseStart: { initialJs: 122.75, playerPageJs: 163.58, css: 12.81, fonts: 48.26 },
+    playerPageEntries: ['GamePage'],
+    gameModules: [],
+    allowedPreloadFonts: ['/fonts/a.woff2'],
+  };
+  it('accepts a well-formed config (entryJs exempt from phaseStart)', () => {
+    expect(validateConfig(good)).toEqual([]);
+  });
+  it('rejects empty playerPageEntries', () => {
+    expect(validateConfig({ ...good, playerPageEntries: [] }).join('\n')).toMatch(/playerPageEntries/);
+  });
+  it('rejects a deleted phaseStart for a non-exempt line', () => {
+    expect(validateConfig({ ...good, phaseStart: {} }).join('\n')).toMatch(/phaseStart.*initialJs/);
+  });
+  it('rejects a non-numeric or missing limit', () => {
+    expect(validateConfig({ ...good, budgets: { ...good.budgets, initialJs: '135' } }).join('\n')).toMatch(/budgets\.initialJs/);
+    expect(validateConfig({ ...good, budgets: undefined }).join('\n')).toMatch(/budgets/);
+  });
+  it('rejects missing keys and empty font allow-list', () => {
+    const msg = validateConfig({ budgets: good.budgets, phaseStart: good.phaseStart }).join('\n');
+    expect(msg).toMatch(/maxPhaseGrowth/);
+    expect(msg).toMatch(/allowedPreloadFonts/);
+    expect(msg).toMatch(/gameModules/);
+    expect(validateConfig({ ...good, allowedPreloadFonts: [] }).join('\n')).toMatch(/allowedPreloadFonts/);
+  });
+  it('rejects unknown top-level keys and unknown budget lines', () => {
+    expect(validateConfig({ ...good, surprise: 1 }).join('\n')).toMatch(/unknown key "surprise"/);
+    expect(validateConfig({ ...good, budgets: { ...good.budgets, bogus: 1 } }).join('\n')).toMatch(/unknown budget line "bogus"/);
+  });
+  it('rejects an exemption naming a line that has no budget', () => {
+    expect(validateConfig({ ...good, phaseGrowthExempt: ['nope'] }).join('\n')).toMatch(/phaseGrowthExempt/);
+  });
+});
+
+describe('maxOfVariants', () => {
+  it('returns the largest value over the variants', async () => {
+    expect(await maxOfVariants([['a'], ['b'], ['c']], async ([k]) => ({ a: 1, b: 3, c: 2 })[k])).toBe(3);
+  });
+  it('fails on no variants', async () => {
+    await expect(maxOfVariants([], async () => 1)).rejects.toThrow(/no variants/);
   });
 });

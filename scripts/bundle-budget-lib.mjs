@@ -89,3 +89,69 @@ export function evaluate(measured, budget) {
     return { line, value, limit, delta: Math.round((value - limit) * 100) / 100, ok, reason };
   });
 }
+
+/**
+ * Compare the fonts preloaded by index.html with the allow-list. An empty
+ * preload set always fails: it means the link regex stopped matching (or the
+ * preload was removed) and "fonts" would otherwise measure 0 and pass.
+ */
+export function compareFontSets(found, allowed) {
+  const missing = allowed.filter((f) => !found.includes(f));
+  const extra = found.filter((f) => !allowed.includes(f));
+  return { ok: found.length > 0 && missing.length === 0 && extra.length === 0, missing, extra };
+}
+
+/** A measured set of files must not be empty: zero files is "not measured", not "0 kB". */
+export function nonEmptyFiles(files, label) {
+  if (files.size === 0) throw new Error(`no ${label} measured`);
+  return files;
+}
+
+/** Largest value of `measure` over the variants; no variants is an error, not 0. */
+export async function maxOfVariants(variants, measure) {
+  if (!variants.length) throw new Error('no variants to measure');
+  let max = -Infinity;
+  for (const v of variants) max = Math.max(max, await measure(v));
+  return max;
+}
+
+const KNOWN_KEYS = ['$comment', 'phase', 'budgets', 'maxPhaseGrowth', 'phaseGrowthExempt', 'phaseStart', 'playerPageEntries', 'gameModules', 'allowedPreloadFonts'];
+const BUDGET_LINES = ['initialJs', 'playerPageJs', 'entryJs', 'css', 'fonts'];
+const isNum = (n) => typeof n === 'number' && Number.isFinite(n);
+const isObj = (o) => o !== null && typeof o === 'object' && !Array.isArray(o);
+
+/**
+ * Shape check of scripts/bundle-budget.json. Returns a list of readable
+ * problems (empty = valid). Every budget line needs a numeric limit and a
+ * numeric phaseStart unless it is listed in phaseGrowthExempt.
+ */
+export function validateConfig(cfg) {
+  const errors = [];
+  if (!isObj(cfg)) return ['budget config must be a JSON object'];
+  for (const key of Object.keys(cfg)) if (!KNOWN_KEYS.includes(key)) errors.push(`unknown key "${key}"`);
+
+  const exempt = Array.isArray(cfg.phaseGrowthExempt) ? cfg.phaseGrowthExempt : [];
+  if (cfg.phaseGrowthExempt !== undefined && !Array.isArray(cfg.phaseGrowthExempt)) errors.push('phaseGrowthExempt must be an array');
+  if (!isNum(cfg.maxPhaseGrowth)) errors.push('maxPhaseGrowth must be a number');
+
+  if (!isObj(cfg.budgets)) {
+    errors.push('budgets must be an object');
+  } else {
+    for (const line of Object.keys(cfg.budgets)) if (!BUDGET_LINES.includes(line)) errors.push(`unknown budget line "${line}"`);
+    for (const line of BUDGET_LINES) if (!(line in cfg.budgets)) errors.push(`budgets.${line} is missing`);
+    for (const [line, limit] of Object.entries(cfg.budgets)) if (!isNum(limit)) errors.push(`budgets.${line} must be a number`);
+    for (const line of exempt) if (!(line in cfg.budgets)) errors.push(`phaseGrowthExempt names "${line}", which has no budget`);
+    if (!isObj(cfg.phaseStart)) {
+      errors.push('phaseStart must be an object');
+    } else {
+      for (const line of Object.keys(cfg.budgets)) {
+        if (!exempt.includes(line) && !isNum(cfg.phaseStart[line])) errors.push(`phaseStart.${line} must be a number (or list "${line}" in phaseGrowthExempt)`);
+      }
+    }
+  }
+
+  if (!Array.isArray(cfg.playerPageEntries) || cfg.playerPageEntries.length === 0) errors.push('playerPageEntries must be a non-empty array');
+  if (!Array.isArray(cfg.gameModules)) errors.push('gameModules must be an array (may be empty)');
+  if (!Array.isArray(cfg.allowedPreloadFonts) || cfg.allowedPreloadFonts.length === 0) errors.push('allowedPreloadFonts must be a non-empty array');
+  return errors;
+}

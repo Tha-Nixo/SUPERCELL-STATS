@@ -17,7 +17,7 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { closure, closureOf, evaluate, gzipBytes, preloadedFonts, toKB } from './bundle-budget-lib.mjs';
+import { closure, closureOf, compareFontSets, evaluate, gzipBytes, maxOfVariants, nonEmptyFiles, preloadedFonts, toKB, validateConfig } from './bundle-budget-lib.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -60,6 +60,8 @@ if (entry) console.log(`entry chunk: ${kb(entry.size)}`);
 
 // ── performance budget ──────────────────────────────────────────────────────
 const budget = JSON.parse(await readFile(path.join(ROOT, 'scripts/bundle-budget.json'), 'utf8'));
+const configErrors = validateConfig(budget);
+for (const e of configErrors) failures.push(`scripts/bundle-budget.json: ${e}`);
 let manifest = null;
 try {
   manifest = JSON.parse(await readFile(path.join(DIST, '.vite/manifest.json'), 'utf8'));
@@ -67,7 +69,7 @@ try {
   failures.push('dist/.vite/manifest.json missing: build.manifest must stay enabled in vite.config.ts');
 }
 
-if (manifest) {
+if (manifest && !configErrors.length) {
   const gzipOf = async (files) => {
     let total = 0;
     for (const file of files) total += gzipBytes(await readFile(path.join(DIST, file)));
@@ -89,25 +91,37 @@ if (manifest) {
   await measure('playerPageJs', async () => {
     const routeRefs = ['index.html', ...budget.playerPageEntries];
     const variants = budget.gameModules.length ? budget.gameModules.map((mod) => [...routeRefs, mod]) : [routeRefs];
-    let max = 0;
-    for (const refs of variants) max = Math.max(max, await gzipOf(closureOf(manifest, refs)));
-    return max;
+    return maxOfVariants(variants, (refs) => gzipOf(closureOf(manifest, refs)));
   });
-  await measure('css', () => gzipOf(new Set(Object.values(manifest).flatMap((chunk) => chunk.css ?? []))));
+  await measure('css', () => gzipOf(nonEmptyFiles(new Set(Object.values(manifest).flatMap((chunk) => chunk.css ?? [])), 'css')));
 
-  const html = await readFile(path.join(DIST, 'index.html'), 'utf8');
-  let fontBytes = 0;
-  for (const href of preloadedFonts(html)) {
-    if (!budget.allowedPreloadFonts.includes(href)) failures.push(`unexpected font on the critical path: ${href}`);
-    fontBytes += (await stat(path.join(DIST, href))).size;
-  }
-  measured.fonts = toKB(fontBytes);
+  await measure('fonts', async () => {
+    const html = await readFile(path.join(DIST, 'index.html'), 'utf8');
+    const found = preloadedFonts(html);
+    const { ok, missing, extra } = compareFontSets(found, budget.allowedPreloadFonts);
+    if (!ok) {
+      const parts = [];
+      if (!found.length) parts.push('no <link rel="preload" as="font"> found in dist/index.html');
+      if (missing.length) parts.push(`allowed but not preloaded: ${missing.join(', ')}`);
+      if (extra.length) parts.push(`preloaded but not allowed: ${extra.join(', ')}`);
+      throw new Error(`font preload set differs from allowedPreloadFonts (${parts.join('; ')})`);
+    }
+    let bytes = 0;
+    for (const href of found) {
+      try {
+        bytes += (await stat(path.join(DIST, href))).size;
+      } catch {
+        throw new Error(`preloaded font file not found in dist: ${href}`);
+      }
+    }
+    return toKB(bytes);
+  });
 
   console.log('\nperformance budget (kB, gzip; fonts raw):');
   for (const row of evaluate(measured, budget)) {
     const delta = Number.isNaN(row.delta) ? '' : `${row.delta > 0 ? '+' : ''}${row.delta.toFixed(2)}`;
     console.log(`  ${row.ok ? '✓' : '✗'} ${row.line.padEnd(13)} ${String(row.value).padStart(7)} / ${String(row.limit).padStart(7)}  ${delta}`);
-    if (!row.ok) failures.push(`${row.line} ${row.reason}: ${row.value} kB > ${row.limit} kB (${delta} kB)`);
+    if (!row.ok && row.reason !== 'not measured') failures.push(`${row.line} ${row.reason}: ${row.value} kB > ${row.limit} kB (${delta} kB)`);
   }
 }
 
