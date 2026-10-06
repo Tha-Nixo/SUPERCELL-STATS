@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CoCTroopData } from '../data/mockStats';
 import { resolveCocIcon } from '../data/cocIconIndex';
 
@@ -129,10 +129,13 @@ function TroopIcon({ troop, category, accent }: { troop: CoCTroopData; category:
     const [idx, setIdx] = useState(0);
     const [loaded, setLoaded] = useState(false);
 
-    useEffect(() => {
+    // Reset the candidate walk when the icon set changes (adjust state during render).
+    const [prevPaths, setPrevPaths] = useState(paths);
+    if (prevPaths !== paths) {
+        setPrevPaths(paths);
         setIdx(0);
         setLoaded(false);
-    }, [paths]);
+    }
 
     const hasError = idx >= paths.length;
 

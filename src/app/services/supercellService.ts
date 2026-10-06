@@ -7,7 +7,7 @@ type SupercellGame = 'clash-royale' | 'brawl-stars' | 'clash-of-clans';
 const TAG_CHARSET = /^[0289PYLQGRJCUV]+$/;
 
 export function normalizeTag(tag: string): string {
-    let t = tag.trim().toUpperCase().replace(/^#/, '').replace(/O/g, '0');
+    const t = tag.trim().toUpperCase().replace(/^#/, '').replace(/O/g, '0');
     return '#' + t;
 }
 
@@ -110,7 +110,8 @@ async function fetchSupercell<T>(url: string, apiKey: string): Promise<T> {
         throw new Error(
             e instanceof DOMException && e.name === 'AbortError'
                 ? 'The request timed out. Please try again.'
-                : 'Network error while contacting the API.'
+                : 'Network error while contacting the API.',
+            { cause: e },
         );
     } finally {
         clearTimeout(timer);
@@ -172,7 +173,7 @@ function getCRCardsTarget(level: number, rarity: string): number {
     const r = (rarity || 'common').toLowerCase();
 
     // As of Level 16 update:
-    let targets: number[] = [];
+    let targets: number[];
     if (r === 'champion') targets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 5, 8, 11, 15];
     else if (r === 'legendary') targets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 6, 9, 12, 14, 20];
     else if (r === 'epic') targets = [0, 0, 0, 0, 0, 0, 2, 4, 10, 20, 30, 50, 70, 100, 130, 180];

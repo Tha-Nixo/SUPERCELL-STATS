@@ -83,5 +83,7 @@ export function removeRecentSearch(gameId: string, tag: string) {
         const list = getRecentSearches();
         const filteredList = list.filter(item => !(item.gameId === gameId && item.tag === tag));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredList));
-    } catch { }
+    } catch {
+        /* storage unavailable (private mode / quota): nothing to remove */
+    }
 }

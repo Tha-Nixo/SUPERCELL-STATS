@@ -119,9 +119,7 @@ const BSHome = ({ playerStats, accentColor }: { playerStats: PlayerStats, accent
 };
 const BSBrawlers = ({ playerStats, accentColor }: { playerStats: PlayerStats, accentColor: string }) => {
     const bs = playerStats.gameVisuals?.bs;
-    if (!bs) return null;
-
-    const brawlers = bs.allBrawlers || [];
+    const brawlers = useMemo(() => bs?.allBrawlers ?? [], [bs]);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState<'trophies' | 'rarity'>('trophies');
@@ -178,6 +176,8 @@ const BSBrawlers = ({ playerStats, accentColor }: { playerStats: PlayerStats, ac
 
         return result;
     }, [brawlers, searchQuery, sortBy, sortOrder]);
+
+    if (!bs) return null;
 
     return (
         <div className="space-y-6">

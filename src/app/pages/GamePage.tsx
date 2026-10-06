@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import {
   Search, ArrowLeft, Trophy, Target, Clock, Award,
@@ -92,23 +92,39 @@ export default function GamePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [bsActiveTab, setBsActiveTab] = useState<string>('home');
   const [cocActiveTab, setCocActiveTab] = useState<'overview' | 'army' | 'heroes' | 'achievements'>('overview');
-  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>(
+    () => (gameId ? getRecentSearches(gameId) : []),
+  );
   const [copied, setCopied] = useState(false);
+  // Only the most recent search may write its result (a slow older one must not overwrite it).
+  const requestId = useRef(0);
 
-  // Load recent searches on mount
-  useEffect(() => {
-    if (gameId) {
-      setRecentSearches(getRecentSearches(gameId));
+  // Adjust state during render when the route changes (instead of syncing in an effect).
+  const [prevGameId, setPrevGameId] = useState(gameId);
+  if (prevGameId !== gameId) {
+    setPrevGameId(gameId);
+    setRecentSearches(gameId ? getRecentSearches(gameId) : []);
+  }
+  const [prevUrlTag, setPrevUrlTag] = useState(urlTag);
+  if (prevUrlTag !== urlTag) {
+    setPrevUrlTag(urlTag);
+    if (urlTag) {
+      setSearchInput(`#${urlTag}`);
+    } else {
+      setResult(null);
+      setIsLoading(false);
     }
-  }, [gameId]);
+  }
 
   const performSearch = useCallback(async (tag: string) => {
     const trimmed = tag.trim();
     if (!trimmed || !gameId) return;
+    const myRequest = ++requestId.current;
     setIsLoading(true);
     // The previous result stays on screen (dimmed) while the next one loads:
     // blanking it makes every search look like the page broke.
     const res = await searchPlayer(gameId, trimmed);
+    if (myRequest !== requestId.current) return;
     setResult(res);
     setIsLoading(false);
 
@@ -121,10 +137,11 @@ export default function GamePage() {
   // The URL is the source of truth for which player is shown.
   useEffect(() => {
     if (!urlTag) {
-      setResult(null);
+      requestId.current++;   // invalidate any in-flight search
       return;
     }
-    setSearchInput(`#${urlTag}`);
+    // Fetch-on-URL-change: performSearch sets the loading flag before awaiting; no cheaper derivation exists.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void performSearch(`#${urlTag}`);
   }, [urlTag, performSearch]);
 
