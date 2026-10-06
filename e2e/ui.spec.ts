@@ -11,7 +11,7 @@ test('the page background comes from the --bg token', async ({ page }) => {
 });
 
 test('the 404 page uses the shared empty state, no emoji, 44px action', async ({ page }) => {
-  const problems = watch(page);
+  const problems = watch(page, [], { documentNotFound: true });
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto('/definitely-not-a-page');
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
