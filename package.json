@@ -11,7 +11,8 @@
     "test": "vitest run",
     "images": "node scripts/optimize-images.mjs",
     "lint": "eslint .",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.487.0",
