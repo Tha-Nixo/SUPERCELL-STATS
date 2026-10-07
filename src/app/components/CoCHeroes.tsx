@@ -81,7 +81,7 @@ function HeroCard({ hero, showEquipment }: { hero: CoCHeroData; showEquipment: b
           className="size-14 shrink-0 rounded-lg bg-surface-2 object-cover sm:size-16"
         />
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-fg break-words">{hero.name}</h3>
+          <h4 className="text-base font-semibold text-fg break-words">{hero.name}</h4>
           <LevelText item={hero} percent />
           {!f.locked && <ProgressBar pct={f.pct} className="mt-2" />}
         </div>
