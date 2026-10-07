@@ -298,3 +298,23 @@ test.describe('Achievements tab', () => {
     await expect(panel(page).getByTestId('achievement').filter({ hasText: 'Gold Grab' }).getByText('Steal 100,000,000 gold')).toBeVisible();
   });
 });
+
+// The live API through the preview's /api proxy (vite.config.ts). Tag from the environment only.
+const realTag = process.env.E2E_COC_TAG?.replace(/^#/, '');
+test('a real Clash of Clans player renders every tab without errors', async ({ page }) => {
+  test.skip(!realTag, 'set E2E_COC_TAG');
+  test.setTimeout(60000);
+  const problems = watch(page);
+  await page.goto(`/game/clash-of-clans/player/${encodeURIComponent(realTag!)}`, { waitUntil: 'networkidle' });
+  await expect(panel(page).getByText('War stars', { exact: true })).toBeVisible({ timeout: 15000 });
+  await expectNoEmoji(panel(page));
+  await page.getByRole('tab', { name: 'Army' }).click();
+  await expect(panel(page).getByTestId('coc-item').first()).toBeVisible();
+  await expectNoEmoji(panel(page));
+  await page.getByRole('tab', { name: 'Heroes and equipment' }).click();
+  await expect(panel(page).getByTestId('hero-card').first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Achievements' }).click();
+  await expect(panel(page).getByText(/^Showing \d+ of \d+ achievements$/)).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  expect(problems).toEqual([]);
+});

@@ -26,10 +26,11 @@ async function recordOverflow(page: Page) {
 }
 const maxOverflow = (page: Page) => page.evaluate(() => (window as unknown as { __maxOverflow: number }).__maxOverflow);
 
-// Every Clash Royale and Brawl Stars tab (phases 2 and 3), filtered Battles views included.
+// Every Clash Royale, Brawl Stars and Clash of Clans tab, filtered Battles views included.
 const PAGES = [
   ...['', '?tab=cards', '?tab=deck', '?tab=battles', '?tab=battles&result=loss&mode=ladder', '?tab=towers'].map((search) => ({ game: 'clash-royale', search })),
   ...['', '?tab=brawlers', '?tab=progression', '?tab=battles', '?tab=battles&mode=solo-showdown&result=loss', '?tab=club'].map((search) => ({ game: 'brawl-stars', search })),
+  ...['', '?tab=army', '?tab=heroes', '?tab=achievements'].map((search) => ({ game: 'clash-of-clans', search })),
 ];
 
 for (const { game, search } of PAGES) {
@@ -77,6 +78,7 @@ test('searching and sorting brawlers and filtering Brawl Stars battles never ove
 const TAB_NAMES = {
   'clash-royale': [/^Cards/, 'Deck', 'Battles', 'Tower troops', 'Overview'],
   'brawl-stars': [/^Brawlers/, 'Progression', 'Battles', 'Club', 'Overview'],
+  'clash-of-clans': ['Army', 'Heroes and equipment', 'Achievements', 'Overview'],
 } as const;
 for (const viewport of [{ width: 320, height: 640 }, { width: 390, height: 844 }, { width: 1440, height: 900 }]) {
   for (const [game, names] of Object.entries(TAB_NAMES)) {
@@ -106,6 +108,30 @@ test('a battle whose map name is one 80-character word never overflows a 320px s
   await recordOverflow(page);
   await page.goto(`/game/brawl-stars/player/${FIXTURE_TAG}?tab=battles`);
   await expect(page.getByTestId('battle-row')).toHaveCount(1);
+  await page.waitForTimeout(500);
+  expect(await maxOverflow(page)).toBe(0);
+});
+
+test('filtering achievements and a long name never overflow a 320px screen', async ({ page }) => {
+  const longName = 'W'.repeat(60);
+  await mockApi(page, {
+    patch: {
+      'clash-of-clans': {
+        clan: { tag: '#2Y0Y', name: longName, clanLevel: 18 },
+        troops: [{ name: longName, level: 1, maxLevel: 2, village: 'home' }],
+      },
+    },
+  });
+  await recordOverflow(page);
+  await page.goto(`/game/clash-of-clans/player/${FIXTURE_TAG}`);
+  await expect(page.getByRole('tabpanel').getByText(longName)).toBeVisible();
+  await page.getByRole('tab', { name: 'Army' }).click();
+  await expect(page.getByRole('tabpanel').getByText(longName)).toBeVisible();
+  await page.getByRole('tab', { name: 'Achievements' }).click();
+  const panel = page.getByRole('tabpanel');
+  for (const option of ['Builder base', 'In progress', 'Clan capital', 'Completed', 'All']) {
+    await panel.locator('label').filter({ hasText: new RegExp(`^${option}\\s*\\d+$`) }).first().click();
+  }
   await page.waitForTimeout(500);
   expect(await maxOverflow(page)).toBe(0);
 });
