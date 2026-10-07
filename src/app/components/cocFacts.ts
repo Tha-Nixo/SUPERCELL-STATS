@@ -14,11 +14,13 @@ export interface Leveled {
  * Level progress. Level 0 means not unlocked: the mapper adds missing heroes,
  * pets and siege machines with level 0 and a guessed max, so no max is shown for them.
  */
-export function levelFacts(item: Leveled): { locked: boolean; maxed: boolean; pct: number } {
-  const locked = item.level <= 0;
-  const maxed = !locked && item.maxLevel > 0 && item.level >= item.maxLevel;
-  const pct = locked || item.maxLevel <= 0 ? 0 : Math.min(100, Math.round((item.level / item.maxLevel) * 100));
-  return { locked, maxed, pct };
+export function levelFacts(item: Leveled): { locked: boolean; maxed: boolean; hasMax: boolean; pct: number } {
+  // `!(x > 0)` also catches undefined and NaN, which `x <= 0` lets through.
+  const locked = !(item.level > 0);
+  const hasMax = item.maxLevel > 0;
+  const maxed = !locked && hasMax && item.level >= item.maxLevel;
+  const pct = locked || !hasMax ? 0 : Math.min(100, Math.round((item.level / item.maxLevel) * 100));
+  return { locked, maxed, hasMax, pct };
 }
 
 /** The printed and spoken level; with no usable max (missing or 0) only the level is printed. */
@@ -92,6 +94,19 @@ export function isAchievementDone(a: CoCAchievement): boolean {
 /** Completed achievements without stars (account safety) show no star row. */
 export function showStars(a: CoCAchievement): boolean {
   return a.stars > 0 || !isAchievementDone(a);
+}
+
+/**
+ * The star row of an achievement: hidden for completed ones without stars; a completed one shows only
+ * the stars it earned and says "N star(s)", an open one shows three slots and says "N of 3 stars".
+ */
+export function starsFacts(a: CoCAchievement): { show: boolean; earnedOnly: boolean; spoken: string } {
+  const earnedOnly = isAchievementDone(a);
+  return {
+    show: showStars(a),
+    earnedOnly,
+    spoken: earnedOnly ? `${a.stars} ${a.stars === 1 ? 'star' : 'stars'}` : `${a.stars} of 3 stars`,
+  };
 }
 
 /** '2000000000' -> '2,000,000,000' inside API text. The API sends ASCII digits; four or more get separators. */

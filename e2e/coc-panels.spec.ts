@@ -130,6 +130,9 @@ test.describe('Army tab', () => {
     await expect(items.filter({ hasText: 'Barbarian' }).locator('.sr-only')).toHaveText('Level 11 of 12');
     await expect(section(page, 'Spells').getByTestId('coc-item').locator('.sr-only')).toHaveText('Level 2');
     await expect(panel(page).getByText(/\/ (0|undefined)?$/)).toHaveCount(0);
+    await expect(panel(page).getByText('NaN')).toHaveCount(0);
+    await expect(panel(page).locator('[style*="NaN"]')).toHaveCount(0);
+    expect(await panel(page).innerText()).not.toContain('NaN');
   });
 
   test('super troops show no level, and the boosted one says so', async ({ page }) => {
@@ -249,6 +252,20 @@ test.describe('Achievements tab', () => {
     await expect(conqueror).toContainText('Completed');
     // A completed achievement without stars shows no star row.
     await expect(tiles.filter({ hasText: 'Keep Your Account Safe!' })).not.toContainText('of 3 stars');
+  });
+
+  test('a completed single-tier achievement shows only its earned stars, never "of 3"', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    const tiles = panel(page).getByTestId('achievement');
+    const slayer = tiles.filter({ hasText: 'Dragon Slayer' });
+    await expect(slayer.locator('svg.lucide-star')).toHaveCount(1);
+    await expect(slayer.locator('.sr-only').filter({ hasText: /^1 star$/ })).toHaveCount(1);
+    await expect(slayer).not.toContainText('of 3');
+    // Still three slots while in progress, and three earned stars read "3 stars".
+    await expect(tiles.filter({ hasText: 'Gold Grab' }).locator('svg.lucide-star')).toHaveCount(3);
+    await expect(tiles.filter({ hasText: 'Conqueror' }).locator('svg.lucide-star')).toHaveCount(3);
+    await expect(tiles.filter({ hasText: 'Conqueror' })).toContainText('3 stars');
   });
 
   test('filters combine, and an empty result offers a reset that returns focus', async ({ page }) => {

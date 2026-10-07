@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CoCAchievement, CoCHeroData } from '../../data/mockStats';
 import {
   ACHIEVEMENT_VILLAGES, ARMY_SECTIONS, achievementView, equipmentList, groupDigits, isAchievementDone, levelFacts, roleLabel,
-  levelText, sectionFacts, showStars, splitHeroes,
+  levelText, sectionFacts, showStars, splitHeroes, starsFacts, type Leveled,
 } from '../cocFacts';
 
 const ach = (name: string, stars: number, value: number, target: number, completionInfo: string | null = null, village = 'home'): CoCAchievement =>
@@ -12,14 +12,24 @@ const hero = (name: string, shortName: string, level: number, equipment: Array<{
 
 describe('levelFacts', () => {
   it('reads level 0 as not unlocked, with no progress', () => {
-    expect(levelFacts({ level: 0, maxLevel: 10 })).toEqual({ locked: true, maxed: false, pct: 0 });
+    expect(levelFacts({ level: 0, maxLevel: 10 })).toEqual({ locked: true, maxed: false, hasMax: true, pct: 0 });
   });
   it('marks max level and rounds the share', () => {
-    expect(levelFacts({ level: 12, maxLevel: 12 })).toEqual({ locked: false, maxed: true, pct: 100 });
-    expect(levelFacts({ level: 85, maxLevel: 95 })).toEqual({ locked: false, maxed: false, pct: 89 });
+    expect(levelFacts({ level: 12, maxLevel: 12 })).toEqual({ locked: false, maxed: true, hasMax: true, pct: 100 });
+    expect(levelFacts({ level: 85, maxLevel: 95 })).toEqual({ locked: false, maxed: false, hasMax: true, pct: 89 });
   });
   it('survives a missing or zero max', () => {
-    expect(levelFacts({ level: 3, maxLevel: 0 })).toEqual({ locked: false, maxed: false, pct: 0 });
+    expect(levelFacts({ level: 3, maxLevel: 0 })).toEqual({ locked: false, maxed: false, hasMax: false, pct: 0 });
+    expect(levelFacts({ level: 3 } as unknown as Leveled)).toEqual({ locked: false, maxed: false, hasMax: false, pct: 0 });
+    expect(levelFacts({ level: 3, maxLevel: NaN })).toEqual({ locked: false, maxed: false, hasMax: false, pct: 0 });
+  });
+  it('never returns NaN for a missing, NaN or negative level', () => {
+    expect(levelFacts({ level: undefined as unknown as number, maxLevel: 10 })).toEqual({ locked: true, maxed: false, hasMax: true, pct: 0 });
+    expect(levelFacts({ level: NaN, maxLevel: 10 }).pct).toBe(0);
+    expect(levelFacts({ level: -2, maxLevel: 10 })).toEqual({ locked: true, maxed: false, hasMax: true, pct: 0 });
+  });
+  it('caps the share at 100 when the level is above the max', () => {
+    expect(levelFacts({ level: 15, maxLevel: 12 })).toEqual({ locked: false, maxed: true, hasMax: true, pct: 100 });
   });
 });
 
@@ -93,6 +103,13 @@ describe('achievements', () => {
     expect(showStars(ach('Keep Your Account Safe!', 0, 0, 1, 'Completed!'))).toBe(false);
     expect(showStars(ach('Gold Grab', 0, 10, 100))).toBe(true);
     expect(showStars(ach('Dragon Slayer', 1, 5, 1))).toBe(true);
+  });
+  it('describes stars: placeholders and "of 3" only while in progress', () => {
+    expect(starsFacts(ach('Gold Grab', 2, 10, 100))).toEqual({ show: true, earnedOnly: false, spoken: '2 of 3 stars' });
+    expect(starsFacts(ach('Gold Grab', 0, 10, 100))).toEqual({ show: true, earnedOnly: false, spoken: '0 of 3 stars' });
+    expect(starsFacts(ach('Dragon Slayer', 1, 5, 1))).toEqual({ show: true, earnedOnly: true, spoken: '1 star' });
+    expect(starsFacts(ach('Conqueror', 3, 8000, 5000))).toEqual({ show: true, earnedOnly: true, spoken: '3 stars' });
+    expect(starsFacts(ach('Keep Your Account Safe!', 0, 0, 1, 'Completed!')).show).toBe(false);
   });
   it('groups long ASCII numbers in API text and leaves short ones alone', () => {
     expect(groupDigits('Total Gold looted: 2000000000')).toBe('Total Gold looted: 2,000,000,000');

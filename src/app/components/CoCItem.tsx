@@ -11,7 +11,7 @@ export function LevelText({ item, percent = false }: { item: Leveled; percent?: 
     <span className="inline-flex flex-wrap items-baseline gap-x-1.5 text-xs tabular-nums text-fg-muted">
       <span aria-hidden="true">{text.visible}</span>
       <span className="sr-only">{text.spoken}</span>
-      {percent && !f.maxed && <span className="text-fg-subtle">· {f.pct}%</span>}
+      {percent && f.hasMax && !f.maxed && <span className="text-fg-subtle">· {f.pct}%</span>}
       {f.maxed && <span className="font-semibold text-accent">Max</span>}
     </span>
   );

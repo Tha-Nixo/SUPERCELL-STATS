@@ -9,7 +9,7 @@ import { FilterGroup } from '../ui/FilterGroup';
 import { ProgressBar } from '../ui/ProgressBar';
 import { StatTile } from '../ui/StatTile';
 import {
-  ACHIEVEMENT_STATUSES, ACHIEVEMENT_VILLAGES, achievementView, groupDigits, isAchievementDone, showStars,
+  ACHIEVEMENT_STATUSES, ACHIEVEMENT_VILLAGES, achievementView, groupDigits, isAchievementDone, starsFacts,
   type AchievementStatus, type AchievementVillage,
 } from './cocFacts';
 
@@ -79,12 +79,13 @@ export function CoCAchievements({ achievements }: { achievements: readonly CoCAc
 
 function AchievementTile({ achievement: a }: { achievement: CoCAchievement }) {
   const done = isAchievementDone(a);
+  const stars = starsFacts(a);
   const pct = a.target > 0 ? (a.value / a.target) * 100 : 0;
   return (
     <li data-testid="achievement" className="flex min-w-0 flex-col gap-2 rounded-card border border-line bg-surface-1 p-3 sm:p-4">
       <div className="flex items-start justify-between gap-3">
         <h3 className="min-w-0 text-sm font-semibold text-fg break-words">{a.name}</h3>
-        {showStars(a) && <Stars count={a.stars} />}
+        {stars.show && <Stars count={a.stars} earnedOnly={stars.earnedOnly} spoken={stars.spoken} />}
       </div>
       {a.info && <p className={cx('text-xs text-fg-muted', done && 'max-sm:sr-only')}>{groupDigits(a.info)}</p>}
       {done ? (
@@ -117,13 +118,14 @@ function AchievementTile({ achievement: a }: { achievement: CoCAchievement }) {
   );
 }
 
-function Stars({ count }: { count: number }) {
+function Stars({ count, earnedOnly, spoken }: { count: number; earnedOnly: boolean; spoken: string }) {
+  const slots = earnedOnly ? Math.min(3, Math.max(0, count)) : 3;
   return (
     <span className="inline-flex shrink-0 items-center gap-0.5 pt-0.5">
-      {[0, 1, 2].map((i) => (
+      {Array.from({ length: slots }, (_, i) => (
         <Star key={i} aria-hidden="true" className={cx('size-3.5', i < count ? 'fill-current text-accent' : 'text-fg-subtle')} />
       ))}
-      <span className="sr-only">{count} of 3 stars</span>
+      <span className="sr-only">{spoken}</span>
     </span>
   );
 }
