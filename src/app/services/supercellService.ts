@@ -716,8 +716,11 @@ const COC_HEROES: Record<string, { shortName: string; emoji: string; color: stri
 async function searchClashOfClans(tag: string): Promise<PlayerStats> {
     const key = apiKeys.get('clashOfClans');
     const encodedTag = encodeURIComponent(normalizeTag(tag));
+    return mapClashOfClansPlayer(await fetchSupercell<any>(`/api/clash-of-clans/players/${encodedTag}`, key));
+}
 
-    const player = await fetchSupercell<any>(`/api/clash-of-clans/players/${encodedTag}`, key);
+/** The raw /players/{tag} payload as PlayerStats. Pure, so it is unit tested without a network. */
+export function mapClashOfClansPlayer(player: any): PlayerStats {
 
     const warStars: number = player.warStars ?? 0;
     const donations: number = player.donations ?? 0;
@@ -796,8 +799,8 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
 
     const isSiegeName = (n: string) => n.includes('Wall Wrecker') || n.includes('Battle Blimp') || n.includes('Stone Slammer') || n.includes('Siege Barracks') || n.includes('Log Launcher') || n.includes('Flame Flinger') || n.includes('Battle Drill') || n === 'Drill' || n.includes('Troop Launcher');
     const isPetName = (n: string) => n.includes('L.A.S.S.I') || n.includes('Electro Owl') || n.includes('Mighty Yak') || n.includes('Unicorn') || n.includes('Frosty') || n.includes('Diggy') || n.includes('Poison Lizard') || n.includes('Phoenix') || n.includes('Spirit Fox') || n.includes('Angry Jelly') || n.includes('Sneezy') || n.includes('Greedy Raven');
-    const isSuperName = (n: string) => n !== 'Super Yeti' && (n.includes('Super ') || n.includes('Sneaky ') || n.includes('Rocket ') || n === 'Ice Hound' || n === 'Inferno Dragon');
-    const isExtraBaseTroop = (n: string) => ['Skeleton', 'Meteor Golem'].includes(n);
+    const isSuperName = (n: string) => n.includes('Super ') || n.includes('Sneaky ') || n.includes('Rocket ') || n === 'Ice Hound' || n === 'Inferno Dragon';
+    const isExtraBaseTroop = (n: string) => n === 'Skeleton';
 
     const troops = rawTroops
         .filter(t => t.village === 'home' && !isSiegeName(t.name) && !isPetName(t.name) && !isSuperName(t.name) && !isExtraBaseTroop(t.name) && !COC_HEROES[t.name])
@@ -805,7 +808,7 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
 
     const superTroops = rawTroops
         .filter(t => t.village === 'home' && isSuperName(t.name))
-        .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel }));
+        .map(t => ({ name: t.name, level: t.level, maxLevel: t.maxLevel, active: t.superTroopIsActive === true }));
 
     const builderBaseTroops = rawTroops
         .filter(t => t.village === 'builderBase' && !isPetName(t.name) && !COC_HEROES[t.name])
@@ -875,7 +878,7 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
             : 0,
         totalMatches,
         hoursPlayed: donations,
-        level: thLevel,
+        level: player.expLevel ?? 0,
         recentMatches: [],
         performanceData: [],
         statLabels: {
@@ -913,6 +916,13 @@ async function searchClashOfClans(tag: string): Promise<PlayerStats> {
                 builderBaseTrophies,
                 bestBuilderBaseTrophies,
                 warStars,
+                expLevel: player.expLevel ?? 0,
+                bestTrophies,
+                donations,
+                donationsReceived,
+                lifetimeAttackWins,
+                lifetimeDefenseWins,
+                clanTag: player.clan?.tag,
                 leagueName,
                 leagueBadgeUrl,
                 clanName,
