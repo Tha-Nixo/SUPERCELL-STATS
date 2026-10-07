@@ -34,10 +34,12 @@ test('Brawl Stars latest battles show the map, the time, the duration and the Sh
   await expect(rows.first()).toContainText('+8');
   const showdown = rows.nth(2);
   await expect(showdown).toContainText('Solo Showdown');
-  await expect(showdown).toContainText('Win');
-  await expect(showdown.getByText('Placed 1st')).toHaveCount(1);
-  // Team battles have no placement: the column stays, empty, so trophy changes line up.
-  await expect(rows.first().getByText(/Placed/)).toHaveCount(0);
+  // A Showdown row says where it finished and why it is green, never "Win".
+  await expect(showdown).toContainText('1st');
+  await expect(showdown).toContainText('Trophy gain');
+  await expect(showdown).not.toContainText(/\bWin\b/);
+  await expect(rows.first()).toContainText('Win');
+  await expect(rows.first().getByText(/Placed|Trophy gain/)).toHaveCount(0);
   await expectNoEmoji(rows.first().locator('xpath=..'));
   expect(problems).toEqual([]);
 });

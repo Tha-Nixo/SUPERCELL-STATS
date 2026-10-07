@@ -34,7 +34,10 @@ test('lists every battle with its summary, counts per option and Showdown placem
   await expect(p.getByText('5 / 3 / 1')).toBeVisible();
   await expect(p.getByText('3 of 9 battles')).toBeVisible();
   // Placement only on Showdown rows; a friendly battle shows no trophy change.
-  await expect(p.getByText(/^Placed /)).toHaveCount(4);
+  await expect(p.getByText(/Trophy gain|Trophy loss|Top half|Bottom half/)).toHaveCount(4);
+  await expect(rows(page).nth(2)).toContainText('1st');
+  await expect(rows(page).nth(2)).not.toContainText(/\bWin\b/);
+  await expect(p.getByText('Gain or top half')).toHaveCount(0);
   await expect(rows(page).nth(6)).toContainText('Super Beach');
   await expect(rows(page).nth(6)).not.toContainText(/[+-]\d/);
   await expectNoEmoji(p);
@@ -46,15 +49,20 @@ test('a Showdown filter keeps placements, rescopes the tiles and survives reload
   await mode(page).getByText('Solo Showdown').click();
   await expect(rows(page)).toHaveCount(3);
   expect(params(page)).toEqual({ tab: 'battles', mode: 'solo-showdown' });
-  await expect(result(page).getByRole('radio', { name: 'Wins 2' })).toBeVisible();
-  await expect(result(page).getByRole('radio', { name: 'Draws 0' })).toBeVisible();
+  // Placement-based logs: honest labels, same values.
+  await expect(result(page).getByRole('radio', { name: 'Gains 2' })).toBeVisible();
+  await expect(result(page).getByRole('radio', { name: 'Even 0' })).toBeVisible();
+  await expect(result(page).getByRole('radio', { name: /^Wins/ })).toHaveCount(0);
+  await expect(result(page).locator('input[value="win"]')).toHaveCount(1);
   // Tiles follow the mode: 2 W / 1 L, +12 -6 +2.
   await expect(panel(page).getByText('67%', { exact: true })).toBeVisible();
+  await expect(panel(page).getByText('Gain or top half')).toBeVisible();
   await expect(panel(page).getByText('+8', { exact: true })).toBeVisible();
 
   await result(page).getByText('Losses').click();
   await expect(rows(page)).toHaveCount(1);
-  await expect(rows(page).getByText('Placed 7th')).toHaveCount(1);
+  await expect(rows(page)).toContainText('7th');
+  await expect(rows(page)).toContainText('Trophy loss');
   expect(params(page)).toEqual({ tab: 'battles', mode: 'solo-showdown', result: 'loss' });
 
   await page.reload();

@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import { Crown, Medal, Minus, Trophy, X } from 'lucide-react';
 import type { Match } from '../data/mockStats';
-import { trophyLabel, trophyQualifier } from '../ui/battleFilters';
+import { placementVerdict, trophyLabel, trophyQualifier } from '../ui/battleFilters';
 import { cx } from '../ui/cx';
 import { Pill, type PillTone } from '../ui/Pill';
 import { ordinal } from '../ui/text';
@@ -25,8 +25,9 @@ const RESULT: Record<Match['result'], { label: string; tone: PillTone; icon: Rea
 
 /**
  * A list of battles, newest first, one row each: result, mode, map and date,
- * then crowns or Showdown placement and the trophy change when the game
- * reports them. Used by both overviews and both Battles tabs; the caller
+ * then crowns and the trophy change when the game
+ * reports them. A Showdown row's pill shows the placement and why it is
+ * green or red (placementVerdict). Used by both overviews and both Battles tabs; the caller
  * provides the surrounding Card.
  */
 export function MatchHistory({ matches }: MatchHistoryProps) {
@@ -34,25 +35,33 @@ export function MatchHistory({ matches }: MatchHistoryProps) {
   const trophyColumn = matches.some((m) => m.score !== undefined);
   // Room for the "PoL" tag, only in lists that contain such a row.
   const qualified = matches.some((m) => m.score !== undefined && trophyQualifier(m.mode));
-  // One placement column too, so trophy changes line up between Showdown and team battles.
-  const placementColumn = matches.some((m) => m.placement !== undefined);
   return (
     <ol className="divide-y divide-line">
       {matches.map((match) => {
         const result = RESULT[match.result];
+        const verdict = placementVerdict(match);
         return (
           <li key={match.id} data-testid="battle-row" className="flex min-h-14 items-center gap-3 py-3">
-            <Pill tone={result.tone} icon={result.icon} className="w-20 shrink-0 justify-center">
-              {result.label}
-            </Pill>
+            {verdict !== undefined && match.placement !== undefined ? (
+              <Pill tone={result.tone} icon={<Medal />} className="w-20 shrink-0 justify-center">
+                <span className="sr-only">Placed </span>
+                {ordinal(match.placement)}
+                <span className="sr-only">, {verdict}</span>
+              </Pill>
+            ) : (
+              <Pill tone={result.tone} icon={result.icon} className="w-20 shrink-0 justify-center">
+                {result.label}
+              </Pill>
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-fg wrap-anywhere">{match.mode}</p>
               {/* Each part stays on one line; a narrow row breaks between them, never inside one. */}
               <p className="text-xs text-fg-subtle">
                 {[match.map, match.date, match.duration].filter(Boolean).map((part, i) => (
                   <Fragment key={i}>
-                    {i > 0 && ' · '}
-                    <span className="whitespace-nowrap">{part}</span>
+                    {i > 0 && ' '}
+                    {/* The separator belongs to the part after it, so no line ends with one. */}
+                    <span className="whitespace-nowrap">{i > 0 && '· '}{part}</span>
                   </Fragment>
                 ))}
               </p>
@@ -63,17 +72,6 @@ export function MatchHistory({ matches }: MatchHistoryProps) {
                   <Crown aria-hidden="true" className="size-4 text-fg-subtle" />
                   <span className="sr-only">Crowns </span>
                   {match.kills}–{match.deaths ?? 0}
-                </span>
-              )}
-              {placementColumn && (
-                <span className="inline-flex w-12 items-center gap-1 text-fg-muted">
-                  {match.placement !== undefined && (
-                    <>
-                      <Medal aria-hidden="true" className="size-4 shrink-0 text-fg-subtle" />
-                      <span className="sr-only">Placed </span>
-                      {ordinal(match.placement)}
-                    </>
-                  )}
                 </span>
               )}
               {trophyColumn && (

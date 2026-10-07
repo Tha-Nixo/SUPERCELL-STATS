@@ -6,10 +6,10 @@ import { FIXTURE_TAG, mockApi } from './support/mockApi';
 const BUDGET = 0.05;
 const PAGES = [
   ...['', '?tab=cards', '?tab=deck', '?tab=battles', '?tab=towers'].map((search) => ({ game: 'clash-royale', search })),
-  { game: 'brawl-stars', search: '' },
+  ...['', '?tab=battles', '?tab=battles&mode=solo-showdown&result=loss'].map((search) => ({ game: 'brawl-stars', search })),
 ];
 
-for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 320, height: 640 }]) {
   for (const { game, search } of PAGES) {
     test(`${game}${search} player page shifts no more than the budget at ${viewport.width}px`, async ({ page }) => {
       await page.setViewportSize(viewport);

@@ -1,13 +1,15 @@
 import type { BSBattleLogItem } from '../data/mockStats';
 import { prettyMode } from '../services/supercellService';
+import type { BattleResult } from '../ui/battleFilters';
 import type { BattleRow } from './MatchHistory';
 
 const RESULTS: Record<string, BattleRow['result']> = { victory: 'win', defeat: 'loss', draw: 'draw' };
 
 /** API battle time ("20261006T095500.000Z") as "Oct 6, 9:55 AM" in the visitor's time zone; '' when unreadable. */
 export function battleTime(raw: string): string {
-  const m = raw.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/);
-  const d = new Date(m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z` : raw);
+  const text = String(raw ?? '');
+  const m = text.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/);
+  const d = new Date(m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z` : text);
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
@@ -34,6 +36,16 @@ export function bsBattleRows(log: readonly BSBattleLogItem[] | undefined): Battl
     map: b.event.map || undefined,
     placement: typeof b.battle.rank === 'number' ? b.battle.rank : undefined,
   }));
+}
+
+/** True when every battle has a Showdown placement: such a list's outcomes are trophy gains or top-half finishes, not victories. */
+export function placementBased(rows: readonly BattleRow[]): boolean {
+  return rows.length > 0 && rows.every((b) => b.placement !== undefined);
+}
+
+/** Result filter labels for a placement-based list (the URL values stay win, loss, draw); undefined for any other list. */
+export function bsResultLabels(rows: readonly BattleRow[]): Partial<Record<BattleResult, string>> | undefined {
+  return placementBased(rows) ? { win: 'Gains', loss: 'Losses', draw: 'Even' } : undefined;
 }
 
 export interface BattleSummary {

@@ -1,7 +1,7 @@
 import { Award, Percent, Shield, Target, Trophy } from 'lucide-react';
 import { BSBattleSummary } from '../../components/BSBattleSummary';
 import { BSBrawlers, BSClub, BSHome, BSProgression } from '../../components/BSProfile';
-import { bsBattleRows } from '../../components/bsFacts';
+import { bsBattleRows, bsResultLabels } from '../../components/bsFacts';
 import type { PlayerStats } from '../../data/mockStats';
 import { EmptyState } from '../../ui/EmptyState';
 import { StatTile } from '../../ui/StatTile';
@@ -43,7 +43,7 @@ export default function BrawlStars({ game, playerStats, tab, onTabChange }: Game
     case 'progression':
       return <BSProgression playerStats={playerStats} accentColor={accent} />;
     case 'battles':
-      return <BattlesPanel matches={battles} summary={(scope) => <BSBattleSummary battles={scope} />} />;
+      return <BattlesPanel matches={battles} summary={(scope) => <BSBattleSummary battles={scope} />} resultLabels={bsResultLabels} />;
     case 'club':
       return bs.club ? (
         <BSClub playerStats={playerStats} accentColor={accent} />

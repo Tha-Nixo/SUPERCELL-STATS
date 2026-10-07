@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { BSBattleLogItem } from '../../data/mockStats';
-import { battleSummary, battleTime, bsBattleRows, formatDuration } from '../bsFacts';
+import { battleSummary, battleTime, bsBattleRows, bsResultLabels, formatDuration, placementBased } from '../bsFacts';
 
 // Times are shown in the visitor's zone; pin one for the assertions.
 process.env.TZ = 'UTC';
@@ -17,6 +17,9 @@ describe('battleTime', () => {
   });
   it('is empty for an unreadable time', () => {
     expect(battleTime('soon')).toBe('');
+  });
+  it('never throws on a battle without a usable time', () => {
+    for (const raw of [undefined, null, 20261006, 'soon', '']) expect(battleTime(raw as unknown as string)).toBe('');
   });
 });
 
@@ -63,5 +66,18 @@ describe('battleSummary', () => {
   it('has no win rate or top mode without battles, and no win rate with draws only', () => {
     expect(battleSummary([])).toEqual({ wins: 0, losses: 0, draws: 0, winRate: undefined, netTrophies: 0, topMode: undefined });
     expect(battleSummary([row('Gem Grab', 'draw', 0)]).winRate).toBeUndefined();
+  });
+});
+
+describe('placement-based battles', () => {
+  const row = (placement?: number) => ({ id: 'x', mode: 'Solo Showdown', result: 'win' as const, date: '', duration: '', placement });
+  it('are logs where every battle has a placement', () => {
+    expect(placementBased([row(1), row(7)])).toBe(true);
+    expect(placementBased([row(1), row()])).toBe(false);
+    expect(placementBased([])).toBe(false);
+  });
+  it('rename the result filters to what the outcome measures, keeping the others', () => {
+    expect(bsResultLabels([row(4)])).toEqual({ win: 'Gains', loss: 'Losses', draw: 'Even' });
+    expect(bsResultLabels([row(4), row()])).toBeUndefined();
   });
 });

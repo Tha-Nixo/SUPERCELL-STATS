@@ -48,6 +48,17 @@ export function trophyQualifier(mode: string): string | null {
   return mode === 'Path of Legend' ? 'PoL' : null;
 }
 
+/**
+ * Why a Showdown row (one with a placement) is green or red. The outcome is the
+ * game's trophy verdict (trophy sign first, then the top half of the entrants),
+ * not a victory, so rows say that instead of "Win"/"Loss". Undefined without a placement.
+ */
+export function placementVerdict(b: { result: BattleResult; score?: number; placement?: number }): string | undefined {
+  if (b.placement === undefined || b.result === 'draw') return b.placement === undefined ? undefined : 'Draw';
+  if (b.score) return b.score > 0 ? 'Trophy gain' : 'Trophy loss';
+  return b.result === 'win' ? 'Top half' : 'Bottom half';
+}
+
 /** URL-safe id of a mode label: 'Path of Legend' -> 'path-of-legend'. Never 'all'. */
 export function modeSlug(mode: string): string {
   const slug = mode
