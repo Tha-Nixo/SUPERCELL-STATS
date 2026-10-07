@@ -55,13 +55,13 @@ export function MatchHistory({ matches }: MatchHistoryProps) {
             )}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-fg wrap-anywhere">{match.mode}</p>
-              {/* Each part stays on one line; a narrow row breaks between them, never inside one. */}
+              {/* A narrow row breaks between the parts, never inside one; only the free-text map name may break when it alone is wider than the row. */}
               <p className="text-xs text-fg-subtle">
-                {[match.map, match.date, match.duration].filter(Boolean).map((part, i) => (
+                {[match.map, match.date, match.duration].map((part, k) => ({ part, long: k === 0 })).filter((x) => x.part).map(({ part, long }, i) => (
                   <Fragment key={i}>
                     {i > 0 && ' '}
                     {/* The separator belongs to the part after it, so no line ends with one. */}
-                    <span className="whitespace-nowrap">{i > 0 && '· '}{part}</span>
+                    <span className={long ? 'inline-block max-w-full wrap-anywhere align-top' : 'whitespace-nowrap'}>{i > 0 && '· '}{part}</span>
                   </Fragment>
                 ))}
               </p>

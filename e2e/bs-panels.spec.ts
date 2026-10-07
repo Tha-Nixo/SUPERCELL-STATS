@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { expectNoEmoji, expectNoHorizontalScroll, watch } from './support/helpers';
+import { bsClub } from './support/fixtures';
 import { FIXTURE_TAG, mockApi } from './support/mockApi';
 
 const bs = (search = '') => `/game/brawl-stars/player/${FIXTURE_TAG}${search}`;
@@ -133,6 +134,8 @@ test.describe('Brawlers tab', () => {
     await expect(shelly.getByText('3 gears')).toHaveCount(0);
     await expect(cards(page).nth(1).getByText('3 gears')).toBeAttached();
     await expect(shelly.getByText('4 win streak')).toBeAttached();
+    // The Hypercharge marker says what it is to sighted users too, not just a bare icon.
+    await expect(shelly.getByText('Hyper', { exact: true })).toBeVisible();
     await expect(shelly.getByText('Best 1,250').first()).toBeAttached();
     await expect(shelly).toContainText('Power 11 · Rank 5 · Prestige 1');
     for (let i = 0; i < 6; i++) expect((await cards(page).nth(i).boundingBox())?.height).toBeLessThan(95);
@@ -195,6 +198,18 @@ test.describe('Club tab', () => {
     expect(calls).toContain('/api/brawl-stars/clubs/#2Y0Y');
     await expectNoEmoji(p);
     expect(problems).toEqual([]);
+  });
+
+  test('a club payload missing its name and a member tag still renders', async ({ page }) => {
+    const { name: _name, ...noName } = bsClub;
+    const members = [{ name: 'Tagless', role: 'member', trophies: 100 }, ...bsClub.members.slice(1, 2)];
+    await mockApi(page, { club: { ...noName, members } });
+    await page.goto(bs('?tab=club'));
+    const p = panel(page);
+    await expect(p.getByRole('heading', { name: '#2Y0Y' })).toBeVisible();
+    await expect(p.getByTestId('club-member')).toHaveCount(2);
+    await expect(p.getByText('Tagless')).toBeVisible();
+    await expect(p.getByText('You', { exact: true })).toHaveCount(1);
   });
 
   test('a club that cannot be loaded says so', async ({ page }) => {

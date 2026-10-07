@@ -30,7 +30,7 @@ export function BSClub({ club, playerTag }: BSClubProps) {
             className="size-14 shrink-0 object-contain"
           />
           <div className="min-w-0">
-            <h3 dir="auto" className="truncate text-xl font-semibold text-fg">{stripColorTags(club.name).trim() || club.tag || 'Club'}</h3>
+            <h3 dir="auto" className="truncate text-xl font-semibold text-fg">{stripColorTags(String(club.name ?? '')).trim() || club.tag || 'Club'}</h3>
             <p className="text-xs text-fg-subtle">{club.tag}</p>
           </div>
         </div>
@@ -46,13 +46,14 @@ export function BSClub({ club, playerTag }: BSClubProps) {
       <Card as="section" title={`Members (${club.members.length})`} className="min-w-0 lg:col-span-2">
         <ol className="divide-y divide-line">
           {club.members.map((m, i) => {
-            const you = m.tag.toUpperCase() === playerTag.toUpperCase();
+            const memberTag = String(m.tag ?? '').toUpperCase();
+            const you = memberTag !== '' && memberTag === playerTag.toUpperCase();
             return (
-              <li key={m.tag} data-testid="club-member" className="flex min-h-14 items-center gap-3 py-2">
+              <li key={memberTag || i} data-testid="club-member" className="flex min-h-14 items-center gap-3 py-2">
                 <span className="w-6 shrink-0 text-right text-sm tabular-nums text-fg-subtle">{i + 1}</span>
                 <div className="min-w-0 flex-1">
                   <p className="flex min-w-0 items-center gap-2">
-                    <span dir="auto" className="truncate text-sm font-medium text-fg">{m.name}</span>
+                    <span dir="auto" className="truncate text-sm font-medium text-fg">{stripColorTags(String(m.name ?? ''))}</span>
                     {/* Inline tag, not a Pill: a 28px pill would make this row taller than the others. */}
                     {you && <span className="shrink-0 rounded-pill bg-accent-soft px-2 text-xs font-medium text-accent">You</span>}
                   </p>

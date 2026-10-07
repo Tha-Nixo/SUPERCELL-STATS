@@ -94,3 +94,18 @@ for (const viewport of [{ width: 320, height: 640 }, { width: 390, height: 844 }
     });
   }
 }
+
+test('a battle whose map name is one 80-character word never overflows a 320px screen', async ({ page }) => {
+  const map = 'M'.repeat(80);
+  const log = {
+    items: [
+      { battleTime: '20261006T095500.000Z', event: { id: 1, mode: 'gemGrab', map }, battle: { mode: 'gemGrab', type: 'ranked', result: 'victory', duration: 121, trophyChange: 8 } },
+    ],
+  };
+  await mockApi(page, { battlelog: { 'brawl-stars': log } });
+  await recordOverflow(page);
+  await page.goto(`/game/brawl-stars/player/${FIXTURE_TAG}?tab=battles`);
+  await expect(page.getByTestId('battle-row')).toHaveCount(1);
+  await page.waitForTimeout(500);
+  expect(await maxOverflow(page)).toBe(0);
+});

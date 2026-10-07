@@ -124,8 +124,9 @@ function BrawlerCard({ brawler: b }: { brawler: BSBrawlerData }) {
           </li>
         )}
         {hasHyper && (
-          <li className="inline-flex items-center [&_svg]:size-3.5">
+          <li className="inline-flex items-center gap-1 text-fg-muted [&_svg]:size-3.5">
             <Zap aria-hidden="true" />
+            <span aria-hidden="true">Hyper</span>
             <span className="sr-only">Hypercharge{hyper && `: ${titleCase(hyper.name)}`}</span>
           </li>
         )}
