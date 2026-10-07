@@ -2,7 +2,8 @@ import { Shield } from 'lucide-react';
 import { BSBattleSummary } from '../../components/BSBattleSummary';
 import { bsBattleRows, bsResultLabels } from '../../components/bsFacts';
 import { BSOverview } from '../../components/BSOverview';
-import { BSBrawlers, BSClub, BSProgression } from '../../components/BSProfile';
+import { BSBrawlers } from '../../components/BSBrawlers';
+import { BSClub, BSProgression } from '../../components/BSProfile';
 import { EmptyState } from '../../ui/EmptyState';
 import { BattlesPanel } from './BattlesPanel';
 import { OverviewExtras } from './OverviewExtras';
@@ -28,7 +29,7 @@ export default function BrawlStars({ game, playerStats, tab, onTabChange }: Game
   // `tab` was validated against GAME_TABS by the shell; the union makes a misspelt id a type error.
   switch (tab as BSTab) {
     case 'brawlers':
-      return <BSBrawlers playerStats={playerStats} accentColor={accent} />;
+      return <BSBrawlers brawlers={bs.allBrawlers} />;
     case 'progression':
       return <BSProgression playerStats={playerStats} accentColor={accent} />;
     case 'battles':

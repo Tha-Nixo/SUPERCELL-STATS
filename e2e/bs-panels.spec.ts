@@ -67,9 +67,70 @@ test.describe('Overview tab', () => {
   });
 });
 
+test.describe('Brawlers tab', () => {
+  const cards = (page: Page) => panel(page).getByTestId('brawler-card');
+
+  test('the tab shows unlocked / in game; each card keeps power, tier, trophies, streak, hypercharge and equipment', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(bs('?tab=brawlers'));
+    await expect(page.getByRole('tab', { name: 'Brawlers 6 of 95' })).toHaveAttribute('aria-selected', 'true');
+    await expect(cards(page)).toHaveCount(6);
+    await expect(page.getByText('Showing 6 of 6 brawlers')).toBeVisible();
+    const shelly = cards(page).first();
+    await expect(shelly.getByRole('heading', { name: 'Shelly' })).toBeVisible();
+    await expect(shelly).toContainText('Power 11 · Prestige 1');
+    await expect(shelly).toContainText('1,210');
+    await expect(shelly).toContainText('Best 1,250');
+    await expect(shelly).toContainText('Win streak 4');
+    await expect(shelly).toContainText('Hypercharge');
+    await expect(shelly.getByRole('img', { name: 'Fast Forward' })).toBeVisible();
+    await expect(shelly.getByRole('img', { name: 'Band-Aid' })).toBeVisible();
+    await expect(shelly.getByRole('img', { name: 'Shield' })).toBeVisible();
+    // GLOWBERT is renamed by the data layer; El Primo owns nothing yet.
+    await expect(cards(page).filter({ hasText: 'Glowy' })).toHaveCount(1);
+    await expect(cards(page).filter({ hasText: 'El Primo' }).getByText('None yet')).toHaveCount(3);
+    await expectNoEmoji(panel(page));
+    expect(problems).toEqual([]);
+  });
+
+  test('search narrows the list; no match offers a reset that returns focus to the search box', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(bs('?tab=brawlers'));
+    const search = panel(page).getByLabel('Search brawlers');
+    await search.fill('el');
+    await expect(cards(page)).toHaveCount(2);
+    await search.fill('zzz');
+    await expect(panel(page).getByTestId('empty-state').getByText('No brawlers match')).toBeVisible();
+    await panel(page).getByRole('button', { name: 'Clear search' }).click();
+    await expect(cards(page)).toHaveCount(6);
+    await expect(search).toBeFocused();
+  });
+
+  test('sort by name and by rarity', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(bs('?tab=brawlers'));
+    const sort = panel(page).getByLabel('Sort brawlers');
+    await sort.selectOption({ label: 'Name' });
+    await expect(cards(page).first().getByRole('heading')).toHaveText('8-Bit');
+    await sort.selectOption({ label: 'Rarest first' });
+    await expect(cards(page).first().getByRole('heading')).toHaveText('Mr. P');
+    await sort.selectOption({ label: 'Fewest trophies' });
+    await expect(cards(page).first().getByRole('heading')).toHaveText('Glowy');
+  });
+
+  test('a player without brawlers gets an empty state', async ({ page }) => {
+    await mockApi(page, { patch: { 'brawl-stars': { brawlers: [] } } });
+    await page.goto(bs('?tab=brawlers'));
+    await expect(panel(page).getByTestId('empty-state').getByText('No brawlers to show')).toBeVisible();
+  });
+});
+
+
 // Every BS tab that shows game art, with the number of art slots the fixture fills.
 const ART_TABS: Array<[string, number]> = [
   ['overview', 3],
+  ['brawlers', 19], // 6 portraits, 4 gadgets, 4 star powers, 5 gears
 ];
 for (const [tab, slots] of ART_TABS) {
   test(`${tab}: missing game art falls back in place without errors`, async ({ page }) => {

@@ -22,9 +22,9 @@ export function getBSTierInfo(trophies: number): BSTierInfo {
     // Prestige 1, 2, 3+
     const prestigeLevel = Math.floor(trophies / 1000); // 1 for 1000-1999, 2 for 2000-2999...
 
-    let iconName = 'icon_trophy_brawler_prestige_1.png';
-    if (prestigeLevel === 2) iconName = 'icon_trophy_brawler_prestige_2.png';
-    if (prestigeLevel >= 3) iconName = 'icon_trophy_brawler_prestige_3.png';
+    let iconName = 'icon_trophy_brawler_prestige_1.webp';
+    if (prestigeLevel === 2) iconName = 'icon_trophy_brawler_prestige_2.webp';
+    if (prestigeLevel >= 3) iconName = 'icon_trophy_brawler_prestige_3.webp';
 
     const currentTierMin = prestigeLevel * 1000;
     const nextThreshold = currentTierMin + 1000;
