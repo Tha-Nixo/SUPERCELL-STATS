@@ -57,7 +57,6 @@ export default defineConfig({
                 manualChunks(id) {
                     if (!id.includes('node_modules')) return;
                     if (/node_modules\/(react|react-dom|react-router|scheduler)\//.test(id)) return 'react';
-                    if (/node_modules\/(motion|framer-motion|motion-dom|motion-utils)\//.test(id)) return 'motion';
                 },
             },
         },
