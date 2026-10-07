@@ -283,7 +283,7 @@ export default function GamePage() {
         )}
       </main>
 
-      {/* Held back while the short skeleton shows: otherwise it sits at the screen bottom and is pushed away on arrival. */}
+      {/* Held back while a skeleton shows (here, and via the panel marker inside main): otherwise it sits at the screen bottom and is pushed away on arrival. */}
       {!(isLoading && !playerStats) && (
         <SiteFooter note={`${game.name} stats. All game data comes from the official Supercell developer API.`} />
       )}

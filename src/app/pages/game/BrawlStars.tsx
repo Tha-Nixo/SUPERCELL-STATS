@@ -26,7 +26,6 @@ export default function BrawlStars({ game, playerStats, playerTag, tab, onTabCha
   const battles = bsBattleRows(bs.battlelog);
   const go = (id: BSTab) => onTabChange(id);
 
-  // Every section is screen-tall, like the skeleton it replaces, so a short one never pulls the footer up.
   const section = () => {
     // `tab` was validated against GAME_TABS by the shell; the union makes a misspelt id a type error.
     switch (tab as BSTab) {
@@ -55,5 +54,5 @@ export default function BrawlStars({ game, playerStats, playerTag, tab, onTabCha
         );
     }
   };
-  return <div className="min-h-dvh">{section()}</div>;
+  return section();
 }

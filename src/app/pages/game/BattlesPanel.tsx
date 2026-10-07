@@ -46,13 +46,10 @@ export function BattlesPanel({ matches, summary, resultLabels, hiddenResults }: 
   });
 
   if (matches.length === 0) {
-    // Screen-tall like PanelSkeleton, so the footer stays off screen when this replaces it.
     return (
-      <div className="min-h-dvh">
-        <EmptyState icon={<Swords />} title="No recent battles">
-          Battles from the last few days appear here once this player has played.
-        </EmptyState>
-      </div>
+      <EmptyState icon={<Swords />} title="No recent battles">
+        Battles from the last few days appear here once this player has played.
+      </EmptyState>
     );
   }
 
