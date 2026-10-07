@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { expectNoEmoji, watch } from './support/helpers';
+import { expectNoEmoji, expectNoHorizontalScroll, watch } from './support/helpers';
 import { FIXTURE_TAG, mockApi } from './support/mockApi';
 
 const bs = (search = '') => `/game/brawl-stars/player/${FIXTURE_TAG}${search}`;
@@ -79,14 +79,18 @@ test.describe('Brawlers tab', () => {
     await expect(page.getByText('Showing 6 of 6 brawlers')).toBeVisible();
     const shelly = cards(page).first();
     await expect(shelly.getByRole('heading', { name: 'Shelly' })).toBeVisible();
-    await expect(shelly).toContainText('Power 11 · Prestige 1');
+    await expect(shelly).toContainText('Power 11 · Rank 5 · Prestige 1');
     await expect(shelly).toContainText('1,210');
     await expect(shelly).toContainText('Best 1,250');
     await expect(shelly).toContainText('Win streak 4');
     await expect(shelly).toContainText('Hypercharge');
-    await expect(shelly.getByRole('img', { name: 'Fast Forward' })).toBeVisible();
-    await expect(shelly.getByRole('img', { name: 'Band-Aid' })).toBeVisible();
-    await expect(shelly.getByRole('img', { name: 'Shield' })).toBeVisible();
+    // Equipment names are text, not only icon titles: they survive art that fails and reach touch users.
+    await expect(shelly.getByText('Fast Forward', { exact: true })).toBeVisible();
+    await expect(shelly.getByText('Band-Aid', { exact: true })).toBeVisible();
+    await expect(shelly.getByText('Shield', { exact: true })).toBeVisible();
+    await expect(shelly.getByText('Gadgets 2')).toBeVisible();
+    await expect(shelly.getByText('Star powers 2')).toBeVisible();
+    await expect(shelly.getByText('Gears 2')).toBeVisible();
     // GLOWBERT is renamed by the data layer; El Primo owns nothing yet.
     await expect(cards(page).filter({ hasText: 'Glowy' })).toHaveCount(1);
     await expect(cards(page).filter({ hasText: 'El Primo' }).getByText('None yet')).toHaveCount(3);
@@ -117,6 +121,22 @@ test.describe('Brawlers tab', () => {
     await expect(cards(page).first().getByRole('heading')).toHaveText('Mr. P');
     await sort.selectOption({ label: 'Fewest trophies' });
     await expect(cards(page).first().getByRole('heading')).toHaveText('Glowy');
+  });
+
+  test('below sm each brawler is a compact row with counts, and the names stay readable', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await mockApi(page);
+    await page.goto(bs('?tab=brawlers'));
+    const shelly = cards(page).first();
+    await expect(shelly.getByText('Gadgets 2')).toBeHidden();
+    await expect(shelly.getByText('2 gadgets')).toBeAttached();
+    await expect(shelly.getByText('3 gears')).toHaveCount(0);
+    await expect(cards(page).nth(1).getByText('3 gears')).toBeAttached();
+    await expect(shelly.getByText('4 win streak')).toBeAttached();
+    await expect(shelly.getByText('Best 1,250').first()).toBeAttached();
+    await expect(shelly).toContainText('Power 11 · Rank 5 · Prestige 1');
+    for (let i = 0; i < 6; i++) expect((await cards(page).nth(i).boundingBox())?.height).toBeLessThan(95);
+    await expectNoHorizontalScroll(page);
   });
 
   test('a player without brawlers gets an empty state', async ({ page }) => {

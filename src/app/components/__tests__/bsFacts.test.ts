@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { BSBattleLogItem, PlayerStats } from '../../data/mockStats';
-import { battleSummary, battleTime, bsBattleRows, bsOverviewFacts, bsResultLabels, formatDuration, placementBased } from '../bsFacts';
+import { battleSummary, battleTime, bsBattleRows, bsOverviewFacts, bsHiddenResults, bsResultLabels, formatDuration, placementBased, winRateNote } from '../bsFacts';
 
 // Times are shown in the visitor's zone; pin one for the assertions.
 process.env.TZ = 'UTC';
@@ -79,6 +79,21 @@ describe('placement-based battles', () => {
   it('rename the result filters to what the outcome measures, keeping the others', () => {
     expect(bsResultLabels([row(4)])).toEqual({ win: 'Gains', loss: 'Losses', draw: 'Even' });
     expect(bsResultLabels([row(4), row()])).toBeUndefined();
+  });
+  it('drop the Even option only when the whole list is placements and none is a draw', () => {
+    expect(bsHiddenResults([row(4), row(8)])).toEqual(['draw']);
+    expect(bsHiddenResults([{ ...row(4), result: 'draw' as const }, row(8)])).toEqual([]);
+    expect(bsHiddenResults([row(4), row()])).toEqual([]);
+    expect(bsHiddenResults([])).toEqual([]);
+  });
+  it('say gain or top half for a Showdown-only log and W / L for any other', () => {
+    const win = { ...row(), result: 'win' as const };
+    const loss = { ...row(), result: 'loss' as const };
+    expect(winRateNote([row(1), row(9)], 'recent')).toBe('Gain or top half');
+    expect(winRateNote([win, win, loss], 'recent')).toBe('2 W / 1 L, recent battles');
+    expect(winRateNote([win, loss, row(3)], 'mode')).toBe('2 W / 1 L');
+    expect(winRateNote([], 'recent')).toBe('No recent wins or losses');
+    expect(winRateNote([], 'mode')).toBe('No wins or losses yet');
   });
 });
 

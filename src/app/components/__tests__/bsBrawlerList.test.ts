@@ -7,7 +7,7 @@ const list = [b('SHELLY', 1210), b('8-BIT', 980), b('COLT', 750, 9), b('MR. P', 
 const names = (l: BSBrawlerData[]) => l.map((x) => x.name);
 
 describe('rarityWeight', () => {
-  it('reads the static table, spaces as dashes, and ranks unknown brawlers last', () => {
+  it('reads the static table, spaces as dashes, and gives unknown brawlers weight 0', () => {
     expect(rarityWeight('SHELLY')).toBe(1);
     expect(rarityWeight('EL PRIMO')).toBe(2);
     expect(rarityWeight('GLOWY')).toBe(5);
@@ -19,7 +19,7 @@ describe('brawlerList', () => {
   it('sorts by trophies both ways, by rarity, power and name', () => {
     expect(names(brawlerList(list, '', 'trophies'))).toEqual(['SHELLY', '8-BIT', 'COLT', 'MR. P', 'EL PRIMO', 'NEWBIE', 'GLOWY']);
     expect(names(brawlerList(list, '', 'trophies-asc'))).toEqual(['GLOWY', 'NEWBIE', 'EL PRIMO', 'MR. P', 'COLT', '8-BIT', 'SHELLY']);
-    expect(names(brawlerList(list, '', 'rarity'))).toEqual(['MR. P', 'GLOWY', '8-BIT', 'COLT', 'EL PRIMO', 'SHELLY', 'NEWBIE']);
+    expect(names(brawlerList(list, '', 'rarity'))).toEqual(['NEWBIE', 'MR. P', 'GLOWY', '8-BIT', 'COLT', 'EL PRIMO', 'SHELLY']);
     expect(names(brawlerList(list, '', 'power'))).toEqual(['SHELLY', '8-BIT', 'COLT', 'MR. P', 'EL PRIMO', 'NEWBIE', 'GLOWY']);
     expect(names(brawlerList(list, '', 'name'))).toEqual(['8-BIT', 'COLT', 'EL PRIMO', 'GLOWY', 'MR. P', 'NEWBIE', 'SHELLY']);
   });

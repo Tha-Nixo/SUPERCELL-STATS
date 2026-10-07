@@ -1,6 +1,6 @@
 import { Shield } from 'lucide-react';
 import { BSBattleSummary } from '../../components/BSBattleSummary';
-import { bsBattleRows, bsResultLabels } from '../../components/bsFacts';
+import { bsBattleRows, bsHiddenResults, bsResultLabels } from '../../components/bsFacts';
 import { BSOverview } from '../../components/BSOverview';
 import { BSBrawlers } from '../../components/BSBrawlers';
 import { BSClub, BSProgression } from '../../components/BSProfile';
@@ -33,7 +33,7 @@ export default function BrawlStars({ game, playerStats, tab, onTabChange }: Game
     case 'progression':
       return <BSProgression playerStats={playerStats} accentColor={accent} />;
     case 'battles':
-      return <BattlesPanel matches={battles} summary={(scope) => <BSBattleSummary battles={scope} />} resultLabels={bsResultLabels} />;
+      return <BattlesPanel matches={battles} summary={(scope) => <BSBattleSummary battles={scope} />} resultLabels={bsResultLabels} hiddenResults={bsHiddenResults} />;
     case 'club':
       return bs.club ? (
         <BSClub playerStats={playerStats} accentColor={accent} />

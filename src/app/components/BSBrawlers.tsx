@@ -70,7 +70,7 @@ export function BSBrawlers({ brawlers }: { brawlers: readonly BSBrawlerData[] })
           No unlocked brawler has “{query.trim()}” in its name.
         </EmptyState>
       ) : (
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
           {shown.map((b) => <BrawlerCard key={b.id} brawler={b} />)}
         </ul>
       )}
@@ -83,43 +83,72 @@ function BrawlerCard({ brawler: b }: { brawler: BSBrawlerData }) {
   const hyper = b.hyperCharges?.[0];
   // The old tab also showed it when only the buffie flag was set.
   const hasHyper = Boolean(hyper) || Boolean(b.buffies?.hyperCharge);
+  const streak = b.currentWinStreak ?? 0;
+  const counts = [
+    { label: 'gadgets', count: b.gadgetsList.length, icon: <Wrench /> },
+    { label: 'star powers', count: b.starPowersList.length, icon: <Star /> },
+    { label: 'gears', count: b.gearsList.length, icon: <Cog /> },
+  ];
   return (
-    <li data-testid="brawler-card" className="flex min-w-0 flex-col gap-3 rounded-card border border-line bg-surface-1 p-4">
-      <div className="flex items-start gap-3">
-        <GameImage sources={[b.imageUrl]} alt="" width={64} height={64} fallback={<UserRound />} className="size-16 shrink-0 rounded-lg bg-surface-2 object-cover" />
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-semibold text-fg">{titleCase(b.name)}</h3>
-          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-fg-subtle">
-            <img src={tier.iconPath} alt="" width={16} height={16} loading="lazy" decoding="async" className="size-4 object-contain" />
-            Power {b.power} · {tier.name}
-          </p>
-        </div>
-        <div className="shrink-0 text-right">
+    <li data-testid="brawler-card" className="flex min-w-0 flex-col gap-1.5 rounded-card border border-line bg-surface-1 px-3 py-2.5 sm:gap-3 sm:p-4">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3">
+        <GameImage sources={[b.imageUrl]} alt="" width={64} height={64} fallback={<UserRound />} className="col-start-1 row-span-2 row-start-1 size-10 shrink-0 rounded-lg bg-surface-2 object-cover sm:size-16" />
+        <h3 className="col-start-2 row-start-1 truncate text-base font-semibold text-fg">{titleCase(b.name)}</h3>
+        <div className="col-start-3 row-start-1 text-right">
           <p className="inline-flex items-center gap-1 text-base font-semibold tabular-nums text-fg">
             <Trophy aria-hidden="true" className="size-4 text-accent" />
             {n(b.trophies)}
             <span className="sr-only"> trophies</span>
           </p>
-          <p className="text-xs tabular-nums text-fg-subtle">Best {n(b.highestTrophies)}</p>
+          <p className="hidden text-xs tabular-nums text-fg-subtle sm:block">Best {n(b.highestTrophies)}</p>
         </div>
+        <p className="col-span-2 col-start-2 row-start-2 flex min-w-0 items-center gap-1.5 text-xs text-fg-subtle">
+          <img src={tier.iconPath} alt="" width={16} height={16} loading="lazy" decoding="async" className="size-4 shrink-0 object-contain" />
+          <span className="min-w-0 break-words">Power {b.power} · Rank {b.rank} · {tier.name}</span>
+        </p>
       </div>
 
-      {((b.currentWinStreak ?? 0) > 0 || hasHyper) && (
-        <div className="flex flex-wrap gap-1.5">
-          {(b.currentWinStreak ?? 0) > 0 && <Pill tone="accent" icon={<Flame />}>Win streak {b.currentWinStreak}</Pill>}
-          {hasHyper && (
-            <Pill icon={<Zap />}>
-              Hypercharge{hyper && <span className="sr-only">: {titleCase(hyper.name)}</span>}
-            </Pill>
-          )}
-        </div>
-      )}
+      <ul className="flex items-center gap-x-3 text-xs text-fg-muted sm:hidden">
+        {counts.map((c) => (
+          <li key={c.label} className="inline-flex items-center gap-1 tabular-nums [&_svg]:size-3.5">
+            <span aria-hidden="true" className="contents">{c.icon}</span>
+            {c.count}
+            <span className="sr-only"> {c.label}</span>
+          </li>
+        ))}
+        {streak > 0 && (
+          <li className="inline-flex items-center gap-1 tabular-nums text-accent [&_svg]:size-3.5">
+            <Flame aria-hidden="true" />
+            {streak}
+            <span className="sr-only"> win streak</span>
+          </li>
+        )}
+        {hasHyper && (
+          <li className="inline-flex items-center [&_svg]:size-3.5">
+            <Zap aria-hidden="true" />
+            <span className="sr-only">Hypercharge{hyper && `: ${titleCase(hyper.name)}`}</span>
+          </li>
+        )}
+        <li className="ml-auto tabular-nums text-fg-subtle">Best {n(b.highestTrophies)}</li>
+      </ul>
 
-      <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 border-t border-line pt-3 text-xs">
-        <Items label="Gadgets" items={b.gadgetsList} icon={<Wrench />} sources={(id) => art('gadgets', id)} />
-        <Items label="Star powers" items={b.starPowersList} icon={<Star />} sources={(id) => art('star-powers', id)} />
-        <Items label="Gears" items={b.gearsList} icon={<Cog />} sources={(id) => [`https://cdn.brawlify.com/gears/regular/${id}.png`]} />
-      </dl>
+      <div className="hidden flex-col gap-3 sm:flex">
+        {(streak > 0 || hasHyper) && (
+          <div className="flex flex-wrap gap-1.5">
+            {streak > 0 && <Pill tone="accent" icon={<Flame />}>Win streak {streak}</Pill>}
+            {hasHyper && (
+              <Pill icon={<Zap />}>
+                Hypercharge{hyper && <span className="sr-only">: {titleCase(hyper.name)}</span>}
+              </Pill>
+            )}
+          </div>
+        )}
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 border-t border-line pt-3 text-xs">
+          <Items label="Gadgets" items={b.gadgetsList} icon={<Wrench />} sources={(id) => art('gadgets', id)} />
+          <Items label="Star powers" items={b.starPowersList} icon={<Star />} sources={(id) => art('star-powers', id)} />
+          <Items label="Gears" items={b.gearsList} icon={<Cog />} sources={(id) => [`https://cdn.brawlify.com/gears/regular/${id}.png`]} />
+        </dl>
+      </div>
     </li>
   );
 }
@@ -127,23 +156,21 @@ function BrawlerCard({ brawler: b }: { brawler: BSBrawlerData }) {
 function Items({ label, items, icon, sources }: { label: string; items: readonly BSEquipment[]; icon: ReactNode; sources: (id: number) => string[] }) {
   return (
     <>
-      <dt className="text-fg-subtle">{label}</dt>
-      <dd className="flex min-h-7 flex-wrap items-center gap-1.5">
+      <dt className="pt-1 text-fg-subtle">
+        {label} <span className="tabular-nums">{items.length}</span>
+      </dt>
+      <dd className="min-w-0">
         {items.length === 0 ? (
-          <span className="text-fg-subtle">None yet</span>
+          <span className="inline-flex min-h-7 items-center text-fg-subtle">None yet</span>
         ) : (
-          items.map((item) => (
-            <GameImage
-              key={item.id}
-              sources={sources(item.id)}
-              alt={titleCase(item.name)}
-              title={titleCase(item.name)}
-              width={28}
-              height={28}
-              fallback={icon}
-              className="size-7 object-contain [&_svg]:size-4"
-            />
-          ))
+          <ul className="flex flex-wrap gap-x-3 gap-y-1">
+            {items.map((item) => (
+              <li key={item.id} className="inline-flex min-w-0 items-center gap-1.5 text-fg-muted">
+                <GameImage sources={sources(item.id)} alt="" width={24} height={24} fallback={icon} className="size-6 shrink-0 object-contain [&_svg]:size-4" />
+                <span className="min-w-0 break-words">{titleCase(item.name)}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </dd>
     </>

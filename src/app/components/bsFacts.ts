@@ -50,6 +50,23 @@ export function bsResultLabels(rows: readonly BattleRow[]): Partial<Record<Battl
   return placementBased(rows) ? { win: 'Gains', loss: 'Losses', draw: 'Even' } : undefined;
 }
 
+/** Result options to leave out of the filter: Showdown never sends a draw, so Even would sit at 0 for good. Judged on the selected mode, not on the result filter, so picking a result never resizes the card. */
+export function bsHiddenResults(rows: readonly BattleRow[]): BattleResult[] {
+  return placementBased(rows) && !rows.some((b) => b.result === 'draw') ? ['draw'] : [];
+}
+
+/**
+ * Sub-line of a win rate tile. Showdown has no victories, so a Showdown-only
+ * log says what the rate measures; any other log counts wins and losses.
+ * `recent` is the overview (all recent battles), `mode` the Battles tab tile.
+ */
+export function winRateNote(rows: readonly BattleRow[], scope: 'recent' | 'mode'): string {
+  if (placementBased(rows)) return 'Gain or top half';
+  const s = battleSummary(rows);
+  if (s.wins + s.losses === 0) return scope === 'recent' ? 'No recent wins or losses' : 'No wins or losses yet';
+  return `${s.wins} W / ${s.losses} L${scope === 'recent' ? ', recent battles' : ''}`;
+}
+
 export interface BattleSummary {
   wins: number;
   losses: number;

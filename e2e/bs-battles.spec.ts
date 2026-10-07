@@ -44,6 +44,32 @@ test('lists every battle with its summary, counts per option and Showdown placem
   expect(problems).toEqual([]);
 });
 
+test('a mixed log keeps the Even option, and picking a result never changes the filter card size', async ({ page }) => {
+  await page.goto(url('?tab=battles'));
+  await expect(result(page).getByRole('radio', { name: 'Draws 1' })).toBeVisible();
+  const card = page.getByRole('region', { name: 'Battle filters' });
+  const before = await card.boundingBox();
+  await result(page).getByText('Losses').click();
+  const after = await card.boundingBox();
+  expect(after?.height).toBe(before?.height);
+});
+
+test('a Showdown-only log says gain or top half on the Overview and the Battles tab alike', async ({ page }) => {
+  const showdown = (time: string, rank: number, trophyChange: number) => ({
+    battleTime: time, event: { id: 15000001, mode: 'soloShowdown', map: 'Acid Lakes' }, battle: { mode: 'soloShowdown', type: 'ranked', rank, trophyChange },
+  });
+  await mockApi(page, {
+    battlelog: { 'brawl-stars': { items: [showdown('20261006T090000.000Z', 1, 12), showdown('20261006T083000.000Z', 7, -6), showdown('20261006T080000.000Z', 2, 8)] } },
+  });
+  await page.goto(url());
+  await expect(panel(page).getByText('Gain or top half')).toBeVisible();
+  await expect(panel(page).getByText(/\d+ W \/ \d+ L/)).toHaveCount(0);
+  await page.goto(url('?tab=battles'));
+  await expect(panel(page).getByText('Gain or top half')).toBeVisible();
+  await expect(result(page).getByRole('radio', { name: /^Even/ })).toHaveCount(0);
+  await expect(result(page).getByRole('radio', { name: 'Gains 2' })).toBeVisible();
+});
+
 test('a Showdown filter keeps placements, rescopes the tiles and survives reload', async ({ page }) => {
   await page.goto(url('?tab=battles'));
   await mode(page).getByText('Solo Showdown').click();
@@ -51,7 +77,8 @@ test('a Showdown filter keeps placements, rescopes the tiles and survives reload
   expect(params(page)).toEqual({ tab: 'battles', mode: 'solo-showdown' });
   // Placement-based logs: honest labels, same values.
   await expect(result(page).getByRole('radio', { name: 'Gains 2' })).toBeVisible();
-  await expect(result(page).getByRole('radio', { name: 'Even 0' })).toBeVisible();
+  // Showdown never sends a draw: the Even option would be a dead 0, so it is left out here and kept for all modes.
+  await expect(result(page).getByRole('radio', { name: /^Even/ })).toHaveCount(0);
   await expect(result(page).getByRole('radio', { name: /^Wins/ })).toHaveCount(0);
   await expect(result(page).locator('input[value="win"]')).toHaveCount(1);
   // Tiles follow the mode: 2 W / 1 L, +12 -6 +2.

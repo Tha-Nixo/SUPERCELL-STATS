@@ -19,6 +19,8 @@ interface BattlesPanelProps {
   summary?: (battles: readonly BattleRow[]) => ReactNode;
   /** Other wording for the Result options given the battles of the selected mode; the URL values never change. */
   resultLabels?: (battles: readonly BattleRow[]) => Partial<Record<ResultFilter, string>> | undefined;
+  /** Result options to leave out given the battles of the selected mode; the selected option is never left out. */
+  hiddenResults?: (battles: readonly BattleRow[]) => readonly ResultFilter[];
 }
 
 /**
@@ -26,7 +28,7 @@ interface BattlesPanelProps {
  * URL (?mode=&result=, see ui/battleFilters.ts). Filter changes replace the
  * history entry, so Back still leaves the tab instead of undoing filters.
  */
-export function BattlesPanel({ matches, summary, resultLabels }: BattlesPanelProps) {
+export function BattlesPanel({ matches, summary, resultLabels, hiddenResults }: BattlesPanelProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const root = useRef<HTMLDivElement>(null);
@@ -61,6 +63,7 @@ export function BattlesPanel({ matches, summary, resultLabels }: BattlesPanelPro
   const shown = filterBattles(matches, filters);
   const scope = filterBattles(matches, { mode: filters.mode, result: 'all' });
   const labels = { ...RESULT_LABELS, ...resultLabels?.(scope) };
+  const hidden = hiddenResults?.(scope) ?? [];
 
   // Reads window.location: a second arrow key can arrive before this re-renders.
   const apply = (change: Partial<BattleFilters>) => {
@@ -77,7 +80,7 @@ export function BattlesPanel({ matches, summary, resultLabels }: BattlesPanelPro
           legend="Result"
           value={filters.result}
           onChange={(result) => apply({ result: result as ResultFilter })}
-          options={RESULT_FILTERS.map((r) => ({ value: r, label: labels[r], count: results[r] }))}
+          options={RESULT_FILTERS.filter((r) => r === filters.result || !hidden.includes(r)).map((r) => ({ value: r, label: labels[r], count: results[r] }))}
         />
         {allModes.length > 1 && (
           <FilterGroup

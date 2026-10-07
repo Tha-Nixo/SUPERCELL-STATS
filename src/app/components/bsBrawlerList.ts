@@ -18,7 +18,8 @@ const RARITY_WEIGHT: Record<string, number> = {
 
 /**
  * Rarity rank from the static table in data/brawlerRarities.ts (the API does
- * not send rarity). A brawler newer than the table ranks as 0, after Common.
+ * not send rarity). A brawler newer than the table weighs 0: the sort puts
+ * those first, since they are the newest.
  */
 export function rarityWeight(name: string): number {
   return RARITY_WEIGHT[brawlerRarityMap[name.toUpperCase().replace(/ /g, '-')] ?? ''] ?? 0;
@@ -28,10 +29,11 @@ export function rarityWeight(name: string): number {
 export function brawlerList(brawlers: readonly BSBrawlerData[], query: string, sort: BrawlerSort): BSBrawlerData[] {
   const q = query.trim().toLowerCase();
   const byTrophies = (a: BSBrawlerData, b: BSBrawlerData) => b.trophies - a.trophies || a.name.localeCompare(b.name);
+  const rarest = (name: string) => rarityWeight(name) || 99;
   const compare: Record<BrawlerSort, (a: BSBrawlerData, b: BSBrawlerData) => number> = {
     trophies: byTrophies,
     'trophies-asc': (a, b) => a.trophies - b.trophies || a.name.localeCompare(b.name),
-    rarity: (a, b) => rarityWeight(b.name) - rarityWeight(a.name) || byTrophies(a, b),
+    rarity: (a, b) => rarest(b.name) - rarest(a.name) || byTrophies(a, b),
     power: (a, b) => b.power - a.power || byTrophies(a, b),
     name: (a, b) => a.name.localeCompare(b.name),
   };

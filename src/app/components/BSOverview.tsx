@@ -7,7 +7,7 @@ import { GameImage } from '../ui/GameImage';
 import { Row } from '../ui/Row';
 import { StatTile } from '../ui/StatTile';
 import { ordinal, titleCase } from '../ui/text';
-import { battleSummary, bsOverviewFacts, formatDuration } from './bsFacts';
+import { battleSummary, bsOverviewFacts, formatDuration, winRateNote } from './bsFacts';
 import type { BattleRow } from './MatchHistory';
 
 interface BSOverviewProps {
@@ -44,7 +44,7 @@ export function BSOverview({ playerStats, battles, onOpenBrawlers }: BSOverviewP
         <StatTile
           label="Win rate"
           value={recent.wins + recent.losses > 0 ? `${playerStats.winRate}%` : '–'}
-          sub={recent.wins + recent.losses > 0 ? `${recent.wins} W / ${recent.losses} L, recent battles` : 'No recent wins or losses'}
+          sub={winRateNote(battles, 'recent')}
           icon={<Percent />}
         />
         <StatTile label="Victories" value={n(victories)} sub="3v3, solo and duo" icon={<Swords />} />
