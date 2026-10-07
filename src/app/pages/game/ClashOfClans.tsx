@@ -10,7 +10,7 @@ import type { GameModuleProps } from './types';
 type CoCTab = TabId<'clash-of-clans'>;
 
 /** Clash of Clans sections: overview | army | heroes | achievements. */
-export default function ClashOfClans({ game, playerStats, tab }: GameModuleProps) {
+export default function ClashOfClans({ playerStats, tab }: GameModuleProps) {
   const coc = playerStats.gameVisuals?.coc;
   if (!coc) {
     return (
@@ -28,7 +28,7 @@ export default function ClashOfClans({ game, playerStats, tab }: GameModuleProps
       return <CoCHeroes heroes={coc.heroes} equipment={coc.heroEquipment ?? []} />;
     case 'achievements':
       return coc.achievements && coc.achievements.length > 0 ? (
-        <CoCAchievements achievements={coc.achievements} accent={game.accent} />
+        <CoCAchievements achievements={coc.achievements} />
       ) : (
         <EmptyState icon={<Award />} title="No achievements in this answer">
           The API sent no achievement progress for this player.

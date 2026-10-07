@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { expectNoEmoji, watch } from './support/helpers';
+import { expectNoEmoji, expectTouchTargets, watch } from './support/helpers';
 import { cocLowTownHall } from './support/fixtures';
 import { FIXTURE_TAG, mockApi } from './support/mockApi';
 
@@ -212,5 +212,72 @@ test.describe('Heroes tab', () => {
     await page.goto(coc('?tab=heroes'));
     await expect(card(page, 'Heroes').getByTestId('hero-card').first()).toContainText('Nothing equipped');
     await expect(card(page, 'Equipment')).toHaveCount(0);
+  });
+});
+
+test.describe('Achievements tab', () => {
+  const filters = (page: Page) => panel(page).locator('section[aria-label="Achievement filters"]');
+  const option = (page: Page, name: string) => filters(page).locator('label').filter({ hasText: new RegExp(`^${name}\\s*\\d+$`) });
+
+  test('summary, counts and one completion rule', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    const p = panel(page);
+    await expect(p.getByText('Showing 8 of 8 achievements')).toBeVisible();
+    await expect(p.getByText('of 8 achievements', { exact: true })).toBeVisible();
+    await expect(option(page, 'Completed')).toContainText('5');
+    await expect(option(page, 'In progress')).toContainText('3');
+    // Dragon Slayer is done by value: it is listed under Completed (it vanished there before).
+    await option(page, 'Completed').click();
+    await expect(p.getByTestId('achievement').filter({ hasText: 'Dragon Slayer' })).toHaveCount(1);
+    await expectNoEmoji(p);
+    expect(problems).toEqual([]);
+  });
+
+  test('tiles show stars in words, grouped numbers and progress', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    const tiles = panel(page).getByTestId('achievement');
+    const gold = tiles.filter({ hasText: 'Gold Grab' });
+    await expect(gold).toContainText('2 of 3 stars');
+    await expect(gold).toContainText('41,000,000');
+    await expect(gold).toContainText('100,000,000');
+    await expect(gold).toContainText('Steal 100,000,000 gold');
+    const conqueror = tiles.filter({ hasText: 'Conqueror' });
+    await expect(conqueror).toContainText('Total multiplayer battles won: 8,123');
+    await expect(conqueror).toContainText('Completed');
+    // A completed achievement without stars shows no star row.
+    await expect(tiles.filter({ hasText: 'Keep Your Account Safe!' })).not.toContainText('of 3 stars');
+  });
+
+  test('filters combine, and an empty result offers a reset that returns focus', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    const p = panel(page);
+    await option(page, 'Builder base').click();
+    await expect(p.getByTestId('achievement')).toHaveCount(1);
+    await option(page, 'In progress').click();
+    await expect(p.getByTestId('empty-state').getByText('No achievements match')).toBeVisible();
+    await p.getByRole('button', { name: 'Reset filters' }).click();
+    await expect(p.getByTestId('achievement')).toHaveCount(8);
+    await expect(filters(page).getByRole('radio').first()).toBeFocused();
+  });
+
+  test('filter options are at least 44px tall on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    await expect(option(page, 'Home village')).toBeVisible();
+    await expectTouchTargets(filters(page).locator('label > span'));
+  });
+
+  test('below sm a completed achievement keeps its description for screen readers only', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    const conqueror = panel(page).getByTestId('achievement').filter({ hasText: 'Conqueror' });
+    await expect(conqueror.getByText('Win 5,000 multiplayer battles')).toHaveClass(/max-sm:sr-only/);
+    await expect(panel(page).getByTestId('achievement').filter({ hasText: 'Gold Grab' }).getByText('Steal 100,000,000 gold')).toBeVisible();
   });
 });
