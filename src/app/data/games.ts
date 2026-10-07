@@ -4,17 +4,10 @@ export interface GameTheme {
   /** Two or three letters for tight spots (header switcher, recent-search chips). */
   shortName: string;
   tagline: string;
-  background: string;
-  surface: string;
+  /** Same hex as the game's --accent in theme.css (data/__tests__/games.test.ts checks it). */
   accent: string;
-  gradientFrom: string;
-  gradientTo: string;
+  /** Line colour of the trophy trend (an SVG attribute, so a hex rather than a class). */
   chartPrimary: string;
-  chartSecondary: string;
-  badgeColor: string;
-  inputType: 'tag';
-  logo: string;
-  fontClass: string;
 }
 
 export const games: GameTheme[] = [
@@ -23,53 +16,25 @@ export const games: GameTheme[] = [
     name: 'Clash Royale',
     shortName: 'CR',
     tagline: 'Real-time card battle arena',
-    background: '#0B0F1A',
-    surface: '#111827',
     accent: '#4C8DFF',
-    gradientFrom: '#0A1832',
-    gradientTo: '#1E3A72',
     chartPrimary: '#4C8DFF',
-    chartSecondary: '#F4C430',
-    badgeColor: '#4C8DFF',
-    inputType: 'tag',
-    logo: '👑',
-    fontClass: 'font-cr',
   },
   {
     id: 'brawl-stars',
     name: 'Brawl Stars',
     shortName: 'BS',
     tagline: 'Fast-paced multiplayer brawls',
-    background: '#0B0F1A',
-    surface: '#111827',
     accent: '#FFC21A',
-    gradientFrom: '#1A0F0B',
-    gradientTo: '#4C3200',
     chartPrimary: '#FFC21A',
-    chartSecondary: '#FF3B3B',
-    badgeColor: '#FFC21A',
-    inputType: 'tag',
-    logo: '⭐',
-    fontClass: 'font-bs',
   },
   {
     id: 'clash-of-clans',
     name: 'Clash of Clans',
     shortName: 'CoC',
     tagline: 'Build, raid, conquer',
-    background: '#0B0F1A',
-    surface: '#111827',
     accent: '#5BD65B',
-    gradientFrom: '#0F1A0D',
-    gradientTo: '#243D1A',
     chartPrimary: '#5BD65B',
-    chartSecondary: '#FFD700',
-    badgeColor: '#5BD65B',
-    inputType: 'tag',
-    logo: '🏰',
-    fontClass: 'font-coc',
   },
-
 ];
 
 export const getGameById = (id: string): GameTheme | undefined =>

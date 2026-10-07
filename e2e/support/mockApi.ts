@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { bsBattlelog, bsPlayer, cocPlayer, crBattlelog, crPlayer } from './fixtures.ts';
+import { bsBattlelog, bsClub, bsPlayer, cocPlayer, crBattlelog, crPlayer } from './fixtures.ts';
 
 export { FIXTURE_TAG } from './fixtures.ts';
 
@@ -10,6 +10,8 @@ export interface MockApiOptions {
   patch?: Partial<Record<'clash-royale' | 'brawl-stars' | 'clash-of-clans', Record<string, unknown>>>;
   /** Replaces a game's battlelog fixture (the raw API payload). */
   battlelog?: Partial<Record<'clash-royale' | 'brawl-stars', unknown>>;
+  /** Replaces the Brawl Stars club payload; `null` answers 404, as for a club that no longer exists. */
+  club?: Record<string, unknown> | null;
   /** Player requests wait for this promise: lets a test look at the loading state. */
   hold?: Promise<void>;
   /** Answer the first `times` player requests with this error instead of the fixture. */
@@ -57,9 +59,13 @@ export async function mockApi(page: Page, options: MockApiOptions = {}): Promise
       if (path.startsWith('/api/clash-royale/')) return json(options.battlelog?.['clash-royale'] ?? crBattlelog);
       return json(options.battlelog?.['brawl-stars'] ?? bsBattlelog);
     }
-    // Catalogue sizes: 121 cards exist in the (fixture) game, so the Cards tab reads "8/121".
+    if (path.startsWith('/api/brawl-stars/clubs/')) {
+      return options.club === null ? json({ reason: 'notFound', message: 'notFound' }, 404) : json(options.club ?? bsClub);
+    }
+    // Catalogue sizes: 121 cards and 95 brawlers exist in the (fixture) game, so the
+    // Cards tab reads "8/121" and the Brawlers tab "6/95".
     if (path === '/api/clash-royale/cards') return json({ items: Array.from({ length: 121 }, (_, id) => ({ id })) });
-    if (path === '/api/brawl-stars/brawlers') return json({ items: [] });
+    if (path === '/api/brawl-stars/brawlers') return json({ items: Array.from({ length: 95 }, (_, id) => ({ id })) });
     return json({ reason: 'notFound', message: 'notFound' }, 404);
   });
 

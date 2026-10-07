@@ -63,6 +63,15 @@ describe('accent', () => {
   });
 });
 
+describe('accent as text', () => {
+  it.each(['clash-royale', 'brawl-stars', 'clash-of-clans'])('%s: accent text and icons are AA on the page and on both surfaces', (game) => {
+    const accent = token('accent', `[data-game='${game}']`);
+    for (const base of [canvas, surface1, token('surface-2')]) {
+      expect(contrast(accent, base)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
 describe('text floor', () => {
   it('fg-subtle (white/60) is AA on every surface', () => {
     for (const base of [canvas, surface1, token('surface-2')]) {

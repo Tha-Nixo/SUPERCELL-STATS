@@ -81,6 +81,7 @@ test('"All battles" in the overview opens the Battles tab', async ({ page }) => 
 });
 
 test('the club tab explains a player without a club', async ({ page }) => {
+  await mockApi(page, { patch: { 'brawl-stars': { club: undefined } } });
   await page.goto(player('brawl-stars', '?tab=club'));
   await expect(page.getByTestId('empty-state').getByText('Not in a club')).toBeVisible();
 });

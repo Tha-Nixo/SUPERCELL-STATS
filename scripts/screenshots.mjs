@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
  * Review screenshots (restyle spec, "Acceptance"): Home, one player page per
- * game and every Clash Royale tab at 390, 768 and 1440 px, written to
- * docs/screenshots/<phase>/.
+ * game, every Brawl Stars tab and the Clash Royale pages that share its battle
+ * components, at 390, 768 and 1440 px, written to docs/screenshots/<phase>/.
+ * Pages render in UTC with an en-US locale, so battle times are stable.
  *
  *   npm run build && npm run screenshots              # fixtures, local preview
- *   SCREENSHOT_ONLY=clash-royale npm run screenshots  # only pages whose name starts with it
+ *   SCREENSHOT_ONLY=brawl-stars npm run screenshots   # only pages whose name starts with it
  *   E2E_CR_TAG=... E2E_BS_TAG=... E2E_COC_TAG=... npm run screenshots
  *                                                     # real players via the preview's API proxy
  *   BASE_URL=https://supercellstats.com npm run screenshots   # production
@@ -23,21 +24,23 @@ import { chromium } from '@playwright/test';
 import { FIXTURE_TAG, mockApi } from '../e2e/support/mockApi.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PHASE = process.env.SCREENSHOT_PHASE ?? 'phase2';
+const PHASE = process.env.SCREENSHOT_PHASE ?? 'phase3';
 const OUT = process.env.SCREENSHOT_DIR ? path.resolve(process.env.SCREENSHOT_DIR) : path.join(ROOT, 'docs/screenshots', PHASE);
 const WIDTHS = [390, 768, 1440];
 const PORT = 4173;
 
 const CR = { game: 'clash-royale', env: 'E2E_CR_TAG' };
+const BS = { game: 'brawl-stars', env: 'E2E_BS_TAG' };
 const ALL_PAGES = [
   { name: 'home', path: () => '/' },
   { name: 'clash-royale', ...CR, search: '' },
-  { name: 'clash-royale-cards', ...CR, search: '?tab=cards' },
-  { name: 'clash-royale-deck', ...CR, search: '?tab=deck' },
   { name: 'clash-royale-battles', ...CR, search: '?tab=battles' },
-  { name: 'clash-royale-battles-losses', ...CR, search: '?tab=battles&result=loss' },
-  { name: 'clash-royale-towers', ...CR, search: '?tab=towers' },
-  { name: 'brawl-stars', game: 'brawl-stars', env: 'E2E_BS_TAG', search: '' },
+  { name: 'brawl-stars', ...BS, search: '' },
+  { name: 'brawl-stars-brawlers', ...BS, search: '?tab=brawlers' },
+  { name: 'brawl-stars-progression', ...BS, search: '?tab=progression' },
+  { name: 'brawl-stars-battles', ...BS, search: '?tab=battles' },
+  { name: 'brawl-stars-battles-showdown', ...BS, search: '?tab=battles&mode=solo-showdown' },
+  { name: 'brawl-stars-club', ...BS, search: '?tab=club' },
   { name: 'clash-of-clans', game: 'clash-of-clans', env: 'E2E_COC_TAG', search: '' },
 ];
 const ONLY = process.env.SCREENSHOT_ONLY;
@@ -73,7 +76,7 @@ try {
   for (const entry of PAGES) {
     const realTag = entry.env ? process.env[entry.env]?.replace(/^#/, '') : undefined;
     for (const width of WIDTHS) {
-      const page = await browser.newPage({ viewport: { width, height: width < 768 ? 844 : 900 }, reducedMotion: 'reduce' });
+      const page = await browser.newPage({ viewport: { width, height: width < 768 ? 844 : 900 }, reducedMotion: 'reduce', timezoneId: 'UTC', locale: 'en-US' });
       if (entry.game && !realTag) await mockApi(page);
       const url = entry.game ? `/game/${entry.game}/player/${encodeURIComponent(realTag ?? FIXTURE_TAG)}${entry.search}` : entry.path();
       await page.goto(base + url, { waitUntil: 'networkidle' });

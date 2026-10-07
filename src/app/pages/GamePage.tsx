@@ -17,6 +17,7 @@ import { SectionTabs, type TabDef } from '../ui/SectionTabs';
 import { SiteFooter } from '../ui/SiteFooter';
 import { parseTab, shareSearch, withTab } from '../ui/tabs';
 import { tagSlug } from '../ui/tag';
+import { battleRowsOf } from './game/battleRows';
 import { GameLanding } from './game/GameLanding';
 import { GAME_MODULES, isGameId, preloadGameModule } from './game/modules';
 import { ModuleBoundary } from './game/ModuleBoundary';
@@ -163,9 +164,9 @@ export default function GamePage() {
 
   const copyPlayerLink = async () => {
     try {
-      // The tab and, on Clash Royale Battles, its valid filters: what the visitor is looking at, nothing else.
-      const filters = gameId === 'clash-royale' && activeTab === 'battles' && result?.data
-        ? shareableFilters(window.location.search, battleModes(result.data.recentMatches))
+      // The tab and, on Battles, its valid filters: what the visitor is looking at, nothing else.
+      const filters = gameId && isGameId(gameId) && activeTab === 'battles' && result?.data
+        ? shareableFilters(window.location.search, battleModes(battleRowsOf(gameId, result.data)))
         : {};
       const query = shareSearch(activeTab, defaultTab, filters);
       const url = `${window.location.origin}/game/${gameId}/player/${tagSlug(urlTag ?? '')}${query}`;
@@ -272,7 +273,7 @@ export default function GamePage() {
                   <h2 className="sr-only">{tabs.find((t) => t.id === activeTab)?.label}</h2>
                   <ModuleBoundary key={`${game.id}:${urlTag}`}>
                     <Suspense fallback={<PanelSkeleton />}>
-                      <GameModule game={game} playerStats={playerStats} tab={activeTab} onTabChange={(id) => selectTab(id)} />
+                      <GameModule game={game} playerStats={playerStats} playerTag={summary.tag} tab={activeTab} onTabChange={(id) => selectTab(id)} />
                     </Suspense>
                   </ModuleBoundary>
                 </section>
@@ -282,7 +283,7 @@ export default function GamePage() {
         )}
       </main>
 
-      {/* Held back while the short skeleton shows: otherwise it sits at the screen bottom and is pushed away on arrival. */}
+      {/* Held back while a skeleton shows (here, and via the panel marker inside main): otherwise it sits at the screen bottom and is pushed away on arrival. */}
       {!(isLoading && !playerStats) && (
         <SiteFooter note={`${game.name} stats. All game data comes from the official Supercell developer API.`} />
       )}

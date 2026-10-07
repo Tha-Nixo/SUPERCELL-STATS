@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  battleModes, filterBattles, modeSlug, NO_FILTERS, parseBattleFilters, resultCounts, shareableFilters, trophyLabel, trophyQualifier, withBattleFilters,
+  battleModes, filterBattles, modeSlug, NO_FILTERS, parseBattleFilters, placementVerdict, resultCounts, shareableFilters, trophyLabel, trophyQualifier, withBattleFilters,
   type BattleLike,
 } from '../battleFilters';
 
@@ -114,5 +114,18 @@ describe('trophyLabel', () => {
     expect(trophyQualifier('Path of Legend')).toBe('PoL');
     expect(trophyQualifier('Ladder')).toBeNull();
     expect(trophyQualifier('Special event')).toBeNull();
+  });
+});
+
+describe('placementVerdict', () => {
+  it('names the rule behind a placement row: trophy sign first, then the half of the field', () => {
+    expect(placementVerdict({ result: 'win', score: 2, placement: 4 })).toBe('Trophy gain');
+    expect(placementVerdict({ result: 'loss', score: -4, placement: 4 })).toBe('Trophy loss');
+    expect(placementVerdict({ result: 'win', score: 0, placement: 2 })).toBe('Top half');
+    expect(placementVerdict({ result: 'loss', placement: 9 })).toBe('Bottom half');
+    expect(placementVerdict({ result: 'draw', placement: 5 })).toBe('Draw');
+  });
+  it('is undefined for battles without a placement', () => {
+    expect(placementVerdict({ result: 'win', score: 5 })).toBeUndefined();
   });
 });

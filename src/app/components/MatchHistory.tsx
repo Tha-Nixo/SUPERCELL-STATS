@@ -1,12 +1,20 @@
-import type { ReactNode } from 'react';
-import { Crown, Minus, Trophy, X } from 'lucide-react';
+import { Fragment, type ReactNode } from 'react';
+import { Crown, Medal, Minus, Trophy, X } from 'lucide-react';
 import type { Match } from '../data/mockStats';
-import { trophyLabel, trophyQualifier } from '../ui/battleFilters';
+import { placementVerdict, trophyLabel, trophyQualifier } from '../ui/battleFilters';
 import { cx } from '../ui/cx';
 import { Pill, type PillTone } from '../ui/Pill';
+import { ordinal } from '../ui/text';
+
+/** One battle as listed: Brawl Stars rows add the map and, in Showdown, the placement. */
+export type BattleRow = Match & {
+  map?: string;
+  /** Showdown finishing position (1 = first); team modes have none. */
+  placement?: number;
+};
 
 interface MatchHistoryProps {
-  matches: Match[];
+  matches: readonly BattleRow[];
 }
 
 const RESULT: Record<Match['result'], { label: string; tone: PillTone; icon: ReactNode }> = {
@@ -16,10 +24,11 @@ const RESULT: Record<Match['result'], { label: string; tone: PillTone; icon: Rea
 };
 
 /**
- * A list of battles, newest first, one row each: result, mode and date, then
- * crowns and trophy change when the game reports them. Used by the
- * Clash Royale and Brawl Stars overviews and by the Clash Royale Battles tab;
- * the caller provides the surrounding Card.
+ * A list of battles, newest first, one row each: result, mode, map and date,
+ * then crowns and the trophy change when the game
+ * reports them. A Showdown row's pill shows the placement and why it is
+ * green or red (placementVerdict). Used by both overviews and both Battles tabs; the caller
+ * provides the surrounding Card.
  */
 export function MatchHistory({ matches }: MatchHistoryProps) {
   // One trophy column for the whole list, so crowns line up when some battles moved no trophies.
@@ -30,16 +39,31 @@ export function MatchHistory({ matches }: MatchHistoryProps) {
     <ol className="divide-y divide-line">
       {matches.map((match) => {
         const result = RESULT[match.result];
+        const verdict = placementVerdict(match);
         return (
           <li key={match.id} data-testid="battle-row" className="flex min-h-14 items-center gap-3 py-3">
-            <Pill tone={result.tone} icon={result.icon} className="w-20 shrink-0 justify-center">
-              {result.label}
-            </Pill>
+            {verdict !== undefined && match.placement !== undefined ? (
+              <Pill tone={result.tone} icon={<Medal />} className="w-20 shrink-0 justify-center">
+                <span className="sr-only">Placed </span>
+                {ordinal(match.placement)}
+                <span className="sr-only">, {verdict}</span>
+              </Pill>
+            ) : (
+              <Pill tone={result.tone} icon={result.icon} className="w-20 shrink-0 justify-center">
+                {result.label}
+              </Pill>
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-fg wrap-anywhere">{match.mode}</p>
+              {/* A narrow row breaks between the parts, never inside one; only the free-text map name may break when it alone is wider than the row. */}
               <p className="text-xs text-fg-subtle">
-                {match.date}
-                {match.duration && ` · ${match.duration}`}
+                {[match.map, match.date, match.duration].map((part, k) => ({ part, long: k === 0 })).filter((x) => x.part).map(({ part, long }, i) => (
+                  <Fragment key={i}>
+                    {i > 0 && ' '}
+                    {/* The separator belongs to the part after it, so no line ends with one. */}
+                    <span className={long ? 'inline-block max-w-full wrap-anywhere align-top' : 'whitespace-nowrap'}>{i > 0 && '· '}{part}</span>
+                  </Fragment>
+                ))}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-4 text-sm tabular-nums">

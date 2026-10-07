@@ -23,10 +23,25 @@ test('Clash Royale latest battles: result, mode, crowns and trophy change per ro
   expect(problems).toEqual([]);
 });
 
-test('Brawl Stars latest battles keep the duration next to the date', async ({ page }) => {
+test('Brawl Stars latest battles show the map, the time, the duration and the Showdown placement', async ({ page }) => {
+  const problems = watch(page);
   await mockApi(page);
   await page.goto(`/game/brawl-stars/player/${FIXTURE_TAG}`);
-  await expect(page.getByTestId('battle-row').first()).toContainText('2m 1s');
+  const rows = page.getByRole('tabpanel').getByTestId('battle-row');
+  await expect(rows).toHaveCount(5);
+  // Playwright runs in UTC (playwright.config.ts), so the fixture's 09:55Z reads 9:55 AM.
+  await expect(rows.first()).toContainText(/Hard Rock Mine · Oct 6, 9:55\sAM · 2m 1s/);
+  await expect(rows.first()).toContainText('+8');
+  const showdown = rows.nth(2);
+  await expect(showdown).toContainText('Solo Showdown');
+  // A Showdown row says where it finished and why it is green, never "Win".
+  await expect(showdown).toContainText('1st');
+  await expect(showdown).toContainText('Trophy gain');
+  await expect(showdown).not.toContainText(/\bWin\b/);
+  await expect(rows.first()).toContainText('Win');
+  await expect(rows.first().getByText(/Placed|Trophy gain/)).toHaveCount(0);
+  await expectNoEmoji(rows.first().locator('xpath=..'));
+  expect(problems).toEqual([]);
 });
 
 test('Clash Royale trophy trend ignores Path of Legend battles (a separate counter)', async ({ page }) => {

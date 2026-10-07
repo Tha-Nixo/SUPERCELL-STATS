@@ -14,6 +14,8 @@ interface GameImageProps {
   className?: string;
   /** 'eager' only for art that is visible on first paint. */
   loading?: 'lazy' | 'eager';
+  /** Hover text (an item's name next to an icon that has no visible label). */
+  title?: string;
 }
 
 /**
@@ -21,7 +23,7 @@ interface GameImageProps {
  * The CDNs can 404 for new content or be blocked; the box keeps its size
  * either way, so nothing shifts when an image fails.
  */
-export function GameImage({ sources, alt, width, height, fallback, className, loading = 'lazy' }: GameImageProps) {
+export function GameImage({ sources, alt, width, height, fallback, className, loading = 'lazy', title }: GameImageProps) {
   const [failed, setFailed] = useState<readonly string[]>([]);
   const src = sources.find((s): s is string => Boolean(s) && !failed.includes(s as string));
 
@@ -32,6 +34,7 @@ export function GameImage({ sources, alt, width, height, fallback, className, lo
         aria-label={alt || undefined}
         aria-hidden={alt ? undefined : true}
         data-testid="game-image-fallback"
+        title={title}
         style={{ aspectRatio: `${width} / ${height}` }}
         className={cx('inline-flex items-center justify-center rounded-lg bg-surface-2 text-fg-subtle [&_svg]:size-6', className)}
       >
@@ -49,6 +52,7 @@ export function GameImage({ sources, alt, width, height, fallback, className, lo
       height={height}
       loading={loading}
       decoding="async"
+      title={title}
       onError={() => setFailed((list) => [...list, src])}
       className={className}
     />

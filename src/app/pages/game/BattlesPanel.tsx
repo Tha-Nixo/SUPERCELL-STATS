@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { SearchX, Swords } from 'lucide-react';
-import { MatchHistory } from '../../components/MatchHistory';
-import type { Match } from '../../data/mockStats';
+import { MatchHistory, type BattleRow } from '../../components/MatchHistory';
 import {
   battleModes, filterBattles, NO_FILTERS, parseBattleFilters, RESULT_FILTERS, resultCounts, withBattleFilters,
   type BattleFilters, type ResultFilter,
@@ -14,12 +13,22 @@ import { FilterGroup } from '../../ui/FilterGroup';
 
 const RESULT_LABELS: Record<ResultFilter, string> = { all: 'All', win: 'Wins', loss: 'Losses', draw: 'Draws' };
 
+interface BattlesPanelProps {
+  matches: readonly BattleRow[];
+  /** Headline tiles above the filters, given the battles of the selected mode (every result). */
+  summary?: (battles: readonly BattleRow[]) => ReactNode;
+  /** Other wording for the Result options given the battles of the selected mode; the URL values never change. */
+  resultLabels?: (battles: readonly BattleRow[]) => Partial<Record<ResultFilter, string>> | undefined;
+  /** Result options to leave out given the battles of the selected mode; the selected option is never left out. */
+  hiddenResults?: (battles: readonly BattleRow[]) => readonly ResultFilter[];
+}
+
 /**
  * Battles tab: the recent battles with mode and result filters kept in the
  * URL (?mode=&result=, see ui/battleFilters.ts). Filter changes replace the
  * history entry, so Back still leaves the tab instead of undoing filters.
  */
-export function BattlesPanel({ matches }: { matches: Match[] }) {
+export function BattlesPanel({ matches, summary, resultLabels, hiddenResults }: BattlesPanelProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const root = useRef<HTMLDivElement>(null);
@@ -37,13 +46,10 @@ export function BattlesPanel({ matches }: { matches: Match[] }) {
   });
 
   if (matches.length === 0) {
-    // Screen-tall like PanelSkeleton, so the footer stays off screen when this replaces it.
     return (
-      <div className="min-h-dvh">
-        <EmptyState icon={<Swords />} title="No recent battles">
-          Battles from the last few days appear here once this player has played.
-        </EmptyState>
-      </div>
+      <EmptyState icon={<Swords />} title="No recent battles">
+        Battles from the last few days appear here once this player has played.
+      </EmptyState>
     );
   }
 
@@ -52,6 +58,9 @@ export function BattlesPanel({ matches }: { matches: Match[] }) {
   const modes = battleModes(matches, filters.result);
   const results = resultCounts(matches, filters.mode);
   const shown = filterBattles(matches, filters);
+  const scope = filterBattles(matches, { mode: filters.mode, result: 'all' });
+  const labels = { ...RESULT_LABELS, ...resultLabels?.(scope) };
+  const hidden = hiddenResults?.(scope) ?? [];
 
   // Reads window.location: a second arrow key can arrive before this re-renders.
   const apply = (change: Partial<BattleFilters>) => {
@@ -62,12 +71,13 @@ export function BattlesPanel({ matches }: { matches: Match[] }) {
 
   return (
     <div ref={root} className="space-y-4">
+      {summary?.(scope)}
       <Card as="section" aria-label="Battle filters" className="grid grid-cols-1 gap-4">
         <FilterGroup
           legend="Result"
           value={filters.result}
           onChange={(result) => apply({ result: result as ResultFilter })}
-          options={RESULT_FILTERS.map((r) => ({ value: r, label: RESULT_LABELS[r], count: results[r] }))}
+          options={RESULT_FILTERS.filter((r) => r === filters.result || !hidden.includes(r)).map((r) => ({ value: r, label: labels[r], count: results[r] }))}
         />
         {allModes.length > 1 && (
           <FilterGroup

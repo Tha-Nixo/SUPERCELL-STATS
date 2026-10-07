@@ -1,5 +1,5 @@
 import { ArrowRight, Swords } from 'lucide-react';
-import { MatchHistory } from '../../components/MatchHistory';
+import { MatchHistory, type BattleRow } from '../../components/MatchHistory';
 import { TrophyTrend } from '../../components/TrophyTrend';
 import type { PlayerStats } from '../../data/mockStats';
 import { Button } from '../../ui/Button';
@@ -11,6 +11,8 @@ interface OverviewExtrasProps {
   playerStats: PlayerStats;
   chartColor: string;
   onShowBattles: () => void;
+  /** The battles to list; defaults to the mapper's recent matches. */
+  matches?: readonly BattleRow[];
   /** Set when the trend only counts some battles ("Trophy Road battles"). */
   trendScope?: string;
   /** Extra sentence for the empty trend state. */
@@ -18,8 +20,8 @@ interface OverviewExtrasProps {
 }
 
 /** Bottom of the Clash Royale and Brawl Stars overview: trend left, latest battles right (stacked on phones). */
-export function OverviewExtras({ playerStats, chartColor, onShowBattles, trendScope, trendEmptyNote }: OverviewExtrasProps) {
-  const latest = latestBattles(playerStats.recentMatches);
+export function OverviewExtras({ playerStats, chartColor, onShowBattles, matches = playerStats.recentMatches, trendScope, trendEmptyNote }: OverviewExtrasProps) {
+  const latest = latestBattles(matches);
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
       <div className="min-w-0">

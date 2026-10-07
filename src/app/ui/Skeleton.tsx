@@ -35,10 +35,10 @@ export function PlayerPageSkeleton() {
   );
 }
 
-/** Placeholder for a tab panel while its game module chunk downloads. Screen-tall so the footer is already off screen when the real panel arrives. */
+/** Placeholder for a tab panel while its game module chunk downloads. The marker keeps the site footer out of the layout meanwhile (see SiteFooter), so the footer appears below the real panel instead of being pushed down by it. */
 export function PanelSkeleton() {
   return (
-    <div aria-hidden="true" data-testid="panel-skeleton" className="grid min-h-dvh content-start gap-4 motion-safe:animate-pulse lg:grid-cols-2">
+    <div aria-hidden="true" data-testid="panel-skeleton" data-panel-loading="" className="grid min-h-[24rem] content-start gap-4 motion-safe:animate-pulse lg:grid-cols-2">
       <Skeleton className="h-72" />
       <Skeleton className="h-72" />
     </div>

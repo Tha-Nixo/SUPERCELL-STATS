@@ -5,7 +5,8 @@ interface SiteFooterProps {
 
 export function SiteFooter({ note = 'All game data comes from the official Supercell developer API.' }: SiteFooterProps) {
   return (
-    <footer className="mt-16 border-t border-line">
+    // Dropped from the layout (not just made invisible) while a sibling main holds a loading panel: it then appears below the content rather than shifting.
+    <footer className="mt-16 border-t border-line [main:has([data-panel-loading])~&]:hidden">
       <div className="mx-auto w-full max-w-6xl px-4 py-8 text-xs leading-relaxed text-fg-subtle sm:px-6">
         <p>
           This material is unofficial and is not endorsed by Supercell. For more information see Supercell's Fan Content Policy:{' '}
