@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { BSBattleLogItem } from '../../data/mockStats';
-import { battleTime, bsBattleRows, formatDuration } from '../bsFacts';
+import { battleSummary, battleTime, bsBattleRows, formatDuration } from '../bsFacts';
 
 // Times are shown in the visitor's zone; pin one for the assertions.
 process.env.TZ = 'UTC';
@@ -50,5 +50,18 @@ describe('bsBattleRows', () => {
   it('names the mode from the event first and treats a missing log as no battles', () => {
     expect(bsBattleRows([item({ mode: '', type: 'ranked', result: 'draw' }, 'unknown')])[0].mode).toBe('Brawl Hockey');
     expect(bsBattleRows(undefined)).toEqual([]);
+  });
+});
+
+describe('battleSummary', () => {
+  const row = (mode: string, result: 'win' | 'loss' | 'draw', score?: number) => ({ id: mode + result, mode, result, score, date: '', duration: '' });
+  it('counts results, leaves draws out of the win rate and sums the trophy changes', () => {
+    expect(
+      battleSummary([row('Solo Showdown', 'win', 12), row('Gem Grab', 'loss', -5), row('Solo Showdown', 'draw', 0), row('Brawl Ball', 'win')]),
+    ).toEqual({ wins: 2, losses: 1, draws: 1, winRate: 67, netTrophies: 7, topMode: { mode: 'Solo Showdown', count: 2 } });
+  });
+  it('has no win rate or top mode without battles, and no win rate with draws only', () => {
+    expect(battleSummary([])).toEqual({ wins: 0, losses: 0, draws: 0, winRate: undefined, netTrophies: 0, topMode: undefined });
+    expect(battleSummary([row('Gem Grab', 'draw', 0)]).winRate).toBeUndefined();
   });
 });

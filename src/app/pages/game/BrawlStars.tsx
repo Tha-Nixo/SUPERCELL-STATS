@@ -1,10 +1,12 @@
 import { Award, Percent, Shield, Target, Trophy } from 'lucide-react';
-import { BSBattleLog, BSBrawlers, BSClub, BSHome, BSProgression } from '../../components/BSProfile';
+import { BSBattleSummary } from '../../components/BSBattleSummary';
+import { BSBrawlers, BSClub, BSHome, BSProgression } from '../../components/BSProfile';
 import { bsBattleRows } from '../../components/bsFacts';
 import type { PlayerStats } from '../../data/mockStats';
 import { EmptyState } from '../../ui/EmptyState';
 import { StatTile } from '../../ui/StatTile';
 import { stripEmoji } from '../../ui/text';
+import { BattlesPanel } from './BattlesPanel';
 import { OverviewExtras } from './OverviewExtras';
 import type { GameModuleProps } from './types';
 
@@ -33,6 +35,7 @@ export default function BrawlStars({ game, playerStats, tab, onTabChange }: Game
   }
   // Every section takes the game accent now (it used to be the player's name colour, which could be unreadable).
   const accent = game.accent;
+  const battles = bsBattleRows(bs.battlelog);
 
   switch (tab) {
     case 'brawlers':
@@ -40,7 +43,7 @@ export default function BrawlStars({ game, playerStats, tab, onTabChange }: Game
     case 'progression':
       return <BSProgression playerStats={playerStats} accentColor={accent} />;
     case 'battles':
-      return <BSBattleLog playerStats={playerStats} accentColor={accent} />;
+      return <BattlesPanel matches={battles} summary={(scope) => <BSBattleSummary battles={scope} />} />;
     case 'club':
       return bs.club ? (
         <BSClub playerStats={playerStats} accentColor={accent} />
@@ -62,7 +65,7 @@ export default function BrawlStars({ game, playerStats, tab, onTabChange }: Game
           <BSHome playerStats={playerStats} accentColor={accent} />
           <OverviewExtras
             playerStats={playerStats}
-            matches={bsBattleRows(bs.battlelog)}
+            matches={battles}
             chartColor={game.chartPrimary}
             onShowBattles={() => onTabChange('battles')}
           />

@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { SearchX, Swords } from 'lucide-react';
-import { MatchHistory } from '../../components/MatchHistory';
-import type { Match } from '../../data/mockStats';
+import { MatchHistory, type BattleRow } from '../../components/MatchHistory';
 import {
   battleModes, filterBattles, NO_FILTERS, parseBattleFilters, RESULT_FILTERS, resultCounts, withBattleFilters,
   type BattleFilters, type ResultFilter,
@@ -14,12 +13,18 @@ import { FilterGroup } from '../../ui/FilterGroup';
 
 const RESULT_LABELS: Record<ResultFilter, string> = { all: 'All', win: 'Wins', loss: 'Losses', draw: 'Draws' };
 
+interface BattlesPanelProps {
+  matches: readonly BattleRow[];
+  /** Headline tiles above the filters, given the battles of the selected mode (every result). */
+  summary?: (battles: readonly BattleRow[]) => ReactNode;
+}
+
 /**
  * Battles tab: the recent battles with mode and result filters kept in the
  * URL (?mode=&result=, see ui/battleFilters.ts). Filter changes replace the
  * history entry, so Back still leaves the tab instead of undoing filters.
  */
-export function BattlesPanel({ matches }: { matches: Match[] }) {
+export function BattlesPanel({ matches, summary }: BattlesPanelProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const root = useRef<HTMLDivElement>(null);
@@ -62,6 +67,7 @@ export function BattlesPanel({ matches }: { matches: Match[] }) {
 
   return (
     <div ref={root} className="space-y-4">
+      {summary?.(filterBattles(matches, { mode: filters.mode, result: 'all' }))}
       <Card as="section" aria-label="Battle filters" className="grid grid-cols-1 gap-4">
         <FilterGroup
           legend="Result"

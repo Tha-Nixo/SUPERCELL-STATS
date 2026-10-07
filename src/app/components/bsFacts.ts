@@ -35,3 +35,33 @@ export function bsBattleRows(log: readonly BSBattleLogItem[] | undefined): Battl
     placement: typeof b.battle.rank === 'number' ? b.battle.rank : undefined,
   }));
 }
+
+export interface BattleSummary {
+  wins: number;
+  losses: number;
+  draws: number;
+  /** Wins among wins + losses, rounded; undefined when there is neither (draws do not count). */
+  winRate?: number;
+  /** Sum of the trophy changes the API reported. */
+  netTrophies: number;
+  /** The mode with the most battles (ties: the most recent first), and how many. */
+  topMode?: { mode: string; count: number };
+}
+
+/** Headline numbers of a list of battles (the Battles tab's tiles). Same rules as the mapper's bsWinStats. */
+export function battleSummary(rows: readonly BattleRow[]): BattleSummary {
+  const count = (r: BattleRow['result']) => rows.filter((b) => b.result === r).length;
+  const wins = count('win');
+  const losses = count('loss');
+  const modes = new Map<string, number>();
+  for (const b of rows) modes.set(b.mode, (modes.get(b.mode) ?? 0) + 1);
+  const top = [...modes.entries()].reduce<[string, number] | undefined>((best, e) => (!best || e[1] > best[1] ? e : best), undefined);
+  return {
+    wins,
+    losses,
+    draws: count('draw'),
+    winRate: wins + losses > 0 ? Math.round((wins / (wins + losses)) * 100) : undefined,
+    netTrophies: rows.reduce((sum, b) => sum + (b.score ?? 0), 0),
+    topMode: top && { mode: top[0], count: top[1] },
+  };
+}
