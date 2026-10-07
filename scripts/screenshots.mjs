@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * Review screenshots (restyle spec, "Acceptance"): Home, one player page per
- * game, every Brawl Stars tab and the Clash Royale pages that share its battle
- * components, at 390, 768 and 1440 px, written to docs/screenshots/<phase>/.
- * Pages render in UTC with an en-US locale, so battle times are stable.
+ * game and every Clash of Clans tab, at 390, 768 and 1440 px, written to
+ * docs/screenshots/<phase>/. Pages render in UTC with an en-US locale, so
+ * battle times are stable.
  *
  *   npm run build && npm run screenshots              # fixtures, local preview
- *   SCREENSHOT_ONLY=brawl-stars npm run screenshots   # only pages whose name starts with it
+ *   SCREENSHOT_ONLY=clash-of-clans npm run screenshots   # only pages whose name starts with it
  *   E2E_CR_TAG=... E2E_BS_TAG=... E2E_COC_TAG=... npm run screenshots
  *                                                     # real players via the preview's API proxy
  *   BASE_URL=https://supercellstats.com npm run screenshots   # production
@@ -24,24 +24,20 @@ import { chromium } from '@playwright/test';
 import { FIXTURE_TAG, mockApi } from '../e2e/support/mockApi.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PHASE = process.env.SCREENSHOT_PHASE ?? 'phase3';
+const PHASE = process.env.SCREENSHOT_PHASE ?? 'phase4';
 const OUT = process.env.SCREENSHOT_DIR ? path.resolve(process.env.SCREENSHOT_DIR) : path.join(ROOT, 'docs/screenshots', PHASE);
 const WIDTHS = [390, 768, 1440];
 const PORT = 4173;
 
-const CR = { game: 'clash-royale', env: 'E2E_CR_TAG' };
-const BS = { game: 'brawl-stars', env: 'E2E_BS_TAG' };
+const COC = { game: 'clash-of-clans', env: 'E2E_COC_TAG' };
 const ALL_PAGES = [
   { name: 'home', path: () => '/' },
-  { name: 'clash-royale', ...CR, search: '' },
-  { name: 'clash-royale-battles', ...CR, search: '?tab=battles' },
-  { name: 'brawl-stars', ...BS, search: '' },
-  { name: 'brawl-stars-brawlers', ...BS, search: '?tab=brawlers' },
-  { name: 'brawl-stars-progression', ...BS, search: '?tab=progression' },
-  { name: 'brawl-stars-battles', ...BS, search: '?tab=battles' },
-  { name: 'brawl-stars-battles-showdown', ...BS, search: '?tab=battles&mode=solo-showdown' },
-  { name: 'brawl-stars-club', ...BS, search: '?tab=club' },
-  { name: 'clash-of-clans', game: 'clash-of-clans', env: 'E2E_COC_TAG', search: '' },
+  { name: 'clash-royale', game: 'clash-royale', env: 'E2E_CR_TAG', search: '' },
+  { name: 'brawl-stars', game: 'brawl-stars', env: 'E2E_BS_TAG', search: '' },
+  { name: 'clash-of-clans', ...COC, search: '' },
+  { name: 'clash-of-clans-army', ...COC, search: '?tab=army' },
+  { name: 'clash-of-clans-heroes', ...COC, search: '?tab=heroes' },
+  { name: 'clash-of-clans-achievements', ...COC, search: '?tab=achievements' },
 ];
 const ONLY = process.env.SCREENSHOT_ONLY;
 const PAGES = ONLY ? ALL_PAGES.filter((p) => p.name.startsWith(ONLY)) : ALL_PAGES;
