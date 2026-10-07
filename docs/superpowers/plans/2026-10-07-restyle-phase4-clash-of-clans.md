@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-06-restyle-design.md` (Phase 4 = "Clash of Clans profile restyle"; tabs `overview | army | heroes | achievements`; Acceptance and Performance budget apply). Read it, then the Global Constraints and decisions of the three previous plans: `docs/superpowers/plans/2026-10-06-restyle-phase1-foundation.md` (D1–D20), `docs/superpowers/plans/2026-10-06-restyle-phase2-clash-royale.md` (D21–D41), `docs/superpowers/plans/2026-10-07-restyle-phase3-brawl-stars.md` (D42–D56; **D53 is SUPERSEDED**: the footer is held out of the layout by CSS `:has([data-panel-loading])` while a panel loads, no `min-h-dvh` wrappers). Deferred items come from the three SDD ledgers in `.superpowers/sdd/*/progress.md`.
 
-**How this plan was checked:** every code block below was applied, task by task, to a throw-away copy of `main` at `562db29` (`git archive` + a copy of `node_modules`), and after each task `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (budget check) and `npm run e2e` were run. The live Clash of Clans payload was read through the production proxy (`https://supercellstats.com/api/clash-of-clans/players/%2328YCV89U0`, a public ranked player, tag written here only because the owner's brief names it; it is not used in any committed test, which reads `E2E_COC_TAG`); the findings are in the Plan decisions. Lighthouse numbers for Home were measured with the method in Task 9 (5 runs on the built preview, 3 on production). Numbers quoted (budget lines, Lighthouse, page heights) are the ones that run measured.
+**How this plan was checked:** every code block of Tasks 1–9 was applied, task by task, to a throw-away copy of `main` at `562db29` (`git archive` + a copy of `node_modules`), and after each task `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (budget check) and the task's e2e specs were run; the full `npm run e2e` was green after Tasks 2, 7 and 9 (unit tests 303 passed; e2e 267 passed, 7 skipped env-gated real-player tests at the end), and the Task 8 sweep passed with `--workers=6 --repeat-each=2` (300 passed). Every red step was seen red after a fresh build. The live Clash of Clans payload was read through the production proxy (`/api/clash-of-clans/players/%23<tag>` with the public ranked player of the owner's brief; no committed file contains the tag, tests read `E2E_COC_TAG`), the env-gated real-player test passed against it, and live screenshots of every tab were looked at at 390 and 1440 px; the findings are in the Plan decisions. Lighthouse numbers are from the method in Task 9 (5 runs on the built preview; 3 on production for the baseline). Tasks 10–11 are procedural: the 21 review screenshots were generated in the copy (not committed there). Numbers quoted are the ones these runs measured.
 
 ## Global Constraints
 
@@ -62,16 +62,16 @@ Tests and tooling: `e2e/support/fixtures.ts`, `e2e/coc-panels.spec.ts` (new), `e
 
 Numbered after Phase 3 (D42–D56). Each line: decision · why · cost if wrong.
 
-- **D57. Phase 4 budget start = the numbers measured on `main` at `562db29`:** `initialJs 123.46`, `playerPageJs 154.98`, `entryJs 6.73`, `css 9.18`, `fonts 48.26` (same method as D2/D21/D42). Caps (×1.05, rounded down to 2 decimals, capped by the absolute line): initialJs **129.63**, playerPageJs **162.72**, css **9.63**, fonts **50**, entryJs **8** (exempt). The CSS cap is the tight one (+0.45 KB): the restyle deletes more one-off classes (`bg-purple-500/10`, `shadow-[0_0_15px_…]`, per-hero inline gradients) than it adds; if a task still crosses it, cut in this order: the Achievements summary tiles, the Legend League card's builder-base row, the `sm:` padding steps on item tiles. Task 9 then drops `initialJs` by ~40 KB (D66). **If `npm run build` prints different start numbers on your machine, check for a stray `node_modules/node_modules` symlink first** (Open concern 4): with it the copy measured 124.00 / 155.52 and the built app crashed with two React copies. · Spec rule 2 measures against the previous phase. · None.
+- **D57. Phase 4 budget start = the numbers measured on `main` at `562db29`:** `initialJs 123.46`, `playerPageJs 154.98`, `entryJs 6.73`, `css 9.18`, `fonts 48.26` (same method as D2/D21/D42). Caps as `check-bundle.mjs` prints them (×1.05, capped by the absolute line): initialJs **129.63**, playerPageJs **162.73**, css **9.64**, fonts **50**, entryJs **8** (exempt). The CSS cap is the tight one (+0.46 KB): the restyle deletes more one-off classes (`bg-purple-500/10`, `shadow-[0_0_15px_…]`, per-hero inline gradients) than it adds; if a task still crosses it, cut in this order: the Achievements summary tiles, the Legend League card's builder-base row, the `sm:` padding steps on item tiles. Measured in the throwaway after each task: CSS 9.19 → 8.69 (T4) → 8.28 (T5) → 7.85 (T6) → 7.37 (T7) → 7.41 (T9); initialJs 123.46 → **83.79 at Task 4** (D66) → 83.33 (T9); playerPageJs 155.06 → 115.82 (T7) → 115.33 (T9). **If `npm run build` prints different start numbers on your machine, check for a stray `node_modules/node_modules` symlink first** (Open concern 4): with it the copy measured 124.00 / 155.52 and the built app crashed with two React copies. · Spec rule 2 measures against the previous phase. · None.
 - **D58. Clash of Clans mapper bugs fixed in the data layer (Task 2), proven on the live payload:** (1) `PlayerStats.level` was the **Town Hall level** (the hero said "Level 18" next to "Town Hall 18"; the live player is experience level 325): it becomes `expLevel`; (2) **Meteor Golem** (a home-village troop, live 3/3) was filtered out by `isExtraBaseTroop` and shown nowhere: kept; (3) **Super Yeti** was excluded from super troops and listed as a regular troop at "1/8": it is a super troop; (4) the API's `superTroopIsActive` was dropped: kept as `active`; (5) the panels re-parsed mapper strings (`"1,200 sent · 900 received"`, `"8,123 / 2,100"`, `statLabels.stat4Value`) with `[\d,]+`, which breaks under non-Latin digit locales because the mapper formats with `toLocaleString()`: the raw numbers (`expLevel`, `bestTrophies`, `donations`, `donationsReceived`, `lifetimeAttackWins`, `lifetimeDefenseWins`, `clanTag`) are added to `gameVisuals.coc` and nothing parses strings any more. The mapping is extracted into the pure, exported `mapClashOfClansPlayer(player)` so it is unit tested; `searchClashOfClans` keeps fetching. `winRate`, `kd`, `statLabels`, `extraStats` and the heroes' `emoji`/`color` keep their values (no reader after this phase; removing them is a data-layer cleanup, not a restyle). · Every number the restyled tabs print traces to one API field. · A future reader of `stats.level` for Clash of Clans now gets the experience level (the only reader is the summary bar, which wanted that).
 - **D59. Overview content (old → new).** The four tiles become War stars, Attack wins (lifetime, from the Conqueror achievement), Defense wins (lifetime, Unbreakable) and Best trophies. The old **"Win Rate · Est. Lifetime Rate"** tile is **dropped**: it was attack wins ÷ (attack wins + defense wins), two unrelated counters (a defense win is not a lost attack), 95 % for the live player. The old "Home Village" row showed the **best** trophies (6,459) labelled as current with "Best: Legend League" under it, and "Experience Level" showed the Town Hall level: the Trophies card now lists Home village (current), Best home village, Builder base, Best builder base and Builder Hall, under the league name with its badge (the badge was only on the old Heroes tab). The Clan card keeps badge, name, role, clan level, donations and capital contributions; donations are labelled "this season" (the API counters reset each season), the role is the game's word (`admin` → Elder, `coLeader` → Co-leader; the old card printed `ADMIN`/`COLEADER`), and a player without a clan reads "Not in a clan" instead of "No Clan · MEMBER". The Legend League banner (purple, glow) becomes a card with Legend trophies, This season (rank and trophies: the live payload has `currentSeason.rank`, which no panel showed), Best season and Best builder base season when present (live: `bestBuilderBaseSeason` exists, `bestSeason` does not). · Data first, no fabricated number. · Less "game flavour" than the purple banner.
 - **D60. Army: names and levels are printed, not hover-only.** The old 48 px icon tiles showed the name and max level only in a hover tooltip and `title`, the level in 9 px text and "max" as a yellow colour only. Each item is now a tile with the art (local, `GameImage`, `alt=""` because the name is printed), the name, "11 / 12" (sr-only "Level 11 of 12"), "Max" in words, and a decorative bar. Sections are reordered home village first: Troops, Super troops, Spells, Siege machines, Pets, Builder base troops (old: Builder base second). Each section's header says "n of m at max level". Super troops show **no level**: the API reports level 1 for every super troop of a maxed Town Hall 18 player (`1/9`, `1/12`), which is not the troop's strength; they show "Boosted now" when `active`. Level-0 entries are items the mapper pads in (missing siege machines and pets, with a guessed max): they read "Not unlocked" without a max or bar, and a section where nothing is unlocked collapses to one line "None unlocked yet". · Information visible on touch screens and to screen readers. · Taller page (measured in Task 8: see D64).
 - **D61. Heroes: the hero's name is shown.** The old cards showed portrait, level and bar but **no name** (only the image `alt`). New cards: portrait (local art), name as a heading, "85 / 95 · 89 %" (the old card printed both), bar, and the equipped items with their levels ("Nothing equipped" when empty). Locked heroes (padded with level 0 by the mapper) read "Not unlocked". Builder base heroes (Battle Machine, Battle Copter) get their own section. The equipment inventory lists every piece with level, "Max" and an **Equipped** pill (the API's `heroEquipment` does not say which hero owns a piece; "equipped" comes from the heroes' `equipment` lists), equipped pieces first. The old header (league badge + name, clan badge) is **moved**: league badge to the Overview's Trophies card, clan badge already in the Clan card. Per-hero colours and the yellow "MAX" styling go (D6: one accent). No equipment art exists locally or on an allowed host, so equipment tiles are text only (no empty boxes). · Every datum kept, one accent. · None.
-- **D62. Achievements: one rule for "completed", stars shown, filters as pill groups.** The old filter counted an achievement as completed when `stars === 3 || completionInfo === 'Completed!'`, but the card also accepted `value >= target`, so "Dragon Slayer" (1 star, 5/1) showed "Completed" yet vanished under the Completed filter. `isAchievementDone` uses the card's rule everywhere. Stars (0–3) are shown as icons with sr-only "2 of 3 stars" (the old card showed none), except for completed achievements without stars ("Keep Your Account Safe!"). The two `<select>`s become two `FilterGroup` radio-pill groups (Phase 2's component) with counts, so the result size is visible before choosing; filters stay local state (not in the URL: the spec only puts the tab in the URL). Long numbers in API text are grouped ("Total Gold looted: 2,000,000,000"; the API sends ASCII digits, so `groupDigits` never parses a localised number). Below `sm` a completed achievement's description is sr-only (its completion line already says what it counts), which keeps the tab short on phones. Two summary tiles: Completed ("48 of 54") and Stars earned. An empty filter result shows an empty state with "Reset filters", which gives focus back to the first village option. Duplicate names are **not** merged: the live "Keep Your Account Safe!" appears twice with different descriptions (two achievements). · Consistent counts, keyboard-friendly. · None.
+- **D62. Achievements: one rule for "completed", stars shown, filters as pill groups.** The old filter counted an achievement as completed when `stars === 3 || completionInfo === 'Completed!'`, but the card also accepted `value >= target`, so "Dragon Slayer" (1 star, 5/1) showed "Completed" yet vanished under the Completed filter. `isAchievementDone` uses the card's rule everywhere. Stars (0–3) are shown as icons with sr-only "2 of 3 stars" (the old card showed none), except for completed achievements without stars ("Keep Your Account Safe!"). The two `<select>`s become two `FilterGroup` radio-pill groups (Phase 2's component) with counts, so the result size is visible before choosing; filters stay local state (not in the URL: the spec only puts the tab in the URL). Long numbers in API text are grouped ("Total Gold looted: 2,000,000,000"; the API sends ASCII digits, so `groupDigits` never parses a localised number). Below `sm` a completed achievement's description is sr-only (its completion line already says what it counts), which keeps the tab short on phones. Two summary tiles: Completed ("5 of 8 achievements" on the fixture; the live Town Hall 18 player has completed all 54) and Stars earned. An empty filter result shows an empty state with "Reset filters", which gives focus back to the first village option. Duplicate names are **not** merged: the live "Keep Your Account Safe!" appears twice with different descriptions (two achievements). · Consistent counts, keyboard-friendly. · None.
 - **D63. Typed tab ids and the CoC page module.** `ClashOfClans.tsx` switches on `TabId<'clash-of-clans'>` like Brawl Stars, the components take data (no `accent` prop: colour comes from tokens), and `e2e/player.spec.ts`'s brittle "second heading in the panel" locator for Clash of Clans becomes the "War stars" tile (Phase 1 deferred item). · A misspelt id is a type error. · None.
-- **D64. Long pages on phones.** Measured at 390 px with the live Town Hall 18 player (97 army items, 8 heroes, 42 equipment pieces, 54 achievements) after Tasks 5–7: two-column item grids below `sm` (the Phase 3 compact-row lesson: a one-column list of 97 rows measured over 7,000 px in the throwaway) keep Army and Heroes within the numbers recorded in Task 8 Step 6; nothing is collapsed behind a disclosure, because every item is information and sections are already headed and counted. · Data stays one scroll away. · If the owner finds Army too long on phones, the next step is a "Not at max level" filter (Open concern 2).
+- **D64. Long pages on phones.** Measured at 390 px with the live Town Hall 18 player (97 army items, 8 heroes, 42 equipment pieces, 54 achievements) in the throwaway: Overview **1,669 px**, Army **5,486 px**, Heroes **4,051 px**, Achievements **5,304 px** (the Brawl Stars Brawlers tab measured 10,821 px after its compact rows). Army and equipment use two-column tiles below `sm` (half the height of one-column rows) and completed achievements hide their description visually on phones (D62); nothing is collapsed behind a disclosure, because every item is information and sections are already headed and counted. · Data stays one scroll away. · If the owner finds Army too long on phones, the next step is a "Not at max level" filter (Open concern 2).
 - **D65. Town Hall art fallback.** Local Town Hall art stops at 16; the live player is Town Hall 18. The summary avatar's fallback becomes a two-line "TH / 18" mark instead of a bare "18" (the "Town Hall 18" pill next to it keeps the accessible wording). No new art is fetched (no allowed host serves it). · Honest and readable. · Two Town Hall levels without art until someone adds files.
-- **D66. Home performance (Task 9), measured, not guessed.** Before (built preview at `562db29`, Lighthouse 13.5.0 mobile, 5 runs): performance **93** (93–94), LCP **2,943 ms** median, FCP **2,018 ms**, TBT 36 ms, CLS 0; production (3 runs): **90**, LCP 3,239 ms, FCP 2,316 ms. LCP element: the decorative `cr_character.webp` on the first game card. Experiments in the throwaway: (a) art as a pseudo-element background: **worse** (LCP 3,016 ms, the span is still the candidate); (b) art fading in from opacity 0: the paragraph becomes the LCP element but LCP stays 2,95 s (the requests already in flight are what lantern counts); (c) **removing `motion` from the entry** (`MotionConfig` in `main.tsx`; after Task 4 deletes `StatCard`, nothing else imports `motion`): initialJs 123.46 → **83.33 KB**, performance **96**, LCP 2,645 ms, FCP 1,720 ms; (d) (c) plus the display font `Clash_Regular.otf` (48.3 KB, requested at "VeryHigh" priority by Home's h1 and game names) **subset to Latin as WOFF2** (17.2 KB), the OTF kept as a fallback face for other characters: performance **97** (97–98), LCP **2,488 ms**, FCP **1,557 ms**, TBT 38 ms, CLS 0, a11y/BP/SEO 100. Task 9 ships (d). The decorative art and its markup are not changed (a and b did not help). · Biggest win for the least change, and it also shrinks every player page. · `MotionConfig reducedMotion="user"` goes with the library; no component uses `motion` any more, CSS motion keeps `motion-safe:`.
+- **D66. Home performance, measured, not guessed.** Before (built preview at `562db29`, Lighthouse 13.5.0 mobile, 5 runs): performance **93** (93–94), LCP **2,943 ms** median, FCP **2,018 ms**, TBT 36 ms, CLS 0; production (3 runs): **90**, LCP 3,239 ms, FCP 2,316 ms. LCP element: the decorative `cr_character.webp` on the first game card. Findings in the throwaway: (a) art as a pseudo-element background: **worse** (LCP 3,016 ms, the span is still the candidate); (b) art fading in from opacity 0: the paragraph becomes the LCP element but LCP stays ~2.95 s (lantern counts the requests already in flight); neither ships, the art markup is not changed. (c) **The `motion` chunk was on Home only because `main.tsx` imports `MotionConfig` and `vite.config.ts` forces every `motion` module into one chunk; its only real user was `StatCard`.** Deleting `StatCard` in Task 4 therefore shrinks initialJs 123.46 → **83.79 KB** by itself: after Tasks 4–8 Home measures **96** (LCP 2,649 ms, FCP 1,709 ms). (d) Task 9 removes the leftover (`MotionConfig`, the dependency, the chunk rule: 83.79 → 83.33 KB) and subsets the display font `Clash_Regular.otf` (48.3 KB, requested at "VeryHigh" priority by Home's h1 and game names) to a Latin WOFF2 (17.2 KB), the OTF kept as a fallback face for other characters (it is not requested on any page with Latin text): Home **97** (all 5 runs), LCP **2,489 ms**, FCP **1,555 ms**, TBT 38 ms, CLS 0, a11y/BP/SEO 100; the three game landings **98** each. Production adds ~300 ms of network (D66 before: preview 93 vs production 90), so production Home should land around 94–95. · Biggest win for the least change; it also shrinks every player page. · `MotionConfig reducedMotion="user"` goes with the library; no component uses `motion` any more, CSS motion keeps `motion-safe:`.
 - **D67. Closing checklist.** Task 11 verifies the spec's Acceptance section for the whole restyle (all three games), not only Phase 4: screenshots for all three games at 390/768/1440 committed under `docs/screenshots/phase4/`, Lighthouse on `/` and the three `/game/<id>` pages before and after deploy, production e2e with the three public tags from the environment, budget numbers against the spec table, CSP unchanged, no console errors, and README/DEPLOY statements about the old UI corrected. · The spec's acceptance is per phase and for the result. · None.
 
 ---
@@ -105,7 +105,7 @@ In `scripts/bundle-budget.json` replace the `phase` and `phaseStart` entries (ke
 ```
 
 Run: `npm run build | sed -n '/performance budget/,$p'`
-Expected: every line `✓`, limits `129.63`, `162.72`, `8`, `9.63`, `50` (`check-bundle.mjs` rounds `start × 1.05` down to 2 decimals; if it prints `9.64`/`162.73` the script rounds to nearest: use what it prints).
+Expected: every line `✓`, limits `129.63`, `162.73`, `8`, `9.64`, `50`.
 
 - [ ] **Step 3: Screenshot script: every Clash of Clans tab and one page per other game**
 
@@ -490,7 +490,7 @@ with
 Run: `npx vitest run src/app/services && npm run lint && npm run typecheck && npm run build && npx playwright test e2e/player.spec.ts e2e/tabs.spec.ts`
 Expected: the six new tests PASS, all gates green.
 
-Look at the hero with Town Hall 18 art missing: `npx playwright test e2e/player.spec.ts` does not cover it, so check by hand: `npm run preview -- --port 4180 &` then open `http://127.0.0.1:4180/game/clash-of-clans/player/PYLQGRJC` after starting the preview with the fixtures is not possible (fixtures are Playwright routes); instead run `SCREENSHOT_DIR=/tmp/p4-shots/t2 SCREENSHOT_ONLY=clash-of-clans npm run screenshots` with `E2E_COC_TAG` set to the live Town Hall 18 player, open `/tmp/p4-shots/t2/clash-of-clans-390.png` and check the avatar reads "TH" over "18" and the pills read "Level 325"-style experience level next to "Town Hall 18". Do not commit those images.
+Look at the Town Hall fallback with the live Town Hall 18 player (no local art above 16): `npm run build && E2E_COC_TAG=<tag> SCREENSHOT_DIR=/tmp/p4-shots/t2 SCREENSHOT_ONLY=clash-of-clans npm run screenshots` (the preview proxies `/api` to production), open `/tmp/p4-shots/t2/clash-of-clans-390.png`: the avatar reads "TH" over "18", and the pills read "Level 325" (experience level) and "Town Hall 18". The old overview still renders below (it is restyled in Task 4). Do not commit those images.
 
 - [ ] **Step 7: Commit**
 
@@ -1054,7 +1054,7 @@ test.describe('Overview tab', () => {
 ```
 
 Run: `npm run build && npx playwright test e2e/coc-panels.spec.ts`
-Expected: FAIL (no "War stars" text, old "Win Rate" tile present, no "Trophies" heading).
+Expected: 6 of 7 FAIL (no "War stars" text, old "Win Rate" tile present, no "Trophies" heading); "no legend card" can pass on the old markup, which has no `section` around its banner.
 
 - [ ] **Step 3: Write the new overview**
 
@@ -1227,7 +1227,7 @@ Run: `npm run lint && npm run typecheck && npm test && npm run build && npx play
 Expected: PASS (7 overview tests, player and tabs specs).
 
 Run: `npm run e2e`
-Expected: green.
+Expected: green. The budget block now prints `initialJs 83.79` and `playerPageJs` ≈ 115.7: deleting `StatCard` took the `motion` chunk off every page (D66); the remaining `MotionConfig` goes in Task 9.
 
 - [ ] **Step 6: Screenshots: look at them**
 
@@ -1306,8 +1306,8 @@ test.describe('Army tab', () => {
     await mockApi(page);
     await page.goto(coc('?tab=army'));
     const barbarian = section(page, 'Troops').getByTestId('coc-item').first();
-    await expect(barbarian.locator('.sr-only').first()).toHaveText('Level');
-    await expect(barbarian).toContainText('Level 11 of 12');
+    await expect(barbarian.locator('.sr-only').first()).toHaveText('Level 11 of 12');
+    await expect(barbarian.locator('[aria-hidden="true"]').filter({ hasText: '11 / 12' })).toHaveCount(1);
   });
 
   test('super troops show no level, and the boosted one says so', async ({ page }) => {
@@ -1384,11 +1384,11 @@ export function LevelText({ item, percent = false }: { item: Leveled; percent?: 
   if (f.locked) return <span className="text-xs text-fg-subtle">Not unlocked</span>;
   return (
     <span className="inline-flex flex-wrap items-baseline gap-x-1.5 text-xs tabular-nums text-fg-muted">
-      <span>
-        <span className="sr-only">Level</span> {item.level}
-        <span aria-hidden="true"> / </span>
-        <span className="sr-only"> of </span>
-        {item.maxLevel}
+      <span aria-hidden="true">
+        {item.level} / {item.maxLevel}
+      </span>
+      <span className="sr-only">
+        Level {item.level} of {item.maxLevel}
       </span>
       {percent && !f.maxed && <span className="text-fg-subtle">· {f.pct}%</span>}
       {f.maxed && <span className="font-semibold text-accent">Max</span>}
@@ -1530,7 +1530,7 @@ Expected: PASS (overview and the 6 army tests). Then `npm run e2e`: green.
 Run: `SCREENSHOT_DIR=/tmp/p4-shots/t5 SCREENSHOT_ONLY=clash-of-clans-army npm run screenshots`
 Open the three images: two columns at 390, three at 768, four at 1440; names wrap inside their tile, never overflow; "Max" in the accent colour; the Sky Wagon and Angry Spell tiles show the section icon in a 40 px box; locked rows say "Not unlocked" without a bar.
 
-Live player: `E2E_COC_TAG=<tag> SCREENSHOT_DIR=/tmp/p4-shots/t5-live SCREENSHOT_ONLY=clash-of-clans-army npm run screenshots`, open `clash-of-clans-army-390.png` and `-1440.png`: 97 items, Meteor Golem in Troops, Super Yeti in Super troops, "2 boosted now" (Super Wall Breaker, Super Bowler on 2026-10-07), every item but Ruin Witch, Sky Wagon and Angry Spell with art. Write the page height at 390 into the task report (`file /tmp/p4-shots/t5-live/clash-of-clans-army-390.png` prints the size; D64 expects it under 5,000 px). Do not commit live screenshots.
+Live player: `E2E_COC_TAG=<tag> SCREENSHOT_DIR=/tmp/p4-shots/t5-live SCREENSHOT_ONLY=clash-of-clans-army npm run screenshots`, open `clash-of-clans-army-390.png` and `-1440.png`: 97 items, Meteor Golem in Troops, Super Yeti in Super troops, "2 boosted now" (Super Wall Breaker, Super Bowler on 2026-10-07), every item but Ruin Witch, Sky Wagon and Angry Spell with art. Write the page height at 390 into the task report (`file /tmp/p4-shots/t5-live/clash-of-clans-army-390.png` prints the size; D64 measured 5,486 px, limit 6,000). Do not commit live screenshots.
 
 Tick the OLD-vs-NEW checklist of Step 1 against what you see.
 
@@ -1822,7 +1822,7 @@ test.describe('Achievements tab', () => {
     await page.goto(coc('?tab=achievements'));
     const p = panel(page);
     await expect(p.getByText('Showing 8 of 8 achievements')).toBeVisible();
-    await expect(p.getByText('of 8 achievements')).toBeVisible();
+    await expect(p.getByText('of 8 achievements', { exact: true })).toBeVisible();
     await expect(option(page, 'Completed')).toContainText('5');
     await expect(option(page, 'In progress')).toContainText('3');
     // Dragon Slayer is done by value: it is listed under Completed (it vanished there before).
@@ -1865,6 +1865,7 @@ test.describe('Achievements tab', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockApi(page);
     await page.goto(coc('?tab=achievements'));
+    await expect(option(page, 'Home village')).toBeVisible();
     await expectTouchTargets(filters(page).locator('label > span'));
   });
 
@@ -2061,10 +2062,8 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 In `e2e/cls.spec.ts`, add to the `PAGES` array (after the Brawl Stars line):
 
 ```ts
-  ...['', '?tab=army', '?tab=heroes', '?tab=achievements', '?tab=achievements&x=1'].map((search) => ({ game: 'clash-of-clans', search })),
+  ...['', '?tab=army', '?tab=heroes', '?tab=achievements'].map((search) => ({ game: 'clash-of-clans', search })),
 ```
-
-(`&x=1` is ignored by the app; it only gives the achievements page a second, independently named test so a one-off flake shows up twice.) Replace that line by the plain four entries if the duplicate name bothers the reviewer: `['', '?tab=army', '?tab=heroes', '?tab=achievements']`.
 
 Append at the end of the file:
 
@@ -2193,7 +2192,7 @@ Run: `E2E_COC_TAG=<tag> SCREENSHOT_DIR=/tmp/p4-shots/t8-live SCREENSHOT_ONLY=cla
 for f in /tmp/p4-shots/t8-live/clash-of-clans*-390.png; do python3 -c "import struct,sys;d=open(sys.argv[1],'rb').read(24);print(sys.argv[1].split('/')[-1], struct.unpack('>II', d[16:24])[1])" "$f"; done
 ```
 
-Record the four heights in the task report. Expected: Overview under 2,500 px, Heroes under 4,500 px, Army under 5,000 px, Achievements under 9,000 px. If Army or Achievements are above, use three columns for item tiles from 360 px on (`min-[360px]:grid-cols-3` is not allowed: no arbitrary breakpoints; use `grid-cols-2` → keep two and shorten the tile instead: `p-2`, art `size-8`) and re-measure; record what you changed.
+Record the four heights in the task report. Expected (D64, measured 2026-10-07: 1,669 / 4,051 / 5,486 / 5,304): Overview under 2,500 px, Heroes under 4,500 px, Army under 6,000 px, Achievements under 6,000 px (the live player's lists grow with the game). If a tab is above, shorten the tile (`p-2`, art `size-8`) rather than adding columns, re-measure and record what you changed.
 
 - [ ] **Step 7: Commit**
 
@@ -2236,9 +2235,9 @@ done
 ```
 
 Run: `mkdir -p /tmp/lh && chmod +x /tmp/lh/run.sh && npm run build && (npx vite preview --host 127.0.0.1 --port 4180 --strictPort &) && sleep 3 && /tmp/lh/run.sh http://127.0.0.1:4180/ /tmp/lh/home-before 5`
-Expected (D66, on `562db29`): performance 93–94, LCP ~2,940 ms, FCP ~2,020 ms, LCP element `img.pointer-events-none` (the first card's art). Keep the five lines for the report. If the build crashes in the browser with "Cannot read properties of null (reading 'useState')", a stray `node_modules/node_modules` symlink is loading a second React (Open concern 4).
+Expected (D66, after Tasks 1–8): performance 96, LCP ~2,650 ms, FCP ~1,710 ms, LCP element `img.pointer-events-none` (the first card's art). (On `562db29`, before Task 4 deleted `StatCard`, the same method gave 93, LCP 2,943 ms, FCP 2,018 ms.) Keep the five lines for the report. If the build crashes in the browser with "Cannot read properties of null (reading 'useState')", a stray `node_modules/node_modules` symlink is loading a second React (Open concern 4).
 
-- [ ] **Step 2: Drop `motion`**
+- [ ] **Step 2: Drop what is left of `motion`**
 
 Replace `src/main.tsx` with:
 
@@ -2263,7 +2262,7 @@ Run: `npm uninstall motion` (updates `package.json` and `package-lock.json`; no 
 Run: `grep -rn "motion/react\|from 'motion'\|MotionConfig" src e2e scripts` → no output.
 
 Run: `npm run build | sed -n '/performance budget/,$p'`
-Expected: `initialJs` ≈ 83.3 (was 123.46), `playerPageJs` ≈ 117–120, others unchanged; all `✓`.
+Expected: `initialJs` 83.79 → **83.33**, `playerPageJs` 115.82 → **115.33**, `entryJs` 6.73 → 6.69; all `✓`. `ls dist/assets | grep -c motion` → `0`.
 
 - [ ] **Step 3: Subset the display font to Latin WOFF2**
 
@@ -2333,14 +2332,14 @@ Expected: green. The fonts budget line is unchanged (it counts preloaded fonts o
 
 Check the network on Home: `npx playwright test e2e/home.spec.ts` passes, and by hand in the preview (DevTools, or a one-off Playwright script) `/fonts/Clash-latin.woff2` is requested and `/fonts/Clash_Regular.otf` is **not**, on `/` and on a Clash of Clans player page with an ASCII name.
 
-Screenshots: `SCREENSHOT_DIR=/tmp/p4-shots/t9 SCREENSHOT_ONLY=home npm run screenshots` and the same before the change (`git stash` is not allowed for staged work: build the previous commit in a worktree, or compare with `docs/screenshots/phase3/home-*.png`): the h1 "Stats" and the three game names look identical (same glyphs).
+Screenshots: `SCREENSHOT_DIR=/tmp/p4-shots/t9 SCREENSHOT_ONLY=home npm run screenshots`, open the three images next to `docs/screenshots/phase3/home-*.png`: the h1 "Stats" and the three game names look identical (same glyphs, checked in the throwaway at 390).
 
 - [ ] **Step 5: Measure after (5 runs) and on the player pages**
 
 Run: `npm run build && /tmp/lh/run.sh http://127.0.0.1:4180/ /tmp/lh/home-after 5`
-Expected (D66): performance 97–98, LCP ~2,490 ms, FCP ~1,560 ms, TBT < 150 ms, CLS 0, accessibility/best practices/SEO 100. Then one run on each game landing: `for g in clash-royale brawl-stars clash-of-clans; do /tmp/lh/run.sh http://127.0.0.1:4180/game/$g /tmp/lh/$g 1; done`: performance ≥ 90 each, a11y/BP/SEO 100.
+Expected (D66): performance 97, LCP ~2,490 ms, FCP ~1,555 ms, TBT < 150 ms, CLS 0, accessibility/best practices/SEO 100. Then one run on each game landing: `for g in clash-royale brawl-stars clash-of-clans; do /tmp/lh/run.sh http://127.0.0.1:4180/game/$g /tmp/lh/$g 1; done`: measured 98 each, a11y/BP/SEO 100.
 
-If performance does not improve by at least 2 points or CLS/accessibility regress, do not commit the font change: revert `fonts.css` and the woff2, keep the `motion` removal, and report the numbers.
+If the font change does not lower FCP by at least 100 ms or CLS/accessibility regress, do not commit it: revert `fonts.css` and the woff2, keep the `motion` removal, and report the numbers.
 
 Write the before/after table (5 runs each: score, FCP, LCP, TBT, CLS, LCP element) into the task report and the PR.
 
@@ -2350,8 +2349,9 @@ Write the before/after table (5 runs each: score, FCP, LCP, TBT, CLS, LCP elemen
 git add src/main.tsx vite.config.ts package.json package-lock.json src/styles/fonts.css public/fonts/Clash-latin.woff2
 git commit -m "perf(home): drop motion from the entry and subset the display font
 
-Initial JS on / 123.5 -> 83.3 KB gzip; Lighthouse mobile on the built preview
-93 -> 97 (LCP 2.94 -> 2.49 s, FCP 2.02 -> 1.56 s), CLS 0, a11y 100.
+Initial JS on / 83.8 -> 83.3 KB gzip (StatCard's removal already took the
+motion chunk off Home); Lighthouse mobile on the built preview 96 -> 97
+(LCP 2.65 -> 2.49 s, FCP 1.71 -> 1.56 s), CLS 0, a11y 100.
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
@@ -2435,9 +2435,7 @@ Every "Now" must be ≤ its phase cap (D57) and the spec budget.
 - [ ] **Step 4: README and DEPLOY say what the site does now**
 
 Run: `grep -n -i "tab\|overview\|army\|heroes\|achievement\|battle\|deck\|brawler\|club\|motion\|framer\|animation\|font" README.md DEPLOY.md`
-For every hit, check it against the restyled site: Clash Royale tabs `overview | cards | deck | battles | towers`, Brawl Stars `overview | brawlers | progression | battles | club`, Clash of Clans `overview | army | heroes | achievements`, battles with filters linkable through `?tab=battles&mode=&result=`, no `motion` dependency, display font served as a Latin WOFF2 subset with the OTF fallback. Fix any sentence that describes the old UI (e.g. a feature list that names a removed control) in place, keeping the files' style; do not add new sections. If nothing is stale, write "README/DEPLOY checked, nothing stale" in the report and change nothing.
-
-Commit if changed:
+For every hit, check it against the restyled site: Clash Royale tabs `overview | cards | deck | battles | towers`, Brawl Stars `overview | brawlers | progression | battles | club`, Clash of Clans `overview | army | heroes | achievements`, battles with filters linkable through `?tab=battles&mode=&result=`, no `motion` dependency, display font served as a Latin WOFF2 subset with the OTF fallback. Known hit (2026-10-07): README.md line 21 lists `Motion` in the stack, which Task 9 removed: drop it from that line. Fix any other sentence that describes the old UI (e.g. a feature list that names a removed control) in place, keeping the files' style; do not add new sections. Commit:
 
 ```bash
 git add README.md DEPLOY.md
