@@ -34,7 +34,7 @@ export function buildSummary(game: GameTheme, stats: PlayerStats, urlTag: string
     name: stats.username,
     tag: `#${tagSlug(urlTag)}`,
     trophies: stats.trophies,
-    level: stats.level,
+    level: stats.level > 0 ? stats.level : undefined,
     league: leagueLabel(stats.rank),
   };
 

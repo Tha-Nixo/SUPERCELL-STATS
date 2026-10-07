@@ -63,7 +63,7 @@ Tests and tooling: `e2e/support/fixtures.ts`, `e2e/coc-panels.spec.ts` (new), `e
 Numbered after Phase 3 (D42–D56). Each line: decision · why · cost if wrong.
 
 - **D57. Phase 4 budget start = the numbers measured on `main` at `562db29`:** `initialJs 123.46`, `playerPageJs 154.98`, `entryJs 6.73`, `css 9.18`, `fonts 48.26` (same method as D2/D21/D42). Caps as `check-bundle.mjs` prints them (×1.05, capped by the absolute line): initialJs **129.63**, playerPageJs **162.73**, css **9.64**, fonts **50**, entryJs **8** (exempt). The CSS cap is the tight one (+0.46 KB): the restyle deletes more one-off classes (`bg-purple-500/10`, `shadow-[0_0_15px_…]`, per-hero inline gradients) than it adds; if a task still crosses it, cut in this order: the Achievements summary tiles, the Legend League card's builder-base row, the `sm:` padding steps on item tiles. Measured in the throwaway after each task: CSS 9.19 → 8.69 (T4) → 8.28 (T5) → 7.85 (T6) → 7.37 (T7) → 7.41 (T9); initialJs 123.46 → **83.79 at Task 4** (D66) → 83.33 (T9); playerPageJs 155.06 → 115.82 (T7) → 115.33 (T9). **If `npm run build` prints different start numbers on your machine, check for a stray `node_modules/node_modules` symlink first** (Open concern 4): with it the copy measured 124.00 / 155.52 and the built app crashed with two React copies. · Spec rule 2 measures against the previous phase. · None.
-- **D58. Clash of Clans mapper bugs fixed in the data layer (Task 2), proven on the live payload:** (1) `PlayerStats.level` was the **Town Hall level** (the hero said "Level 18" next to "Town Hall 18"; the live player is experience level 325): it becomes `expLevel`; (2) **Meteor Golem** (a home-village troop, live 3/3) was filtered out by `isExtraBaseTroop` and shown nowhere: kept; (3) **Super Yeti** was excluded from super troops and listed as a regular troop at "1/8": it is a super troop; (4) the API's `superTroopIsActive` was dropped: kept as `active`; (5) the panels re-parsed mapper strings (`"1,200 sent · 900 received"`, `"8,123 / 2,100"`, `statLabels.stat4Value`) with `[\d,]+`, which breaks under non-Latin digit locales because the mapper formats with `toLocaleString()`: the raw numbers (`expLevel`, `bestTrophies`, `donations`, `donationsReceived`, `lifetimeAttackWins`, `lifetimeDefenseWins`, `clanTag`) are added to `gameVisuals.coc` and nothing parses strings any more. The mapping is extracted into the pure, exported `mapClashOfClansPlayer(player)` so it is unit tested; `searchClashOfClans` keeps fetching. `winRate`, `kd`, `statLabels`, `extraStats` and the heroes' `emoji`/`color` keep their values (no reader after this phase; removing them is a data-layer cleanup, not a restyle). · Every number the restyled tabs print traces to one API field. · A future reader of `stats.level` for Clash of Clans now gets the experience level (the only reader is the summary bar, which wanted that).
+- **D58. Clash of Clans mapper bugs fixed in the data layer (Task 2), proven on the live payload:** (1) `PlayerStats.level` was the **Town Hall level** (the hero said "Level 18" next to "Town Hall 18"; the live player is experience level in the hundreds): it becomes `expLevel`; (2) **Meteor Golem** (a home-village troop, live 3/3) was filtered out by `isExtraBaseTroop` and shown nowhere: kept; (3) **Super Yeti** was excluded from super troops and listed as a regular troop at "1/8": it is a super troop; (4) the API's `superTroopIsActive` was dropped: kept as `active`; (5) the panels re-parsed mapper strings (`"1,200 sent · 900 received"`, `"8,123 / 2,100"`, `statLabels.stat4Value`) with `[\d,]+`, which breaks under non-Latin digit locales because the mapper formats with `toLocaleString()`: the raw numbers (`expLevel`, `bestTrophies`, `donations`, `donationsReceived`, `lifetimeAttackWins`, `lifetimeDefenseWins`, `clanTag`) are added to `gameVisuals.coc` and nothing parses strings any more. The mapping is extracted into the pure, exported `mapClashOfClansPlayer(player)` so it is unit tested; `searchClashOfClans` keeps fetching. `winRate`, `kd`, `statLabels`, `extraStats` and the heroes' `emoji`/`color` keep their values (no reader after this phase; removing them is a data-layer cleanup, not a restyle). · Every number the restyled tabs print traces to one API field. · A future reader of `stats.level` for Clash of Clans now gets the experience level (the only reader is the summary bar, which wanted that).
 - **D59. Overview content (old → new).** The four tiles become War stars, Attack wins (lifetime, from the Conqueror achievement), Defense wins (lifetime, Unbreakable) and Best trophies. The old **"Win Rate · Est. Lifetime Rate"** tile is **dropped**: it was attack wins ÷ (attack wins + defense wins), two unrelated counters (a defense win is not a lost attack), 95 % for the live player. The old "Home Village" row showed the **best** trophies (6,459) labelled as current with "Best: Legend League" under it, and "Experience Level" showed the Town Hall level: the Trophies card now lists Home village (current), Best home village, Builder base, Best builder base and Builder Hall, under the league name with its badge (the badge was only on the old Heroes tab). The Clan card keeps badge, name, role, clan level, donations and capital contributions; donations are labelled "this season" (the API counters reset each season), the role is the game's word (`admin` → Elder, `coLeader` → Co-leader; the old card printed `ADMIN`/`COLEADER`), and a player without a clan reads "Not in a clan" instead of "No Clan · MEMBER". The Legend League banner (purple, glow) becomes a card with Legend trophies, This season (rank and trophies: the live payload has `currentSeason.rank`, which no panel showed), Best season and Best builder base season when present (live: `bestBuilderBaseSeason` exists, `bestSeason` does not). · Data first, no fabricated number. · Less "game flavour" than the purple banner.
 - **D60. Army: names and levels are printed, not hover-only.** The old 48 px icon tiles showed the name and max level only in a hover tooltip and `title`, the level in 9 px text and "max" as a yellow colour only. Each item is now a tile with the art (local, `GameImage`, `alt=""` because the name is printed), the name, "11 / 12" (sr-only "Level 11 of 12"), "Max" in words, and a decorative bar. Sections are reordered home village first: Troops, Super troops, Spells, Siege machines, Pets, Builder base troops (old: Builder base second). Each section's header says "n of m at max level". Super troops show **no level**: the API reports level 1 for every super troop of a maxed Town Hall 18 player (`1/9`, `1/12`), which is not the troop's strength; they show "Boosted now" when `active`. Level-0 entries are items the mapper pads in (missing siege machines and pets, with a guessed max): they read "Not unlocked" without a max or bar, and a section where nothing is unlocked collapses to one line "None unlocked yet". · Information visible on touch screens and to screen readers. · Taller page (measured in Task 8: see D64).
 - **D61. Heroes: the hero's name is shown.** The old cards showed portrait, level and bar but **no name** (only the image `alt`). New cards: portrait (local art), name as a heading, "85 / 95 · 89 %" (the old card printed both), bar, and the equipped items with their levels ("Nothing equipped" when empty). Locked heroes (padded with level 0 by the mapper) read "Not unlocked". Builder base heroes (Battle Machine, Battle Copter) get their own section. The equipment inventory lists every piece with level, "Max" and an **Equipped** pill (the API's `heroEquipment` does not say which hero owns a piece; "equipped" comes from the heroes' `equipment` lists), equipped pieces first. The old header (league badge + name, clan badge) is **moved**: league badge to the Overview's Trophies card, clan badge already in the Clan card. Per-hero colours and the yellow "MAX" styling go (D6: one accent). No equipment art exists locally or on an allowed host, so equipment tiles are text only (no empty boxes). · Every datum kept, one accent. · None.
@@ -273,16 +273,16 @@ const live = {
   tag: '#PYLQGRJC',
   name: 'Harrow Keep',
   townHallLevel: 18,
-  expLevel: 325,
-  trophies: 5030,
-  bestTrophies: 6459,
-  warStars: 8032,
+  expLevel: 300,
+  trophies: 5000,
+  bestTrophies: 6500,
+  warStars: 8000,
   builderHallLevel: 10,
-  donations: 226,
+  donations: 200,
   donationsReceived: 120,
   role: 'coLeader',
-  clan: { tag: '#8J909CLU', name: 'Lantern Watch', clanLevel: 37, badgeUrls: { medium: 'https://api-assets.clashofclans.com/badges/200/x.png' } },
-  legendStatistics: { legendTrophies: 4210, currentSeason: { rank: 141, trophies: 5030 }, bestBuilderBaseSeason: { id: '2023-09', rank: 3207, trophies: 5514 } },
+  clan: { tag: '#2PP0LQ', name: 'Lantern Watch', clanLevel: 37, badgeUrls: { medium: 'https://api-assets.clashofclans.com/badges/200/x.png' } },
+  legendStatistics: { legendTrophies: 4200, currentSeason: { rank: 150, trophies: 5000 }, bestBuilderBaseSeason: { id: '2023-09', rank: 3200, trophies: 5500 } },
   heroes: [item('Barbarian King', 110, 110)],
   troops: [
     item('Barbarian', 13, 13),
@@ -296,8 +296,8 @@ const live = {
   ],
   spells: [item('Lightning Spell', 13, 13)],
   achievements: [
-    { name: 'Conqueror', stars: 3, value: 35516, target: 5000, info: 'Win 5000 multiplayer battles', completionInfo: 'Total multiplayer battles won: 35516', village: 'home' },
-    { name: 'Unbreakable', stars: 3, value: 1854, target: 500, info: 'Successfully defend against 500 attacks', completionInfo: 'Total defenses won: 1854', village: 'home' },
+    { name: 'Conqueror', stars: 3, value: 35000, target: 5000, info: 'Win 5000 multiplayer battles', completionInfo: 'Total multiplayer battles won: 35000', village: 'home' },
+    { name: 'Unbreakable', stars: 3, value: 1800, target: 500, info: 'Successfully defend against 500 attacks', completionInfo: 'Total defenses won: 1800', village: 'home' },
   ],
 };
 
@@ -306,20 +306,20 @@ describe('mapClashOfClansPlayer', () => {
 
   it('uses the experience level as the player level, not the Town Hall', () => {
     const stats = mapClashOfClansPlayer(live);
-    expect(stats.level).toBe(325);
-    expect(coc().expLevel).toBe(325);
+    expect(stats.level).toBe(300);
+    expect(coc().expLevel).toBe(300);
     expect(coc().townHallLevel).toBe(18);
   });
 
   it('exposes the raw numbers the panels print, so nothing parses formatted strings', () => {
     expect(coc()).toMatchObject({
-      bestTrophies: 6459,
-      donations: 226,
+      bestTrophies: 6500,
+      donations: 200,
       donationsReceived: 120,
-      lifetimeAttackWins: 35516,
-      lifetimeDefenseWins: 1854,
-      clanTag: '#8J909CLU',
-      warStars: 8032,
+      lifetimeAttackWins: 35000,
+      lifetimeDefenseWins: 1800,
+      clanTag: '#2PP0LQ',
+      warStars: 8000,
     });
   });
 
@@ -334,8 +334,8 @@ describe('mapClashOfClansPlayer', () => {
   });
 
   it('passes the legend statistics through, current season rank included', () => {
-    expect(coc().legendStatistics?.currentSeason).toEqual({ rank: 141, trophies: 5030 });
-    expect(coc().legendStatistics?.bestBuilderBaseSeason).toEqual({ id: '2023-09', rank: 3207, trophies: 5514 });
+    expect(coc().legendStatistics?.currentSeason).toEqual({ rank: 150, trophies: 5000 });
+    expect(coc().legendStatistics?.bestBuilderBaseSeason).toEqual({ id: '2023-09', rank: 3200, trophies: 5500 });
   });
 
   it('has no clan tag for a player outside a clan', () => {

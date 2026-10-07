@@ -734,7 +734,7 @@ export function mapClashOfClansPlayer(player: any): PlayerStats {
     const clanBadgeUrl: string = player.clan?.badgeUrls?.medium ?? '';
     const clanLevel: number = player.clan?.clanLevel ?? 0;
     const leagueName: string = player.league?.name ?? player.leagueTier?.name ?? 'Unranked';
-    const leagueBadgeUrl: string = player.league?.iconUrls?.medium ?? player.leagueTier?.iconUrls?.medium ?? '';
+    const leagueBadgeUrl: string = player.league?.iconUrls?.medium ?? player.league?.iconUrls?.large ?? player.league?.iconUrls?.small ?? player.leagueTier?.iconUrls?.medium ?? player.leagueTier?.iconUrls?.large ?? player.leagueTier?.iconUrls?.small ?? '';
     const builderBaseTrophies: number = player.builderBaseTrophies ?? 0;
     const bestBuilderBaseTrophies: number = player.bestBuilderBaseTrophies ?? 0;
     const clanCapitalContributions: number = player.clanCapitalContributions ?? 0;

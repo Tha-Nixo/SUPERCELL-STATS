@@ -90,7 +90,9 @@ export function showStars(a: CoCAchievement): boolean {
 
 /** '2000000000' -> '2,000,000,000' inside API text. The API sends ASCII digits; four or more get separators. */
 export function groupDigits(text: string): string {
-  return text.replace(/\d{4,}/g, (digits) => Number(digits).toLocaleString('en-US'));
+  // String-based: no Number conversion, so long runs and leading zeros survive untouched.
+  return text.replace(/(\d+)(\.\d+)?/g, (match, int: string, frac = '') =>
+    int.length >= 4 ? int.replace(/\B(?=(\d{3})+$)/g, ',') + frac : match);
 }
 
 export type AchievementVillage = 'all' | 'home' | 'builderBase' | 'clanCapital';

@@ -89,6 +89,17 @@ describe('achievements', () => {
     expect(groupDigits('Upgrade a Builder Hall to level 8')).toBe('Upgrade a Builder Hall to level 8');
     expect(groupDigits('Win 5000 multiplayer battles')).toBe('Win 5,000 multiplayer battles');
   });
+  it('groups by string, so long runs, leading zeros, signs and decimals stay exact', () => {
+    expect(groupDigits('12345678901234567890')).toBe('12,345,678,901,234,567,890');
+    expect(groupDigits('Code 0001234')).toBe('Code 0,001,234');
+    expect(groupDigits('Lost -12345 trophies')).toBe('Lost -12,345 trophies');
+    expect(groupDigits('Rate 1234.5678')).toBe('Rate 1,234.5678');
+    expect(groupDigits('Win 123 battles')).toBe('Win 123 battles');
+  });
+  it('leaves non-Latin digits untouched', () => {
+    expect(groupDigits('٢٠٠٠٠٠٠٠٠٠')).toBe('٢٠٠٠٠٠٠٠٠٠');
+    expect(groupDigits('۱۲۳۴۵۶')).toBe('۱۲۳۴۵۶');
+  });
   it('filters by village and status, with counts for each option of the other filter', () => {
     const list = [
       ach('A', 3, 10, 5),
