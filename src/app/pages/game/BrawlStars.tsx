@@ -3,7 +3,7 @@ import { BSBattleSummary } from '../../components/BSBattleSummary';
 import { bsBattleRows, bsHiddenResults, bsResultLabels } from '../../components/bsFacts';
 import { BSOverview } from '../../components/BSOverview';
 import { BSBrawlers } from '../../components/BSBrawlers';
-import { BSClub } from '../../components/BSProfile';
+import { BSClub } from '../../components/BSClub';
 import { BSProgression } from '../../components/BSProgression';
 import { EmptyState } from '../../ui/EmptyState';
 import { BattlesPanel } from './BattlesPanel';
@@ -14,7 +14,7 @@ import type { GameModuleProps } from './types';
 type BSTab = TabId<'brawl-stars'>;
 
 /** Brawl Stars sections: overview | brawlers | progression | battles | club. */
-export default function BrawlStars({ game, playerStats, tab, onTabChange }: GameModuleProps) {
+export default function BrawlStars({ game, playerStats, playerTag, tab, onTabChange }: GameModuleProps) {
   const bs = playerStats.gameVisuals?.bs;
   if (!bs) {
     return (
@@ -23,7 +23,6 @@ export default function BrawlStars({ game, playerStats, tab, onTabChange }: Game
       </EmptyState>
     );
   }
-  const accent = game.accent;
   const battles = bsBattleRows(bs.battlelog);
   const go = (id: BSTab) => onTabChange(id);
 
@@ -39,7 +38,7 @@ export default function BrawlStars({ game, playerStats, tab, onTabChange }: Game
         return <BattlesPanel matches={battles} summary={(scope) => <BSBattleSummary battles={scope} />} resultLabels={bsResultLabels} hiddenResults={bsHiddenResults} />;
       case 'club':
         return bs.club ? (
-          <BSClub playerStats={playerStats} accentColor={accent} />
+          <BSClub club={bs.club} playerTag={playerTag} />
         ) : (
           <EmptyState icon={<Shield />} title={bs.clubTag ? 'Club details are unavailable' : 'Not in a club'}>
             {bs.clubTag

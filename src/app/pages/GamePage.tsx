@@ -273,7 +273,7 @@ export default function GamePage() {
                   <h2 className="sr-only">{tabs.find((t) => t.id === activeTab)?.label}</h2>
                   <ModuleBoundary key={`${game.id}:${urlTag}`}>
                     <Suspense fallback={<PanelSkeleton />}>
-                      <GameModule game={game} playerStats={playerStats} tab={activeTab} onTabChange={(id) => selectTab(id)} />
+                      <GameModule game={game} playerStats={playerStats} playerTag={summary.tag} tab={activeTab} onTabChange={(id) => selectTab(id)} />
                     </Suspense>
                   </ModuleBoundary>
                 </section>

@@ -172,10 +172,43 @@ test.describe('Progression tab', () => {
   });
 });
 
+test.describe('Club tab', () => {
+  test('shows the club without colour tags, its facts and the members by trophies with the player marked', async ({ page }) => {
+    const problems = watch(page);
+    const calls = await mockApi(page);
+    await page.goto(bs('?tab=club'));
+    const p = panel(page);
+    await expect(p.getByRole('heading', { name: 'LanternWatch' })).toBeVisible();
+    await expect(p.getByText('<c')).toHaveCount(0);
+    await expect(p.getByText(/Friendly club, active daily\.\s+Push events together\./)).toBeVisible();
+    await expect(p.getByText('161,734')).toBeVisible();
+    await expect(p.getByText('30,000', { exact: true })).toBeVisible();
+    await expect(p.getByText('Invite only')).toBeVisible();
+    await expect(p.getByText('4 of 30')).toBeVisible();
+    const members = p.getByTestId('club-member');
+    await expect(members).toHaveCount(4);
+    await expect(members.nth(0)).toContainText('Ash Vale');
+    await expect(members.nth(0)).toContainText('President');
+    await expect(members.nth(1)).toContainText('Vice president');
+    await expect(members.nth(1).getByText('You', { exact: true })).toBeVisible();
+    await expect(p.getByText('You', { exact: true })).toHaveCount(1);
+    expect(calls).toContain('/api/brawl-stars/clubs/#2Y0Y');
+    await expectNoEmoji(p);
+    expect(problems).toEqual([]);
+  });
+
+  test('a club that cannot be loaded says so', async ({ page }) => {
+    await mockApi(page, { club: null });
+    await page.goto(bs('?tab=club'));
+    await expect(panel(page).getByTestId('empty-state').getByText('Club details are unavailable')).toBeVisible();
+  });
+});
+
 // Every BS tab that shows game art, with the number of art slots the fixture fills.
 const ART_TABS: Array<[string, number]> = [
   ['overview', 3],
   ['brawlers', 19], // 6 portraits, 4 gadgets, 4 star powers, 5 gears
+  ['club', 1],
 ];
 for (const [tab, slots] of ART_TABS) {
   test(`${tab}: missing game art falls back in place without errors`, async ({ page }) => {

@@ -10,7 +10,7 @@ test.use({ viewport: { width: 320, height: 640 } });
 // Every Clash Royale tab (phase 2 restyle) plus the other games' landing tab.
 const PAGES = [
   ...['', '?tab=cards', '?tab=deck', '?tab=battles', '?tab=battles&result=loss&mode=ladder', '?tab=towers'].map((search) => ({ game: 'clash-royale', search })),
-  ...['', '?tab=progression', '?tab=battles', '?tab=battles&mode=solo-showdown&result=loss'].map((search) => ({ game: 'brawl-stars', search })),
+  ...['', '?tab=progression', '?tab=battles', '?tab=battles&mode=solo-showdown&result=loss', '?tab=club'].map((search) => ({ game: 'brawl-stars', search })),
 ];
 
 for (const { game, search } of PAGES) {

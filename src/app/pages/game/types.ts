@@ -7,6 +7,8 @@ export interface GameModuleProps {
   playerStats: PlayerStats;
   /** Selected section id, already validated against GAME_TABS (pages/game/tabs.tsx). */
   tab: string;
+  /** The player's tag as shown in the hero ('#PYLQGRJC'). */
+  playerTag: string;
   /** Switch section from inside the content (e.g. "All battles"). Pushes a history entry. */
   onTabChange: (id: string) => void;
 }
