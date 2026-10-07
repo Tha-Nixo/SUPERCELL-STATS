@@ -23,17 +23,7 @@ export default function ClashOfClans({ game, playerStats, tab }: GameModuleProps
   // `tab` was validated against GAME_TABS by the shell; the union makes a misspelt id a type error.
   switch (tab as CoCTab) {
     case 'army':
-      return (
-        <CoCArmyDisplay
-          troops={coc.troops}
-          superTroops={coc.superTroops}
-          builderBaseTroops={coc.builderBaseTroops}
-          spells={coc.spells}
-          siegeMachines={coc.siegeMachines}
-          pets={coc.pets}
-          accent={game.accent}
-        />
-      );
+      return <CoCArmyDisplay coc={coc} />;
     case 'heroes':
       return (
         <CoCHeroesDisplay

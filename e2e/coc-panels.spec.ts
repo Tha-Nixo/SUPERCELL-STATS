@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { expectNoEmoji, watch } from './support/helpers';
+import { cocLowTownHall } from './support/fixtures';
 import { FIXTURE_TAG, mockApi } from './support/mockApi';
 
 const coc = (search = '') => `/game/clash-of-clans/player/${FIXTURE_TAG}${search}`;
@@ -75,5 +76,67 @@ test.describe('Overview tab', () => {
     await page.goto(coc());
     await expect(card(page, 'Legend League')).toHaveCount(0);
     await expect(card(page, 'Trophies').getByText('Unranked')).toBeVisible();
+  });
+});
+
+test.describe('Army tab', () => {
+  const section = (page: Page, title: string) => card(page, title);
+
+  test('sections come home village first, with names and levels printed', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(coc('?tab=army'));
+    const titles = panel(page).getByRole('heading', { level: 3 });
+    await expect(titles).toHaveText(['Troops', 'Super troops', 'Spells', 'Siege machines', 'Pets', 'Builder base troops']);
+    const troops = section(page, 'Troops');
+    await expect(troops.getByTestId('coc-item')).toHaveCount(5);
+    await expect(troops.getByTestId('coc-item').filter({ hasText: 'Barbarian' }).first()).toContainText('11 / 12');
+    await expect(troops.getByTestId('coc-item').filter({ hasText: 'Archer' })).toContainText('Max');
+    await expect(troops.getByText('Meteor Golem')).toBeVisible();
+    await expect(troops.getByText('1 of 5 at max level')).toBeVisible();
+    await expectNoEmoji(panel(page));
+    expect(problems).toEqual([]);
+  });
+
+  test('levels are worded for screen readers', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=army'));
+    const barbarian = section(page, 'Troops').getByTestId('coc-item').first();
+    await expect(barbarian.locator('.sr-only').first()).toHaveText('Level 11 of 12');
+    await expect(barbarian.locator('[aria-hidden="true"]').filter({ hasText: '11 / 12' })).toHaveCount(1);
+  });
+
+  test('super troops show no level, and the boosted one says so', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=army'));
+    const sup = section(page, 'Super troops');
+    await expect(sup.getByTestId('coc-item')).toHaveCount(3);
+    await expect(sup.getByText('Super Yeti')).toBeVisible();
+    await expect(sup.getByTestId('coc-item').filter({ hasText: 'Sneaky Goblin' })).toContainText('Boosted now');
+    await expect(sup.getByText(/\d+ \/ \d+/)).toHaveCount(0);
+    await expect(sup.getByText('1 boosted now')).toBeVisible();
+  });
+
+  test('items without local art keep their box with an icon, never a broken image', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=army'));
+    const wagon = section(page, 'Troops').getByTestId('coc-item').filter({ hasText: 'Sky Wagon' });
+    await expect(wagon.getByTestId('game-image-fallback')).toHaveCount(1);
+    await expect(section(page, 'Troops').getByTestId('coc-item').filter({ hasText: 'Barbarian' }).first().locator('img')).toHaveAttribute('src', /\/images\/coc\/troops\//);
+  });
+
+  test('padded items read "Not unlocked" and an all-locked section collapses', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-of-clans': cocLowTownHall } });
+    await page.goto(coc('?tab=army'));
+    await expect(section(page, 'Siege machines').getByText('None unlocked yet')).toBeVisible();
+    await expect(section(page, 'Siege machines').getByTestId('coc-item')).toHaveCount(0);
+    await expect(section(page, 'Super troops')).toHaveCount(0);
+  });
+
+  test('a player with no army at all gets an empty state', async ({ page }) => {
+    await mockApi(page);
+    await page.route('**/api/clash-of-clans/players/**', (route) => route.fulfill({ json: { name: 'Harrow Keep', tag: `#${FIXTURE_TAG}` } }));
+    await page.goto(coc('?tab=army'));
+    await expect(page.getByTestId('empty-state').getByText('No army in this answer')).toBeVisible();
   });
 });
