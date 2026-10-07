@@ -39,3 +39,26 @@ export function brawlerList(brawlers: readonly BSBrawlerData[], query: string, s
   };
   return brawlers.filter((b) => b.name.toLowerCase().includes(q)).sort(compare[sort]);
 }
+
+export interface ProgressionFacts {
+  /** Brawlers at each power level, index 0 = power 1 ... index 10 = power 11. */
+  powerCounts: number[];
+  /** Sum of every brawler's trophies now, and of each one's best. */
+  trophies: number;
+  peakTrophies: number;
+  maxed: number;
+  over1000: number;
+}
+
+/** Account progression from the raw brawler list (no display strings involved). */
+export function progressionFacts(brawlers: readonly BSBrawlerData[]): ProgressionFacts {
+  const powerCounts = Array.from({ length: 11 }, () => 0);
+  for (const b of brawlers) if (b.power >= 1 && b.power <= 11) powerCounts[b.power - 1] += 1;
+  return {
+    powerCounts,
+    trophies: brawlers.reduce((sum, b) => sum + b.trophies, 0),
+    peakTrophies: brawlers.reduce((sum, b) => sum + Math.max(b.highestTrophies, b.trophies), 0),
+    maxed: brawlers.filter((b) => b.power === 11).length,
+    over1000: brawlers.filter((b) => b.trophies >= 1000).length,
+  };
+}

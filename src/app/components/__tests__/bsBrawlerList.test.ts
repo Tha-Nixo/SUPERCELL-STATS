@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { BSBrawlerData } from '../../data/mockStats';
-import { brawlerList, rarityWeight } from '../bsBrawlerList';
+import { brawlerList, progressionFacts, rarityWeight } from '../bsBrawlerList';
 
 const b = (name: string, trophies: number, power = 11) => ({ id: trophies, name, trophies, power }) as BSBrawlerData;
 const list = [b('SHELLY', 1210), b('8-BIT', 980), b('COLT', 750, 9), b('MR. P', 420, 7), b('EL PRIMO', 120, 3), b('GLOWY', 0, 1), b('NEWBIE', 50, 2)];
@@ -28,5 +28,23 @@ describe('brawlerList', () => {
     expect(names(brawlerList(list, '  el ', 'trophies'))).toEqual(['SHELLY', 'EL PRIMO']);
     expect(brawlerList(list, 'zzz', 'trophies')).toEqual([]);
     expect(list).toEqual(copy);
+  });
+});
+
+describe('progressionFacts', () => {
+  it('counts power levels, sums trophies and peaks, and counts maxed and 1000+ brawlers', () => {
+    const brawlers = [
+      { ...b('SHELLY', 1210), highestTrophies: 1250 },
+      { ...b('COLT', 750, 9), highestTrophies: 800 },
+      { ...b('EL PRIMO', 120, 3), highestTrophies: 100 },
+    ] as BSBrawlerData[];
+    expect(progressionFacts(brawlers)).toEqual({
+      powerCounts: [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
+      trophies: 2080,
+      // A best below the current count (stale API value) counts as the current one.
+      peakTrophies: 2170,
+      maxed: 1,
+      over1000: 1,
+    });
   });
 });

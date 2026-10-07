@@ -147,6 +147,31 @@ test.describe('Brawlers tab', () => {
 });
 
 
+test.describe('Progression tab', () => {
+  test('prints every power level count and the trophies below the best, no hover needed', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(bs('?tab=progression'));
+    const levels = panel(page).getByTestId('power-level');
+    await expect(levels).toHaveCount(11);
+    await expect(levels.nth(10)).toHaveText(/Power 11\s*2/);
+    await expect(levels.nth(0)).toHaveText(/Power 1\s*1/);
+    await expect(levels.nth(1)).toHaveText(/Power 2\s*0/);
+    // Fixture: 3,480 now, 3,630 at best.
+    await expect(panel(page).getByText('3,480', { exact: true })).toBeVisible();
+    await expect(panel(page).getByText('3,630', { exact: true })).toBeVisible();
+    await expect(panel(page).getByText('150 trophies below their combined best.')).toBeVisible();
+    await expectNoEmoji(panel(page));
+    expect(problems).toEqual([]);
+  });
+
+  test('a player without brawlers gets an empty state', async ({ page }) => {
+    await mockApi(page, { patch: { 'brawl-stars': { brawlers: [] } } });
+    await page.goto(bs('?tab=progression'));
+    await expect(panel(page).getByTestId('empty-state').getByText('No progression to show')).toBeVisible();
+  });
+});
+
 // Every BS tab that shows game art, with the number of art slots the fixture fills.
 const ART_TABS: Array<[string, number]> = [
   ['overview', 3],

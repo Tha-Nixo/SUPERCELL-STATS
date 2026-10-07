@@ -6,7 +6,7 @@ import { FIXTURE_TAG, mockApi } from './support/mockApi';
 const BUDGET = 0.05;
 const PAGES = [
   ...['', '?tab=cards', '?tab=deck', '?tab=battles', '?tab=towers'].map((search) => ({ game: 'clash-royale', search })),
-  ...['', '?tab=brawlers', '?tab=battles', '?tab=battles&mode=solo-showdown&result=loss'].map((search) => ({ game: 'brawl-stars', search })),
+  ...['', '?tab=brawlers', '?tab=progression', '?tab=battles', '?tab=battles&mode=solo-showdown&result=loss'].map((search) => ({ game: 'brawl-stars', search })),
 ];
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 320, height: 640 }]) {
@@ -102,6 +102,29 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     });
     await page.goto(`/game/clash-royale/player/${FIXTURE_TAG}?tab=battles`);
     await expect(page.getByTestId('empty-state').getByText(/No recent battles/)).toBeVisible();
+    await expect(page.getByTestId('panel-skeleton')).toHaveCount(0);
+    await page.waitForTimeout(1000);
+    const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
+    expect(cls, `CLS ${cls.toFixed(4)}`).toBeLessThanOrEqual(BUDGET);
+  });
+}
+
+// Same for the Brawl Stars Progression tab of a player without brawlers.
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 320, height: 640 }]) {
+  test(`an empty progression tab shifts no more than the budget at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await mockApi(page, { patch: { 'brawl-stars': { brawlers: [] } } });
+    await page.addInitScript(() => {
+      const w = window as unknown as { __cls: number };
+      w.__cls = 0;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) {
+          if (!entry.hadRecentInput) w.__cls += entry.value;
+        }
+      }).observe({ type: 'layout-shift', buffered: true });
+    });
+    await page.goto(`/game/brawl-stars/player/${FIXTURE_TAG}?tab=progression`);
+    await expect(page.getByTestId('empty-state').getByText('No progression to show')).toBeVisible();
     await expect(page.getByTestId('panel-skeleton')).toHaveCount(0);
     await page.waitForTimeout(1000);
     const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
