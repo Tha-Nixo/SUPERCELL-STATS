@@ -1,12 +1,20 @@
-import type { ReactNode } from 'react';
-import { Crown, Minus, Trophy, X } from 'lucide-react';
+import { Fragment, type ReactNode } from 'react';
+import { Crown, Medal, Minus, Trophy, X } from 'lucide-react';
 import type { Match } from '../data/mockStats';
 import { trophyLabel, trophyQualifier } from '../ui/battleFilters';
 import { cx } from '../ui/cx';
 import { Pill, type PillTone } from '../ui/Pill';
+import { ordinal } from '../ui/text';
+
+/** One battle as listed: Brawl Stars rows add the map and, in Showdown, the placement. */
+export type BattleRow = Match & {
+  map?: string;
+  /** Showdown finishing position (1 = first); team modes have none. */
+  placement?: number;
+};
 
 interface MatchHistoryProps {
-  matches: Match[];
+  matches: readonly BattleRow[];
 }
 
 const RESULT: Record<Match['result'], { label: string; tone: PillTone; icon: ReactNode }> = {
@@ -16,16 +24,18 @@ const RESULT: Record<Match['result'], { label: string; tone: PillTone; icon: Rea
 };
 
 /**
- * A list of battles, newest first, one row each: result, mode and date, then
- * crowns and trophy change when the game reports them. Used by the
- * Clash Royale and Brawl Stars overviews and by the Clash Royale Battles tab;
- * the caller provides the surrounding Card.
+ * A list of battles, newest first, one row each: result, mode, map and date,
+ * then crowns or Showdown placement and the trophy change when the game
+ * reports them. Used by both overviews and both Battles tabs; the caller
+ * provides the surrounding Card.
  */
 export function MatchHistory({ matches }: MatchHistoryProps) {
   // One trophy column for the whole list, so crowns line up when some battles moved no trophies.
   const trophyColumn = matches.some((m) => m.score !== undefined);
   // Room for the "PoL" tag, only in lists that contain such a row.
   const qualified = matches.some((m) => m.score !== undefined && trophyQualifier(m.mode));
+  // One placement column too, so trophy changes line up between Showdown and team battles.
+  const placementColumn = matches.some((m) => m.placement !== undefined);
   return (
     <ol className="divide-y divide-line">
       {matches.map((match) => {
@@ -37,9 +47,14 @@ export function MatchHistory({ matches }: MatchHistoryProps) {
             </Pill>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-fg wrap-anywhere">{match.mode}</p>
+              {/* Each part stays on one line; a narrow row breaks between them, never inside one. */}
               <p className="text-xs text-fg-subtle">
-                {match.date}
-                {match.duration && ` · ${match.duration}`}
+                {[match.map, match.date, match.duration].filter(Boolean).map((part, i) => (
+                  <Fragment key={i}>
+                    {i > 0 && ' · '}
+                    <span className="whitespace-nowrap">{part}</span>
+                  </Fragment>
+                ))}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-4 text-sm tabular-nums">
@@ -48,6 +63,17 @@ export function MatchHistory({ matches }: MatchHistoryProps) {
                   <Crown aria-hidden="true" className="size-4 text-fg-subtle" />
                   <span className="sr-only">Crowns </span>
                   {match.kills}–{match.deaths ?? 0}
+                </span>
+              )}
+              {placementColumn && (
+                <span className="inline-flex w-12 items-center gap-1 text-fg-muted">
+                  {match.placement !== undefined && (
+                    <>
+                      <Medal aria-hidden="true" className="size-4 shrink-0 text-fg-subtle" />
+                      <span className="sr-only">Placed </span>
+                      {ordinal(match.placement)}
+                    </>
+                  )}
                 </span>
               )}
               {trophyColumn && (
