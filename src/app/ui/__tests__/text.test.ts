@@ -54,6 +54,10 @@ describe('stripColorTags', () => {
     ['<cff00ff>Neon</c> Club', 'Neon Club'],
     ['Plain club', 'Plain club'],
     ['a < b > c', 'a < b > c'],
+    ['<c9>Win', 'Win'],
+    ['<c9></c>', ''],
+    ['<c9>A<c4>B</c></c>', 'AB'],
+    ['<C9>Up</C>', 'Up'],
   ])('%j -> %j', (input, expected) => {
     expect(stripColorTags(input)).toBe(expected);
   });

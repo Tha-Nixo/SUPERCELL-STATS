@@ -30,7 +30,7 @@ export function BSClub({ club, playerTag }: BSClubProps) {
             className="size-14 shrink-0 object-contain"
           />
           <div className="min-w-0">
-            <h3 dir="auto" className="truncate text-xl font-semibold text-fg">{stripColorTags(club.name)}</h3>
+            <h3 dir="auto" className="truncate text-xl font-semibold text-fg">{stripColorTags(club.name).trim() || club.tag || 'Club'}</h3>
             <p className="text-xs text-fg-subtle">{club.tag}</p>
           </div>
         </div>
