@@ -66,12 +66,22 @@ test.describe('Overview tab', () => {
     await mockApi(page);
     await page.goto(coc());
     const legend = card(page, 'Legend League');
+    await expect(legend.getByText('Legend trophies, all time', { exact: true })).toBeVisible();
     await expect(legend.getByText('2,210', { exact: true })).toBeVisible();
     await expect(legend.getByText('#1,412 · 5,012 trophies')).toBeVisible();
     await expect(legend.getByText('2026-08 · #830 · 5,560 trophies')).toBeVisible();
   });
 
-  test('a player without legend statistics or league gets no legend card and a league icon', async ({ page }) => {
+  test('without a best-trophies figure the tile and the row agree on the current trophies', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-of-clans': { bestTrophies: undefined } } });
+    await page.goto(coc());
+    const tile = panel(page).getByText('Best trophies', { exact: true }).locator('xpath=ancestor::*[contains(@class,"rounded")][1]');
+    await expect(tile).toContainText('5,012');
+    const row = card(page, 'Trophies').getByText('Best home village', { exact: true }).locator('xpath=..');
+    await expect(row).toContainText('5,012');
+  });
+
+  test('a player without legend statistics or league gets no legend card and reads Unranked', async ({ page }) => {
     await mockApi(page, { patch: { 'clash-of-clans': { legendStatistics: undefined, league: undefined } } });
     await page.goto(coc());
     await expect(card(page, 'Legend League')).toHaveCount(0);
@@ -104,6 +114,22 @@ test.describe('Army tab', () => {
     const barbarian = section(page, 'Troops').getByTestId('coc-item').first();
     await expect(barbarian.locator('.sr-only').first()).toHaveText('Level 11 of 12');
     await expect(barbarian.locator('[aria-hidden="true"]').filter({ hasText: '11 / 12' })).toHaveCount(1);
+  });
+
+  test('an item with no max level prints just its level', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-of-clans': { troops: [
+      { name: 'Zorb Rider', level: 5, village: 'home' },
+      { name: 'Zero Max', level: 3, maxLevel: 0, village: 'home' },
+      { name: 'Barbarian', level: 11, maxLevel: 12, village: 'home' },
+    ], spells: [{ name: 'Mystery Spell', level: 2, village: 'home' }] } } });
+    await page.goto(coc('?tab=army'));
+    const items = section(page, 'Troops').getByTestId('coc-item');
+    await expect(items.filter({ hasText: 'Zorb Rider' })).toHaveText('Zorb Rider5Level 5');
+    await expect(items.filter({ hasText: 'Zorb Rider' }).locator('.sr-only')).toHaveText('Level 5');
+    await expect(items.filter({ hasText: 'Zero Max' }).locator('.sr-only')).toHaveText('Level 3');
+    await expect(items.filter({ hasText: 'Barbarian' }).locator('.sr-only')).toHaveText('Level 11 of 12');
+    await expect(section(page, 'Spells').getByTestId('coc-item').locator('.sr-only')).toHaveText('Level 2');
+    await expect(panel(page).getByText(/\/ (0|undefined)?$/)).toHaveCount(0);
   });
 
   test('super troops show no level, and the boosted one says so', async ({ page }) => {

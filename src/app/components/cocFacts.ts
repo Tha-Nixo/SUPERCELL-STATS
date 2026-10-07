@@ -21,6 +21,12 @@ export function levelFacts(item: Leveled): { locked: boolean; maxed: boolean; pc
   return { locked, maxed, pct };
 }
 
+/** The printed and spoken level; with no usable max (missing or 0) only the level is printed. */
+export function levelText(item: Leveled): { visible: string; spoken: string } {
+  if (!(item.maxLevel > 0)) return { visible: `${item.level}`, spoken: `Level ${item.level}` };
+  return { visible: `${item.level} / ${item.maxLevel}`, spoken: `Level ${item.level} of ${item.maxLevel}` };
+}
+
 const ROLES: Record<string, string> = { leader: 'Leader', coLeader: 'Co-leader', admin: 'Elder', member: 'Member' };
 
 /** The API's clan role id in the game's words ('admin' is an Elder in the game). */

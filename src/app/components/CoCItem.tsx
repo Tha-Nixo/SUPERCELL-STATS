@@ -1,19 +1,16 @@
 import type { ReactNode } from 'react';
 import { ProgressBar } from '../ui/ProgressBar';
-import { levelFacts, type Leveled } from './cocFacts';
+import { levelFacts, levelText, type Leveled } from './cocFacts';
 
 /** "11 / 12", "12 / 12 Max" or "Not unlocked"; screen readers hear "Level 11 of 12". */
 export function LevelText({ item, percent = false }: { item: Leveled; percent?: boolean }) {
   const f = levelFacts(item);
+  const text = levelText(item);
   if (f.locked) return <span className="text-xs text-fg-subtle">Not unlocked</span>;
   return (
     <span className="inline-flex flex-wrap items-baseline gap-x-1.5 text-xs tabular-nums text-fg-muted">
-      <span aria-hidden="true">
-        {item.level} / {item.maxLevel}
-      </span>
-      <span className="sr-only">
-        Level {item.level} of {item.maxLevel}
-      </span>
+      <span aria-hidden="true">{text.visible}</span>
+      <span className="sr-only">{text.spoken}</span>
       {percent && !f.maxed && <span className="text-fg-subtle">· {f.pct}%</span>}
       {f.maxed && <span className="font-semibold text-accent">Max</span>}
     </span>

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CoCAchievement, CoCHeroData } from '../../data/mockStats';
 import {
   ACHIEVEMENT_VILLAGES, ARMY_SECTIONS, achievementView, equipmentList, groupDigits, isAchievementDone, levelFacts, roleLabel,
-  sectionFacts, showStars, splitHeroes,
+  levelText, sectionFacts, showStars, splitHeroes,
 } from '../cocFacts';
 
 const ach = (name: string, stars: number, value: number, target: number, completionInfo: string | null = null, village = 'home'): CoCAchievement =>
@@ -20,6 +20,16 @@ describe('levelFacts', () => {
   });
   it('survives a missing or zero max', () => {
     expect(levelFacts({ level: 3, maxLevel: 0 })).toEqual({ locked: false, maxed: false, pct: 0 });
+  });
+});
+
+describe('levelText', () => {
+  it('prints level and max, and the spoken form', () => {
+    expect(levelText({ level: 11, maxLevel: 12 })).toEqual({ visible: '11 / 12', spoken: 'Level 11 of 12' });
+  });
+  it('prints only the level when there is no usable max', () => {
+    expect(levelText({ level: 5, maxLevel: undefined as unknown as number })).toEqual({ visible: '5', spoken: 'Level 5' });
+    expect(levelText({ level: 3, maxLevel: 0 })).toEqual({ visible: '3', spoken: 'Level 3' });
   });
 });
 

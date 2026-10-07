@@ -23,6 +23,7 @@ export function CoCOverview({ playerStats }: { playerStats: PlayerStats }) {
   const coc = playerStats.gameVisuals?.coc;
   if (!coc) return null;
   const legend = coc.legendStatistics;
+  const bestTrophies = coc.bestTrophies ?? playerStats.trophies;
   const role = roleLabel(coc.clanRole);
   const season = (s: { rank?: number; trophies: number }) => `${s.rank ? `#${n(s.rank)} · ` : ''}${n(s.trophies)} trophies`;
 
@@ -32,7 +33,7 @@ export function CoCOverview({ playerStats }: { playerStats: PlayerStats }) {
         <StatTile label="War stars" value={n(coc.warStars)} sub="Clan war total" icon={<Star />} />
         <StatTile label="Attack wins" value={n(coc.lifetimeAttackWins)} sub="Lifetime" icon={<Swords />} />
         <StatTile label="Defense wins" value={n(coc.lifetimeDefenseWins)} sub="Lifetime" icon={<Shield />} />
-        <StatTile label="Best trophies" value={n(coc.bestTrophies ?? playerStats.trophies)} sub="Home village" icon={<Trophy />} />
+        <StatTile label="Best trophies" value={n(bestTrophies)} sub="Home village" icon={<Trophy />} />
       </div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
@@ -46,7 +47,7 @@ export function CoCOverview({ playerStats }: { playerStats: PlayerStats }) {
           </div>
           <div className="divide-y divide-line">
             <Row label="Home village" value={n(playerStats.trophies)} />
-            <Row label="Best home village" value={n(coc.bestTrophies)} />
+            <Row label="Best home village" value={n(bestTrophies)} />
             <Row label="Builder base" value={n(coc.builderBaseTrophies)} />
             <Row label="Best builder base" value={n(coc.bestBuilderBaseTrophies)} />
             <Row label="Builder Hall" value={coc.builderHallLevel > 0 ? `Level ${coc.builderHallLevel}` : 'Not built'} />
@@ -77,7 +78,7 @@ export function CoCOverview({ playerStats }: { playerStats: PlayerStats }) {
         {legend && legend.legendTrophies > 0 && (
           <Card as="section" title="Legend League" action={<Crown aria-hidden="true" className="size-4 text-accent" />} className="min-w-0 lg:col-span-2">
             <div className="grid grid-cols-1 divide-y divide-line lg:grid-cols-2 lg:gap-x-8 lg:divide-y-0">
-              <LegendLine label="Legend trophies" value={n(legend.legendTrophies)} />
+              <LegendLine label="Legend trophies, all time" value={n(legend.legendTrophies)} />
               {legend.currentSeason && <LegendLine label="This season" value={season(legend.currentSeason)} />}
               {legend.bestSeason && <LegendLine label="Best season" value={`${legend.bestSeason.id} · ${season(legend.bestSeason)}`} />}
               {legend.bestBuilderBaseSeason && (
