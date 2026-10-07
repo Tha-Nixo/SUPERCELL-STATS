@@ -6,7 +6,7 @@ import { FIXTURE_TAG, deferred, mockApi } from './support/mockApi';
 const BUDGET = 0.05;
 const PAGES = [
   ...['', '?tab=cards', '?tab=deck', '?tab=battles', '?tab=towers'].map((search) => ({ game: 'clash-royale', search })),
-  ...['', '?tab=brawlers', '?tab=progression', '?tab=battles', '?tab=battles&mode=solo-showdown&result=loss'].map((search) => ({ game: 'brawl-stars', search })),
+  ...['', '?tab=brawlers', '?tab=progression', '?tab=battles', '?tab=battles&mode=solo-showdown&result=loss', '?tab=club'].map((search) => ({ game: 'brawl-stars', search })),
 ];
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 320, height: 640 }]) {
@@ -207,4 +207,54 @@ test('the footer waits for a loading panel and then shows below it', async ({ pa
   chunk.release();
   await expect(page.getByTestId('panel-skeleton')).toHaveCount(0);
   await expect(page.getByRole('contentinfo')).toBeVisible();
+});
+
+// The other short Brawl Stars sections: a player outside any club, no brawlers, no battles.
+const SHORT_BS: Array<[string, string, Parameters<typeof mockApi>[1]]> = [
+  ['no club', '?tab=club', { patch: { 'brawl-stars': { club: undefined } } }],
+  ['no brawlers', '?tab=brawlers', { patch: { 'brawl-stars': { brawlers: [] } } }],
+  ['no battles', '?tab=battles', { battlelog: { 'brawl-stars': { items: [] } } }],
+];
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 320, height: 640 }]) {
+  for (const [name, search, options] of SHORT_BS) {
+    test(`brawl-stars ${name} shifts no more than the budget at ${viewport.width}px`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await mockApi(page, options);
+      await page.addInitScript(() => {
+        const w = window as unknown as { __cls: number };
+        w.__cls = 0;
+        new PerformanceObserver((list) => {
+          for (const entry of list.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) {
+            if (!entry.hadRecentInput) w.__cls += entry.value;
+          }
+        }).observe({ type: 'layout-shift', buffered: true });
+      });
+      await page.goto(`/game/brawl-stars/player/${FIXTURE_TAG}${search}`);
+      await expect(page.getByTestId('empty-state')).toBeVisible();
+      await expect(page.getByTestId('panel-skeleton')).toHaveCount(0);
+      await page.waitForTimeout(1000);
+      const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
+      expect(cls, `CLS ${cls.toFixed(4)}`).toBeLessThanOrEqual(BUDGET);
+    });
+  }
+}
+
+// Phase 1 left the Brawl Stars podium shifting ~0.03 at 390px; the restyled overview must stay under 0.02.
+test('brawl-stars overview shifts less than 0.02 at 390px', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.addInitScript(() => {
+    const w = window as unknown as { __cls: number };
+    w.__cls = 0;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) {
+        if (!entry.hadRecentInput) w.__cls += entry.value;
+      }
+    }).observe({ type: 'layout-shift', buffered: true });
+  });
+  await page.goto(`/game/brawl-stars/player/${FIXTURE_TAG}`);
+  await expect(page.getByTestId('top-brawler')).toHaveCount(3);
+  await page.waitForTimeout(1500);
+  const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
+  expect(cls, `CLS ${cls.toFixed(4)}`).toBeLessThan(0.02);
 });
