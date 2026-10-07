@@ -4,9 +4,12 @@ import { CoCArmyDisplay } from '../../components/CoCArmyDisplay';
 import { CoCHeroesDisplay } from '../../components/CoCHeroesDisplay';
 import { CoCOverview } from '../../components/CoCOverview';
 import { EmptyState } from '../../ui/EmptyState';
+import type { TabId } from './tabs';
 import type { GameModuleProps } from './types';
 
-/** Clash of Clans sections: overview | army | heroes | achievements. The data components are restyled in phase 4. */
+type CoCTab = TabId<'clash-of-clans'>;
+
+/** Clash of Clans sections: overview | army | heroes | achievements. */
 export default function ClashOfClans({ game, playerStats, tab }: GameModuleProps) {
   const coc = playerStats.gameVisuals?.coc;
   if (!coc) {
@@ -17,7 +20,8 @@ export default function ClashOfClans({ game, playerStats, tab }: GameModuleProps
     );
   }
 
-  switch (tab) {
+  // `tab` was validated against GAME_TABS by the shell; the union makes a misspelt id a type error.
+  switch (tab as CoCTab) {
     case 'army':
       return (
         <CoCArmyDisplay
@@ -50,6 +54,6 @@ export default function ClashOfClans({ game, playerStats, tab }: GameModuleProps
         </EmptyState>
       );
     default:
-      return <CoCOverview playerStats={playerStats} accent={game.accent} />;
+      return <CoCOverview playerStats={playerStats} />;
   }
 }
