@@ -1,6 +1,8 @@
-import type { BSBattleLogItem } from '../data/mockStats';
+import type { BSBattleLogItem, PlayerStats } from '../data/mockStats';
 import { prettyMode } from '../services/supercellService';
 import type { BattleResult } from '../ui/battleFilters';
+import { titleCase } from '../ui/text';
+import { parseCount } from './crFacts';
 import type { BattleRow } from './MatchHistory';
 
 const RESULTS: Record<string, BattleRow['result']> = { victory: 'win', defeat: 'loss', draw: 'draw' };
@@ -75,5 +77,33 @@ export function battleSummary(rows: readonly BattleRow[]): BattleSummary {
     winRate: wins + losses > 0 ? Math.round((wins / (wins + losses)) * 100) : undefined,
     netTrophies: rows.reduce((sum, b) => sum + (b.score ?? 0), 0),
     topMode: top && { mode: top[0], count: top[1] },
+  };
+}
+
+export interface BSOverviewFacts {
+  bestTrophies?: number;
+  /** Brawlers that exist in the game, when the catalogue could be fetched. */
+  brawlersInGame?: number;
+  /** Current Ranked rank and Elo, as the API names them ('Gold II', '2,196 Elo'). */
+  ranked?: { rank: string; elo?: string };
+  bestRanked?: string;
+}
+
+const extra = (stats: PlayerStats, label: string) => stats.extraStats?.find((s) => s.label === label)?.value;
+
+/**
+ * Overview figures the mapper hands over only inside display strings
+ * ("Best: 42,010", "6/95 brawlers unlocked", "GOLD II · 2,196 Elo"). Everything
+ * else the overview shows is read from raw numbers in gameVisuals.bs.
+ */
+export function bsOverviewFacts(stats: PlayerStats): BSOverviewFacts {
+  const unlocked = String(stats.statLabels?.stat3Sub ?? '').split('/');
+  const [rank, elo] = String(extra(stats, 'Ranked') ?? '').split(' · ');
+  const best = extra(stats, 'Best Ranked (all time)');
+  return {
+    bestTrophies: parseCount(stats.statLabels?.stat4Sub),
+    brawlersInGame: unlocked.length === 2 ? parseCount(unlocked[1]) : undefined,
+    ranked: rank ? { rank: titleCase(rank), elo: elo || undefined } : undefined,
+    bestRanked: best ? titleCase(String(best)) : undefined,
   };
 }

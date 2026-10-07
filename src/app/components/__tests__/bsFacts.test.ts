@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { BSBattleLogItem } from '../../data/mockStats';
-import { battleSummary, battleTime, bsBattleRows, bsResultLabels, formatDuration, placementBased } from '../bsFacts';
+import type { BSBattleLogItem, PlayerStats } from '../../data/mockStats';
+import { battleSummary, battleTime, bsBattleRows, bsOverviewFacts, bsResultLabels, formatDuration, placementBased } from '../bsFacts';
 
 // Times are shown in the visitor's zone; pin one for the assertions.
 process.env.TZ = 'UTC';
@@ -79,5 +79,29 @@ describe('placement-based battles', () => {
   it('rename the result filters to what the outcome measures, keeping the others', () => {
     expect(bsResultLabels([row(4)])).toEqual({ win: 'Gains', loss: 'Losses', draw: 'Even' });
     expect(bsResultLabels([row(4), row()])).toBeUndefined();
+  });
+});
+
+describe('bsOverviewFacts', () => {
+  const stats = (statLabels: PlayerStats['statLabels'], extraStats: PlayerStats['extraStats'] = []) => ({ statLabels, extraStats }) as PlayerStats;
+
+  it('reads best trophies, the brawler catalogue and the Ranked lines back from the mapper strings', () => {
+    expect(
+      bsOverviewFacts(stats({ stat3Sub: '107/109 brawlers unlocked', stat4Sub: 'Best: 322,473' }, [
+        { label: 'Ranked', value: 'GOLD II · 2,196 Elo' },
+        { label: 'Best Ranked (all time)', value: 'MASTERS III' },
+      ])),
+    ).toEqual({ bestTrophies: 322473, brawlersInGame: 109, ranked: { rank: 'Gold II', elo: '2,196 Elo' }, bestRanked: 'Masters III' });
+  });
+
+  it('reads locale digits (the mapper formats with the browser locale)', () => {
+    expect(bsOverviewFacts(stats({ stat4Sub: 'Best: ٤٢٬٠١٠' })).bestTrophies).toBe(42010);
+  });
+
+  it('leaves out what the mapper did not send', () => {
+    expect(bsOverviewFacts(stats({ stat3Sub: '6 brawlers unlocked' }))).toEqual({
+      bestTrophies: undefined, brawlersInGame: undefined, ranked: undefined, bestRanked: undefined,
+    });
+    expect(bsOverviewFacts(stats({}, [{ label: 'Ranked', value: 'BRONZE I' }])).ranked).toEqual({ rank: 'Bronze I', elo: undefined });
   });
 });
