@@ -34,7 +34,7 @@ export function buildSummary(game: GameTheme, stats: PlayerStats, urlTag: string
     name: stats.username,
     tag: `#${tagSlug(urlTag)}`,
     trophies: stats.trophies,
-    level: stats.level,
+    level: stats.level > 0 ? stats.level : undefined,
     league: leagueLabel(stats.rank),
   };
 
@@ -60,7 +60,17 @@ export function buildSummary(game: GameTheme, stats: PlayerStats, urlTag: string
       ...base,
       league: visuals.coc.leagueName || base.league,
       extra: `Town Hall ${th}`,
-      avatar: { sources: TH_IMAGES[th] ? [TH_IMAGES[th]] : [], alt: `Town Hall ${th}`, fallback: th },
+      // No local art above Town Hall 16: a two-line "TH / 18" mark instead of a bare number.
+      avatar: {
+        sources: TH_IMAGES[th] ? [TH_IMAGES[th]] : [],
+        alt: `Town Hall ${th}`,
+        fallback: (
+          <span className="flex flex-col items-center leading-none">
+            <span className="text-xs font-medium text-fg-subtle">TH</span>
+            {th}
+          </span>
+        ),
+      },
     };
   }
 

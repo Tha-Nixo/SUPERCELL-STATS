@@ -1,108 +1,131 @@
-import { useState } from 'react';
-import { CoCAchievement } from '../data/mockStats';
-import { Award, CheckCircle2, Circle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Award, CheckCircle2, SearchX, Star } from 'lucide-react';
+import type { CoCAchievement } from '../data/mockStats';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { cx } from '../ui/cx';
+import { EmptyState } from '../ui/EmptyState';
+import { FilterGroup } from '../ui/FilterGroup';
+import { ProgressBar } from '../ui/ProgressBar';
+import { StatTile } from '../ui/StatTile';
+import {
+  ACHIEVEMENT_STATUSES, ACHIEVEMENT_VILLAGES, achievementView, groupDigits, isAchievementDone, starsFacts,
+  type AchievementStatus, type AchievementVillage,
+} from './cocFacts';
 
-interface CoCAchievementsProps {
-    achievements: CoCAchievement[];
-    accent: string;
+const n = (value: number) => value.toLocaleString('en-US');
+
+/** Clash of Clans "Achievements" tab: progress per achievement, filterable by village and status. */
+export function CoCAchievements({ achievements }: { achievements: readonly CoCAchievement[] }) {
+  const [village, setVillage] = useState<AchievementVillage>('all');
+  const [status, setStatus] = useState<AchievementStatus>('all');
+  const filtersRef = useRef<HTMLDivElement>(null);
+  const refocus = useRef(false);
+
+  // "Reset filters" disappears with the empty state: give focus to the first village option.
+  useEffect(() => {
+    if (refocus.current) {
+      refocus.current = false;
+      filtersRef.current?.querySelector<HTMLInputElement>('input[type="radio"]')?.focus();
+    }
+  });
+
+  const view = achievementView(achievements, village, status);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <StatTile label="Completed" value={n(view.done)} sub={`of ${n(achievements.length)} achievements`} icon={<Award />} />
+        <StatTile label="Stars earned" value={n(view.stars)} sub="All villages" icon={<Star />} />
+      </div>
+
+      <Card as="section" aria-label="Achievement filters" className="grid gap-4 sm:grid-cols-2">
+        <div ref={filtersRef} className="min-w-0">
+          <FilterGroup
+            legend="Village"
+            options={ACHIEVEMENT_VILLAGES.map(([value, label]) => ({ value, label, count: view.villageCounts[value] }))}
+            value={village}
+            onChange={(v) => setVillage(v as AchievementVillage)}
+          />
+        </div>
+        <FilterGroup
+          legend="Status"
+          options={ACHIEVEMENT_STATUSES.map(([value, label]) => ({ value, label, count: view.statusCounts[value] }))}
+          value={status}
+          onChange={(s) => setStatus(s as AchievementStatus)}
+        />
+      </Card>
+
+      <p aria-live="polite" className="text-sm text-fg-muted">
+        Showing {view.shown.length} of {achievements.length} achievements
+      </p>
+
+      {view.shown.length === 0 ? (
+        <EmptyState
+          icon={<SearchX />}
+          title="No achievements match"
+          action={<Button onClick={() => { refocus.current = true; setVillage('all'); setStatus('all'); }}>Reset filters</Button>}
+        >
+          No achievement fits both filters. Pick another village or status.
+        </EmptyState>
+      ) : (
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
+          {view.shown.map((a, i) => <AchievementTile key={`${a.name}-${a.village}-${i}`} achievement={a} />)}
+        </ul>
+      )}
+    </div>
+  );
 }
 
-export function CoCAchievements({ achievements, accent }: CoCAchievementsProps) {
-    const [villageFilter, setVillageFilter] = useState<'all' | 'home' | 'builderBase' | 'clanCapital'>('all');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'incomplete'>('all');
-
-    const filtered = achievements.filter(a => {
-        if (villageFilter !== 'all' && a.village !== villageFilter) return false;
-        const isComplete = a.stars === 3 || a.completionInfo === 'Completed!';
-        if (statusFilter === 'completed' && !isComplete) return false;
-        if (statusFilter === 'incomplete' && isComplete) return false;
-        return true;
-    });
-
-    return (
-        <div className="p-6 rounded-3xl border border-white/8 bg-white/3" style={{ borderColor: `${accent}25` }}>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                        <Award className="w-5 h-5" style={{ color: accent }} />
-                        Achievements
-                    </h3>
-                    <p className="text-white/70 text-sm mt-1">Tracked progress across villages</p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <select
-                        aria-label="Filter achievements by village"
-                        className="min-h-11 bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-sm text-white/80 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-                        value={villageFilter}
-                        onChange={e => setVillageFilter(e.target.value as any)}
-                    >
-                        <option value="all">All Villages</option>
-                        <option value="home">Home Village</option>
-                        <option value="builderBase">Builder Base</option>
-                        <option value="clanCapital">Clan Capital</option>
-                    </select>
-
-                    <select
-                        aria-label="Filter achievements by completion status"
-                        className="min-h-11 bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-sm text-white/80 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-                        value={statusFilter}
-                        onChange={e => setStatusFilter(e.target.value as any)}
-                    >
-                        <option value="all">All Status</option>
-                        <option value="completed">Completed</option>
-                        <option value="incomplete">In Progress</option>
-                    </select>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {filtered.map((a, i) => {
-                    const isComplete = a.stars === 3 || a.completionInfo === 'Completed!' || (a.target > 0 && a.value >= a.target);
-                    const safeTarget = Math.max(a.target, 1);
-                    const progressPct = isComplete ? 100 : a.target > 0 ? Math.min(100, (a.value / safeTarget) * 100) : 0;
-
-                    return (
-                        <div key={i} className="p-4 rounded-xl border border-white/5 bg-white/5 flex flex-col justify-between">
-                            <div>
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                    <h4 className="font-semibold text-white/90 text-sm">{a.name}</h4>
-                                    {isComplete ? (
-                                        <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
-                                    ) : (
-                                        <Circle className="w-4 h-4 text-white/20 shrink-0" />
-                                    )}
-                                </div>
-                                <p className="text-white/70 text-[11px] leading-relaxed mb-3">{a.info}</p>
-                            </div>
-
-                            <div>
-                                {a.target > 0 && !isComplete ? (
-                                    <>
-                                        <div className="flex justify-between text-[10px] text-white/55 mb-1 font-mono">
-                                            <span>{a.value.toLocaleString()}</span>
-                                            <span>{a.target.toLocaleString()}</span>
-                                        </div>
-                                        <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-                                            <div className="h-full rounded-full" style={{ width: `${progressPct}%`, backgroundColor: accent }} />
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="text-[11px] font-medium text-green-400/80 bg-green-400/10 px-2 py-1 rounded inline-block">
-                                        {a.completionInfo || 'Completed'}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {filtered.length === 0 && (
-                <div className="text-center py-12 text-white/70 text-sm">
-                    No achievements match the selected filters.
-                </div>
+function AchievementTile({ achievement: a }: { achievement: CoCAchievement }) {
+  const done = isAchievementDone(a);
+  const stars = starsFacts(a);
+  const pct = a.target > 0 ? (a.value / a.target) * 100 : 0;
+  return (
+    <li data-testid="achievement" className="flex min-w-0 flex-col gap-2 rounded-card border border-line bg-surface-1 p-3 sm:p-4">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="min-w-0 text-sm font-semibold text-fg break-words">{a.name}</h3>
+        {stars.show && <Stars count={a.stars} earnedOnly={stars.earnedOnly} spoken={stars.spoken} />}
+      </div>
+      {a.info && <p className={cx('text-xs text-fg-muted', done && 'max-sm:sr-only')}>{groupDigits(a.info)}</p>}
+      {done ? (
+        <p className="flex min-w-0 items-start gap-1.5 text-xs text-fg-muted">
+          <CheckCircle2 aria-hidden="true" className="size-4 shrink-0 text-accent" />
+          <span className="min-w-0 break-words">
+            {a.completionInfo && a.completionInfo !== 'Completed!' ? (
+              <>
+                <span className="sr-only">Completed: </span>
+                {groupDigits(a.completionInfo)}
+              </>
+            ) : (
+              'Completed'
             )}
+          </span>
+        </p>
+      ) : (
+        <div>
+          <p className="flex justify-between gap-3 text-xs tabular-nums text-fg-muted">
+            <span>
+              {n(a.value)}
+              <span className="sr-only"> of {n(a.target)}</span>
+            </span>
+            <span aria-hidden="true">{n(a.target)}</span>
+          </p>
+          <ProgressBar pct={pct} className="mt-1" />
         </div>
-    );
+      )}
+    </li>
+  );
+}
+
+function Stars({ count, earnedOnly, spoken }: { count: number; earnedOnly: boolean; spoken: string }) {
+  const slots = earnedOnly ? Math.min(3, Math.max(0, count)) : 3;
+  return (
+    <span className="inline-flex shrink-0 items-center gap-0.5 pt-0.5">
+      {Array.from({ length: slots }, (_, i) => (
+        <Star key={i} aria-hidden="true" className={cx('size-3.5', i < count ? 'fill-current text-accent' : 'text-fg-subtle')} />
+      ))}
+      <span className="sr-only">{spoken}</span>
+    </span>
+  );
 }

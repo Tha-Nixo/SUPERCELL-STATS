@@ -166,6 +166,8 @@ export interface CoCTroopData {
   level: number;
   maxLevel: number;
   iconUrl?: string;
+  /** Super troops only: boosted right now (the API's superTroopIsActive). */
+  active?: boolean;
 }
 
 export interface CoCAchievement {
@@ -186,6 +188,12 @@ export interface CoCLegendStatistics {
     trophies: number;
   };
   currentSeason?: {
+    trophies: number;
+    rank?: number;
+  };
+  bestBuilderBaseSeason?: {
+    id: string;
+    rank: number;
     trophies: number;
   };
 }
@@ -255,6 +263,17 @@ export interface GameVisuals {
     builderBaseTrophies?: number;
     bestBuilderBaseTrophies?: number;
     warStars?: number;
+    /** Raw API numbers, so panels never parse the formatted strings in statLabels/extraStats. */
+    expLevel?: number;
+    bestTrophies?: number;
+    /** Troops donated / received this season (the API resets them every season). */
+    donations?: number;
+    donationsReceived?: number;
+    /** Lifetime counters from the Conqueror and Unbreakable achievements. */
+    lifetimeAttackWins?: number;
+    lifetimeDefenseWins?: number;
+    /** Present only when the player is in a clan. */
+    clanTag?: string;
 
     leagueName: string;
     leagueBadgeUrl?: string;

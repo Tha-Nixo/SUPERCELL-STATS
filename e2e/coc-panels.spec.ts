@@ -1,0 +1,320 @@
+import { test, expect, type Page } from '@playwright/test';
+import { expectNoEmoji, expectTouchTargets, watch } from './support/helpers';
+import { cocLowTownHall } from './support/fixtures';
+import { FIXTURE_TAG, mockApi } from './support/mockApi';
+
+const coc = (search = '') => `/game/clash-of-clans/player/${FIXTURE_TAG}${search}`;
+const panel = (page: Page) => page.getByRole('tabpanel');
+const card = (page: Page, title: string) => panel(page).locator('section').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
+
+test.describe('Overview tab', () => {
+  test('tiles show war stars, lifetime wins and best trophies, and no invented win rate', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(coc());
+    const p = panel(page);
+    await expect(p.getByText('War stars', { exact: true })).toBeVisible();
+    await expect(p.getByText('1,450', { exact: true })).toBeVisible();
+    await expect(p.getByText('8,123', { exact: true })).toBeVisible();
+    await expect(p.getByText('2,100', { exact: true })).toBeVisible();
+    await expect(p.getByText(/win rate/i)).toHaveCount(0);
+    await expectNoEmoji(p);
+    expect(problems).toEqual([]);
+  });
+
+  test('the summary bar shows the experience level next to the Town Hall', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc());
+    const summary = page.getByTestId('player-summary');
+    await expect(summary.getByText('Level 210')).toBeVisible();
+    await expect(summary.getByText('Town Hall 15')).toBeVisible();
+  });
+
+  test('trophies card separates current from best, with the league and its badge', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc());
+    const trophies = card(page, 'Trophies');
+    await expect(trophies.getByText('Legend League')).toBeVisible();
+    await expect(trophies.locator('img[src*="api-assets.clashofclans.com/leagues"]')).toHaveCount(1);
+    for (const [label, value] of [['Home village', '5,012'], ['Best home village', '5,340'], ['Builder base', '3,120'], ['Best builder base', '3,333'], ['Builder Hall', 'Level 10']]) {
+      await expect(trophies.getByText(label, { exact: true })).toBeVisible();
+      await expect(trophies.getByText(value, { exact: true })).toBeVisible();
+    }
+  });
+
+  test('clan card shows the role in game words and season donations', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc());
+    const clan = card(page, 'Clan');
+    await expect(clan.getByText('Lantern Watch')).toBeVisible();
+    await expect(clan.getByText('Co-leader · Level 18')).toBeVisible();
+    await expect(clan.getByText('1,200', { exact: true })).toBeVisible();
+    await expect(clan.getByText('900', { exact: true })).toBeVisible();
+    await expect(clan.getByText('1,234,567', { exact: true })).toBeVisible();
+    await expect(clan.getByText(/this season/).first()).toBeVisible();
+  });
+
+  test('a player outside a clan reads "Not in a clan", with no role', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-of-clans': { clan: undefined, role: undefined } } });
+    await page.goto(coc());
+    const clan = card(page, 'Clan');
+    await expect(clan.getByText('Not in a clan')).toBeVisible();
+    await expect(clan.getByText(/Member|Co-leader/)).toHaveCount(0);
+  });
+
+  test('legend card lists legend trophies, this season and the best season', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc());
+    const legend = card(page, 'Legend League');
+    await expect(legend.getByText('Legend trophies, all time', { exact: true })).toBeVisible();
+    await expect(legend.getByText('2,210', { exact: true })).toBeVisible();
+    await expect(legend.getByText('#1,412 · 5,012 trophies')).toBeVisible();
+    await expect(legend.getByText('2026-08 · #830 · 5,560 trophies')).toBeVisible();
+  });
+
+  test('without a best-trophies figure the tile and the row agree on the current trophies', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-of-clans': { bestTrophies: undefined } } });
+    await page.goto(coc());
+    const tile = panel(page).getByText('Best trophies', { exact: true }).locator('xpath=ancestor::*[contains(@class,"rounded")][1]');
+    await expect(tile).toContainText('5,012');
+    const row = card(page, 'Trophies').getByText('Best home village', { exact: true }).locator('xpath=..');
+    await expect(row).toContainText('5,012');
+  });
+
+  test('a player without legend statistics or league gets no legend card and reads Unranked', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-of-clans': { legendStatistics: undefined, league: undefined } } });
+    await page.goto(coc());
+    await expect(card(page, 'Legend League')).toHaveCount(0);
+    await expect(card(page, 'Trophies').getByText('Unranked')).toBeVisible();
+  });
+});
+
+test.describe('Army tab', () => {
+  const section = (page: Page, title: string) => card(page, title);
+
+  test('sections come home village first, with names and levels printed', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(coc('?tab=army'));
+    const titles = panel(page).getByRole('heading', { level: 3 });
+    await expect(titles).toHaveText(['Troops', 'Super troops', 'Spells', 'Siege machines', 'Pets', 'Builder base troops']);
+    const troops = section(page, 'Troops');
+    await expect(troops.getByTestId('coc-item')).toHaveCount(5);
+    await expect(troops.getByTestId('coc-item').filter({ hasText: 'Barbarian' }).first()).toContainText('11 / 12');
+    await expect(troops.getByTestId('coc-item').filter({ hasText: 'Archer' })).toContainText('Max');
+    await expect(troops.getByText('Meteor Golem')).toBeVisible();
+    await expect(troops.getByText('1 of 5 at max level')).toBeVisible();
+    await expectNoEmoji(panel(page));
+    expect(problems).toEqual([]);
+  });
+
+  test('levels are worded for screen readers', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=army'));
+    const barbarian = section(page, 'Troops').getByTestId('coc-item').first();
+    await expect(barbarian.locator('.sr-only').first()).toHaveText('Level 11 of 12');
+    await expect(barbarian.locator('[aria-hidden="true"]').filter({ hasText: '11 / 12' })).toHaveCount(1);
+  });
+
+  test('an item with no max level prints just its level', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-of-clans': { troops: [
+      { name: 'Zorb Rider', level: 5, village: 'home' },
+      { name: 'Zero Max', level: 3, maxLevel: 0, village: 'home' },
+      { name: 'Barbarian', level: 11, maxLevel: 12, village: 'home' },
+    ], spells: [{ name: 'Mystery Spell', level: 2, village: 'home' }] } } });
+    await page.goto(coc('?tab=army'));
+    const items = section(page, 'Troops').getByTestId('coc-item');
+    await expect(items.filter({ hasText: 'Zorb Rider' })).toHaveText('Zorb Rider5Level 5');
+    await expect(items.filter({ hasText: 'Zorb Rider' }).locator('.sr-only')).toHaveText('Level 5');
+    await expect(items.filter({ hasText: 'Zero Max' }).locator('.sr-only')).toHaveText('Level 3');
+    await expect(items.filter({ hasText: 'Barbarian' }).locator('.sr-only')).toHaveText('Level 11 of 12');
+    await expect(section(page, 'Spells').getByTestId('coc-item').locator('.sr-only')).toHaveText('Level 2');
+    await expect(panel(page).getByText(/\/ (0|undefined)?$/)).toHaveCount(0);
+    await expect(panel(page).getByText('NaN')).toHaveCount(0);
+    await expect(panel(page).locator('[style*="NaN"]')).toHaveCount(0);
+    expect(await panel(page).innerText()).not.toContain('NaN');
+  });
+
+  test('super troops show no level, and the boosted one says so', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=army'));
+    const sup = section(page, 'Super troops');
+    await expect(sup.getByTestId('coc-item')).toHaveCount(3);
+    await expect(sup.getByText('Super Yeti')).toBeVisible();
+    await expect(sup.getByTestId('coc-item').filter({ hasText: 'Sneaky Goblin' })).toContainText('Boosted now');
+    await expect(sup.getByText(/\d+ \/ \d+/)).toHaveCount(0);
+    await expect(sup.getByText('1 boosted now')).toBeVisible();
+  });
+
+  test('items without local art keep their box with an icon, never a broken image', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=army'));
+    const wagon = section(page, 'Troops').getByTestId('coc-item').filter({ hasText: 'Sky Wagon' });
+    await expect(wagon.getByTestId('game-image-fallback')).toHaveCount(1);
+    await expect(section(page, 'Troops').getByTestId('coc-item').filter({ hasText: 'Barbarian' }).first().locator('img')).toHaveAttribute('src', /\/images\/coc\/troops\//);
+  });
+
+  test('padded items read "Not unlocked" and an all-locked section collapses', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-of-clans': cocLowTownHall } });
+    await page.goto(coc('?tab=army'));
+    await expect(section(page, 'Siege machines').getByText('None unlocked yet')).toBeVisible();
+    await expect(section(page, 'Siege machines').getByTestId('coc-item')).toHaveCount(0);
+    await expect(section(page, 'Super troops')).toHaveCount(0);
+  });
+
+  test('a player with no army at all gets an empty state', async ({ page }) => {
+    await mockApi(page);
+    await page.route('**/api/clash-of-clans/players/**', (route) => route.fulfill({ json: { name: 'Harrow Keep', tag: `#${FIXTURE_TAG}` } }));
+    await page.goto(coc('?tab=army'));
+    await expect(page.getByTestId('empty-state').getByText('No army in this answer')).toBeVisible();
+  });
+});
+
+test.describe('Heroes tab', () => {
+  test('hero cards are named, with level, share and what each hero wears', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(coc('?tab=heroes'));
+    const heroes = card(page, 'Heroes').getByTestId('hero-card');
+    // Three heroes in the payload, three the mapper adds as not unlocked.
+    await expect(heroes).toHaveCount(6);
+    const king = heroes.filter({ has: page.getByRole('heading', { name: 'Barbarian King' }) });
+    await expect(king).toContainText('85 / 95');
+    await expect(king).toContainText('89%');
+    await expect(king).toContainText('Barbarian Puppet');
+    await expect(king).toContainText('Rage Vial');
+    await expect(heroes.filter({ hasText: 'Archer Queen' })).toContainText('Max');
+    await expect(heroes.filter({ hasText: 'Royal Champion' })).toContainText('Not unlocked');
+    await expect(heroes.filter({ hasText: 'Royal Champion' })).not.toContainText('Equipped');
+    await expectNoEmoji(panel(page));
+    expect(problems).toEqual([]);
+  });
+
+  test('builder base heroes have their own card', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=heroes'));
+    const builder = card(page, 'Builder base heroes');
+    await expect(builder.getByRole('heading', { name: 'Battle Machine' })).toBeVisible();
+    await expect(builder).toContainText('30 / 35');
+  });
+
+  test('the equipment list marks equipped pieces and lists them first', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=heroes'));
+    const equipment = card(page, 'Equipment');
+    await expect(equipment.getByText('8 owned · 5 equipped')).toBeVisible();
+    const items = equipment.getByTestId('coc-item');
+    await expect(items).toHaveCount(8);
+    for (let i = 0; i < 5; i++) await expect(items.nth(i)).toContainText('Equipped');
+    await expect(items.nth(5)).toContainText('Giant Arrow');
+    await expect(items.nth(5)).not.toContainText('Equipped');
+  });
+
+  test('a hero without equipment says so, and a player without equipment gets no equipment card', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-of-clans': { heroes: [{ name: 'Barbarian King', level: 20, maxLevel: 40, village: 'home' }], heroEquipment: [] } } });
+    await page.goto(coc('?tab=heroes'));
+    await expect(card(page, 'Heroes').getByTestId('hero-card').first()).toContainText('Nothing equipped');
+    await expect(card(page, 'Equipment')).toHaveCount(0);
+  });
+});
+
+test.describe('Achievements tab', () => {
+  const filters = (page: Page) => panel(page).locator('section[aria-label="Achievement filters"]');
+  const option = (page: Page, name: string) => filters(page).locator('label').filter({ hasText: new RegExp(`^${name}\\s*\\d+$`) });
+
+  test('summary, counts and one completion rule', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    const p = panel(page);
+    await expect(p.getByText('Showing 8 of 8 achievements')).toBeVisible();
+    await expect(p.getByText('of 8 achievements', { exact: true })).toBeVisible();
+    await expect(option(page, 'Completed')).toContainText('5');
+    await expect(option(page, 'In progress')).toContainText('3');
+    // Dragon Slayer is done by value: it is listed under Completed (it vanished there before).
+    await option(page, 'Completed').click();
+    await expect(p.getByTestId('achievement').filter({ hasText: 'Dragon Slayer' })).toHaveCount(1);
+    await expectNoEmoji(p);
+    expect(problems).toEqual([]);
+  });
+
+  test('tiles show stars in words, grouped numbers and progress', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    const tiles = panel(page).getByTestId('achievement');
+    const gold = tiles.filter({ hasText: 'Gold Grab' });
+    await expect(gold).toContainText('2 of 3 stars');
+    await expect(gold).toContainText('41,000,000');
+    await expect(gold).toContainText('100,000,000');
+    await expect(gold).toContainText('Steal 100,000,000 gold');
+    const conqueror = tiles.filter({ hasText: 'Conqueror' });
+    await expect(conqueror).toContainText('Total multiplayer battles won: 8,123');
+    await expect(conqueror).toContainText('Completed');
+    // A completed achievement without stars shows no star row.
+    await expect(tiles.filter({ hasText: 'Keep Your Account Safe!' })).not.toContainText('of 3 stars');
+  });
+
+  test('a completed single-tier achievement shows only its earned stars, never "of 3"', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    const tiles = panel(page).getByTestId('achievement');
+    const slayer = tiles.filter({ hasText: 'Dragon Slayer' });
+    await expect(slayer.locator('svg.lucide-star')).toHaveCount(1);
+    await expect(slayer.locator('.sr-only').filter({ hasText: /^1 star$/ })).toHaveCount(1);
+    await expect(slayer).not.toContainText('of 3');
+    // Still three slots while in progress, and three earned stars read "3 stars".
+    await expect(tiles.filter({ hasText: 'Gold Grab' }).locator('svg.lucide-star')).toHaveCount(3);
+    await expect(tiles.filter({ hasText: 'Conqueror' }).locator('svg.lucide-star')).toHaveCount(3);
+    await expect(tiles.filter({ hasText: 'Conqueror' })).toContainText('3 stars');
+  });
+
+  test('filters combine, and an empty result offers a reset that returns focus', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    const p = panel(page);
+    await option(page, 'Builder base').click();
+    await expect(p.getByTestId('achievement')).toHaveCount(1);
+    await option(page, 'In progress').click();
+    await expect(p.getByTestId('empty-state').getByText('No achievements match')).toBeVisible();
+    await p.getByRole('button', { name: 'Reset filters' }).click();
+    await expect(p.getByTestId('achievement')).toHaveCount(8);
+    await expect(filters(page).getByRole('radio').first()).toBeFocused();
+  });
+
+  test('filter options are at least 44px tall on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    await expect(option(page, 'Home village')).toBeVisible();
+    await expectTouchTargets(filters(page).locator('label > span'));
+  });
+
+  test('below sm a completed achievement keeps its description for screen readers only', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockApi(page);
+    await page.goto(coc('?tab=achievements'));
+    const conqueror = panel(page).getByTestId('achievement').filter({ hasText: 'Conqueror' });
+    await expect(conqueror.getByText('Win 5,000 multiplayer battles')).toHaveClass(/max-sm:sr-only/);
+    await expect(panel(page).getByTestId('achievement').filter({ hasText: 'Gold Grab' }).getByText('Steal 100,000,000 gold')).toBeVisible();
+  });
+});
+
+// The live API through the preview's /api proxy (vite.config.ts). Tag from the environment only.
+const realTag = process.env.E2E_COC_TAG?.replace(/^#/, '');
+test('a real Clash of Clans player renders every tab without errors', async ({ page }) => {
+  test.skip(!realTag, 'set E2E_COC_TAG');
+  test.setTimeout(60000);
+  const problems = watch(page);
+  await page.goto(`/game/clash-of-clans/player/${encodeURIComponent(realTag!)}`, { waitUntil: 'networkidle' });
+  await expect(panel(page).getByText('War stars', { exact: true })).toBeVisible({ timeout: 15000 });
+  await expectNoEmoji(panel(page));
+  await page.getByRole('tab', { name: 'Army' }).click();
+  await expect(panel(page).getByTestId('coc-item').first()).toBeVisible();
+  await expectNoEmoji(panel(page));
+  await page.getByRole('tab', { name: 'Heroes and equipment' }).click();
+  await expect(panel(page).getByTestId('hero-card').first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Achievements' }).click();
+  await expect(panel(page).getByText(/^Showing \d+ of \d+ achievements$/)).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  expect(problems).toEqual([]);
+});

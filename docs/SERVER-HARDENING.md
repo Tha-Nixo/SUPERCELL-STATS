@@ -153,7 +153,7 @@ rebuild and no restart, and is the better first move.
 The live site sends no CSP, no `X-Content-Type-Options`, no `Referrer-Policy` and
 no frame protection. The CSP below was checked against the built bundle: there are
 no inline `<script>` tags, so `script-src 'self'` holds; `style-src` needs
-`'unsafe-inline'` because motion writes inline styles; `connect-src 'self'` is
+`'unsafe-inline'` because inline styles come from progress bars, `GameImage` and skeleton sizing; `connect-src 'self'` is
 correct because every fetch goes to same-origin `/api/*`.
 
 Ship it as **`Content-Security-Policy-Report-Only` for a week** before enforcing.

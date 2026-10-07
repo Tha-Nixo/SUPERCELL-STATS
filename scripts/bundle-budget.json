@@ -11,12 +11,12 @@
   "phaseGrowthExempt": [
     "entryJs"
   ],
-  "phase": "restyle phase 3 (brawl stars)",
+  "phase": "restyle phase 4 (clash of clans)",
   "phaseStart": {
-    "initialJs": 123.64,
-    "playerPageJs": 156.17,
-    "entryJs": 6.92,
-    "css": 11.73,
+    "initialJs": 123.46,
+    "playerPageJs": 154.98,
+    "entryJs": 6.73,
+    "css": 9.18,
     "fonts": 48.26
   },
   "playerPageEntries": [

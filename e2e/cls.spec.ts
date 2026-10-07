@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { cocLowTownHall } from './support/fixtures';
 import { FIXTURE_TAG, deferred, mockApi } from './support/mockApi';
 
 // Spec performance budget: production CLS <= 0.05. The footer used to sit at the
@@ -7,6 +8,7 @@ const BUDGET = 0.05;
 const PAGES = [
   ...['', '?tab=cards', '?tab=deck', '?tab=battles', '?tab=towers'].map((search) => ({ game: 'clash-royale', search })),
   ...['', '?tab=brawlers', '?tab=progression', '?tab=battles', '?tab=battles&mode=solo-showdown&result=loss', '?tab=club'].map((search) => ({ game: 'brawl-stars', search })),
+  ...['', '?tab=army', '?tab=heroes', '?tab=achievements'].map((search) => ({ game: 'clash-of-clans', search })),
 ];
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 320, height: 640 }]) {
@@ -169,6 +171,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     { label: 'BS brawlers', game: 'brawl-stars', search: '?tab=brawlers', options: {} },
     { label: 'BS small club', game: 'brawl-stars', search: '?tab=club', options: {} },
     { label: 'BS empty progression', game: 'brawl-stars', search: '?tab=progression', options: { patch: { 'brawl-stars': { brawlers: [] } } } },
+    { label: 'CoC achievements', game: 'clash-of-clans', search: '?tab=achievements', options: {} },
+    { label: 'CoC no achievements', game: 'clash-of-clans', search: '?tab=achievements', options: { patch: { 'clash-of-clans': { achievements: [] } } } },
+    { label: 'CoC small army', game: 'clash-of-clans', search: '?tab=army', options: { patch: { 'clash-of-clans': cocLowTownHall } } },
     { label: 'CR empty battles', game: 'clash-royale', search: '?tab=battles', options: { battlelog: { 'clash-royale': [] } } },
   ] as const) {
     test(`${label} keeps the footer close to the content at ${viewport.width}px`, async ({ page }) => {
@@ -231,6 +236,37 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       });
       await page.goto(`/game/brawl-stars/player/${FIXTURE_TAG}${search}`);
       await expect(page.getByTestId('empty-state')).toBeVisible();
+      await expect(page.getByTestId('panel-skeleton')).toHaveCount(0);
+      await page.waitForTimeout(1000);
+      const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
+      expect(cls, `CLS ${cls.toFixed(4)}`).toBeLessThanOrEqual(BUDGET);
+    });
+  }
+}
+
+// Short Clash of Clans states: no achievements, a player outside a clan, a small account.
+const SHORT_COC: Array<[string, string, Parameters<typeof mockApi>[1], string]> = [
+  ['no achievements', '?tab=achievements', { patch: { 'clash-of-clans': { achievements: [] } } }, 'No achievements in this answer'],
+  ['no clan', '', { patch: { 'clash-of-clans': { clan: undefined, role: undefined } } }, 'Not in a clan'],
+  ['a small account army', '?tab=army', { patch: { 'clash-of-clans': cocLowTownHall } }, 'None unlocked yet'],
+  ['a small account heroes', '?tab=heroes', { patch: { 'clash-of-clans': cocLowTownHall } }, 'Nothing equipped'],
+];
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 320, height: 640 }]) {
+  for (const [name, search, options, ready] of SHORT_COC) {
+    test(`clash-of-clans ${name} shifts no more than the budget at ${viewport.width}px`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await mockApi(page, options);
+      await page.addInitScript(() => {
+        const w = window as unknown as { __cls: number };
+        w.__cls = 0;
+        new PerformanceObserver((list) => {
+          for (const entry of list.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) {
+            if (!entry.hadRecentInput) w.__cls += entry.value;
+          }
+        }).observe({ type: 'layout-shift', buffered: true });
+      });
+      await page.goto(`/game/clash-of-clans/player/${FIXTURE_TAG}${search}`);
+      await expect(page.getByRole('tabpanel').getByText(ready).first()).toBeVisible();
       await expect(page.getByTestId('panel-skeleton')).toHaveCount(0);
       await page.waitForTimeout(1000);
       const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);

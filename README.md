@@ -18,7 +18,7 @@ Player statistics website for Supercell games — search any player by tag and g
 
 ## Tech stack
 
-React 18 · TypeScript · Vite 7 · Tailwind CSS 4 · React Router 7 · Motion
+React 18 · TypeScript · Vite 7 · Tailwind CSS 4 · React Router 7
 
 Charts are hand-rolled SVG: the one trend chart on the site did not justify the
 528 KB that Recharts and its d3 dependencies were adding to every page load.
