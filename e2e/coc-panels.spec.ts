@@ -166,3 +166,51 @@ test.describe('Army tab', () => {
     await expect(page.getByTestId('empty-state').getByText('No army in this answer')).toBeVisible();
   });
 });
+
+test.describe('Heroes tab', () => {
+  test('hero cards are named, with level, share and what each hero wears', async ({ page }) => {
+    const problems = watch(page);
+    await mockApi(page);
+    await page.goto(coc('?tab=heroes'));
+    const heroes = card(page, 'Heroes').getByTestId('hero-card');
+    // Three heroes in the payload, three the mapper adds as not unlocked.
+    await expect(heroes).toHaveCount(6);
+    const king = heroes.filter({ has: page.getByRole('heading', { name: 'Barbarian King' }) });
+    await expect(king).toContainText('85 / 95');
+    await expect(king).toContainText('89%');
+    await expect(king).toContainText('Barbarian Puppet');
+    await expect(king).toContainText('Rage Vial');
+    await expect(heroes.filter({ hasText: 'Archer Queen' })).toContainText('Max');
+    await expect(heroes.filter({ hasText: 'Royal Champion' })).toContainText('Not unlocked');
+    await expect(heroes.filter({ hasText: 'Royal Champion' })).not.toContainText('Equipped');
+    await expectNoEmoji(panel(page));
+    expect(problems).toEqual([]);
+  });
+
+  test('builder base heroes have their own card', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=heroes'));
+    const builder = card(page, 'Builder base heroes');
+    await expect(builder.getByRole('heading', { name: 'Battle Machine' })).toBeVisible();
+    await expect(builder).toContainText('30 / 35');
+  });
+
+  test('the equipment list marks equipped pieces and lists them first', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(coc('?tab=heroes'));
+    const equipment = card(page, 'Equipment');
+    await expect(equipment.getByText('8 owned · 5 equipped')).toBeVisible();
+    const items = equipment.getByTestId('coc-item');
+    await expect(items).toHaveCount(8);
+    for (let i = 0; i < 5; i++) await expect(items.nth(i)).toContainText('Equipped');
+    await expect(items.nth(5)).toContainText('Giant Arrow');
+    await expect(items.nth(5)).not.toContainText('Equipped');
+  });
+
+  test('a hero without equipment says so, and a player without equipment gets no equipment card', async ({ page }) => {
+    await mockApi(page, { patch: { 'clash-of-clans': { heroes: [{ name: 'Barbarian King', level: 20, maxLevel: 40, village: 'home' }], heroEquipment: [] } } });
+    await page.goto(coc('?tab=heroes'));
+    await expect(card(page, 'Heroes').getByTestId('hero-card').first()).toContainText('Nothing equipped');
+    await expect(card(page, 'Equipment')).toHaveCount(0);
+  });
+});

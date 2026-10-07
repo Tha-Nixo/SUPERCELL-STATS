@@ -1,7 +1,7 @@
 import { Award } from 'lucide-react';
 import { CoCAchievements } from '../../components/CoCAchievements';
 import { CoCArmyDisplay } from '../../components/CoCArmyDisplay';
-import { CoCHeroesDisplay } from '../../components/CoCHeroesDisplay';
+import { CoCHeroes } from '../../components/CoCHeroes';
 import { CoCOverview } from '../../components/CoCOverview';
 import { EmptyState } from '../../ui/EmptyState';
 import type { TabId } from './tabs';
@@ -25,16 +25,7 @@ export default function ClashOfClans({ game, playerStats, tab }: GameModuleProps
     case 'army':
       return <CoCArmyDisplay coc={coc} />;
     case 'heroes':
-      return (
-        <CoCHeroesDisplay
-          heroes={coc.heroes}
-          heroEquipment={coc.heroEquipment}
-          leagueName={coc.leagueName}
-          leagueBadgeUrl={coc.leagueBadgeUrl}
-          clanBadgeUrl={coc.clanBadgeUrl}
-          accent={game.accent}
-        />
-      );
+      return <CoCHeroes heroes={coc.heroes} equipment={coc.heroEquipment ?? []} />;
     case 'achievements':
       return coc.achievements && coc.achievements.length > 0 ? (
         <CoCAchievements achievements={coc.achievements} accent={game.accent} />
